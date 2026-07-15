@@ -1,0 +1,143 @@
+import React, { useState } from 'react';
+import DashboardLayout from '../components/DashboardLayout';
+import GenerateCourseModal from '../components/GenerateCourseModal';
+import { BookOpen, Search, Filter, Sparkles } from 'lucide-react';
+
+const Course = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Mock Data for courses
+  const courses = [
+    {
+      id: 1,
+      title: "React Hooks Deep Dive",
+      category: "Web Development",
+      progress: 45,
+      color: "blue",
+      rotation: "rotate-1",
+    },
+    {
+      id: 2,
+      title: "Intro to UI/UX Design",
+      category: "Design",
+      progress: 80,
+      color: "yellow",
+      rotation: "-rotate-2",
+    },
+    {
+      id: 3,
+      title: "Advanced TypeScript",
+      category: "Programming",
+      progress: 15,
+      color: "green",
+      rotation: "rotate-2",
+    },
+    {
+      id: 4,
+      title: "Machine Learning Basics",
+      category: "Data Science",
+      progress: 0,
+      color: "pink",
+      rotation: "-rotate-1",
+    },
+    {
+      id: 5,
+      title: "Spanish for Beginners",
+      category: "Language",
+      progress: 100,
+      color: "purple",
+      rotation: "rotate-1",
+    }
+  ];
+
+  // Helper function to map colors to tailwind classes
+  const getColorClasses = (color: string) => {
+    switch(color) {
+      case 'blue': return { bg: 'bg-blue-100 dark:bg-blue-900/40', border: 'border-blue-300 dark:border-blue-700/50', shadow: 'shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[4px_4px_0px_0px_rgba(30,58,138,0.8)]', tape: 'bg-yellow-400/80 dark:bg-yellow-500/40', text: 'text-blue-900 dark:text-blue-300', barBg: 'bg-blue-200 dark:bg-blue-800/50', barFill: 'bg-blue-500 dark:bg-blue-400' };
+      case 'yellow': return { bg: 'bg-yellow-100 dark:bg-yellow-900/40', border: 'border-yellow-300 dark:border-yellow-700/50', shadow: 'shadow-[4px_4px_0px_0px_rgba(250,204,21,1)] dark:shadow-[4px_4px_0px_0px_rgba(161,98,7,0.8)]', tape: 'bg-pink-400/80 dark:bg-pink-500/40', text: 'text-yellow-900 dark:text-yellow-300', barBg: 'bg-yellow-200 dark:bg-yellow-800/50', barFill: 'bg-yellow-500 dark:bg-yellow-400' };
+      case 'green': return { bg: 'bg-green-100 dark:bg-green-900/40', border: 'border-green-300 dark:border-green-700/50', shadow: 'shadow-[4px_4px_0px_0px_rgba(74,222,128,1)] dark:shadow-[4px_4px_0px_0px_rgba(21,128,61,0.8)]', tape: 'bg-blue-400/80 dark:bg-blue-500/40', text: 'text-green-900 dark:text-green-300', barBg: 'bg-green-200 dark:bg-green-800/50', barFill: 'bg-green-500 dark:bg-green-400' };
+      case 'pink': return { bg: 'bg-pink-100 dark:bg-pink-900/40', border: 'border-pink-300 dark:border-pink-700/50', shadow: 'shadow-[4px_4px_0px_0px_rgba(244,114,182,1)] dark:shadow-[4px_4px_0px_0px_rgba(190,24,93,0.8)]', tape: 'bg-green-400/80 dark:bg-green-500/40', text: 'text-pink-900 dark:text-pink-300', barBg: 'bg-pink-200 dark:bg-pink-800/50', barFill: 'bg-pink-500 dark:bg-pink-400' };
+      case 'purple': return { bg: 'bg-purple-100 dark:bg-purple-900/40', border: 'border-purple-300 dark:border-purple-700/50', shadow: 'shadow-[4px_4px_0px_0px_rgba(192,132,252,1)] dark:shadow-[4px_4px_0px_0px_rgba(107,33,168,0.8)]', tape: 'bg-yellow-400/80 dark:bg-yellow-500/40', text: 'text-purple-900 dark:text-purple-300', barBg: 'bg-purple-200 dark:bg-purple-800/50', barFill: 'bg-purple-500 dark:bg-purple-400' };
+      default: return { bg: 'bg-gray-100 dark:bg-gray-800/50', border: 'border-gray-300 dark:border-gray-700', shadow: 'shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)]', tape: 'bg-gray-400/80 dark:bg-gray-500/40', text: 'text-gray-900 dark:text-gray-100', barBg: 'bg-gray-200 dark:bg-gray-700', barFill: 'bg-gray-500 dark:bg-gray-400' };
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto md:mx-0 pb-16">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+          <div>
+            <h1 className="text-5xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-4">
+              <BookOpen className="w-10 h-10 text-blue-500" />
+              My Courses
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">All your active and completed learning paths.</p>
+          </div>
+          
+          {/* Search and Filter */}
+          <div className="flex flex-wrap gap-4 w-full md:w-auto items-center">
+            <div className="relative flex-grow md:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
+              <input 
+                type="text" 
+                placeholder="Search courses..." 
+                className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all font-bold text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
+              />
+            </div>
+            <button className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 p-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-sm">
+              <Filter className="w-6 h-6" />
+            </button>
+            <button 
+              className="bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-2 px-6 rounded-xl shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_2px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_2px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-0.5 font-['Kalam',cursive] text-lg tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 flex-shrink-0"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Sparkles className="w-5 h-5" /> Make Course
+            </button>
+          </div>
+        </div>
+
+        {/* Course Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {courses.map((course) => {
+            const styles = getColorClasses(course.color);
+            return (
+              <div key={course.id} className={`${styles.bg} p-6 rounded-2xl border-2 ${styles.border} ${styles.shadow} transform ${course.rotation} hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2`}>
+                {/* Sticky Tape */}
+                <div className={`absolute top-0 left-1/2 w-16 h-5 ${styles.tape} -translate-x-1/2 -translate-y-2.5 transform ${course.id % 2 === 0 ? 'rotate-2' : '-rotate-3'} backdrop-blur-sm shadow-sm`}></div>
+                
+                <span className={`text-xs font-bold uppercase tracking-wider mb-3 inline-block px-2 py-1 bg-white/50 dark:bg-gray-900/30 rounded-md ${styles.text} w-max`}>
+                  {course.category}
+                </span>
+                
+                <h3 className={`text-2xl font-bold font-['Kalam',cursive] ${styles.text} mb-4 flex-grow`}>
+                  {course.title}
+                </h3>
+                
+                <div className="mt-auto">
+                  <div className="flex justify-between items-end mb-2">
+                    <span className={`${styles.text} font-bold text-sm`}>Progress</span>
+                    <span className={`${styles.text} font-bold text-sm`}>{course.progress}%</span>
+                  </div>
+                  <div className={`w-full ${styles.barBg} rounded-full h-2.5 mb-4 border border-white/40 dark:border-black/20 overflow-hidden`}>
+                    <div className={`${styles.barFill} h-full rounded-full transition-all duration-1000`} style={{ width: `${course.progress}%` }}></div>
+                  </div>
+                  
+                  <button className={`w-full py-2 rounded-xl font-bold font-['Kalam',cursive] text-lg border-2 border-transparent transition-all hover:bg-white/40 dark:hover:bg-gray-900/20 ${styles.text} hover:border-white/60 dark:hover:border-gray-900/40`}>
+                    {course.progress === 100 ? 'Review Course' : course.progress === 0 ? 'Start Learning' : 'Continue'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+      </div>
+      
+      <GenerateCourseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+    </DashboardLayout>
+  );
+};
+
+export default Course;
