@@ -2,5 +2,7 @@ export const listed = {
     landing: "/",
     home: "/home",
     course: "/course",
-    settings: "/settings"
+    settings: "/settings",
+    roadmap: "/roadmap",
+    lesson: "/lesson"
 }

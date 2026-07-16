@@ -5,6 +5,8 @@ import { BookOpen, Search, Filter, Sparkles } from 'lucide-react';
 
 const Course = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
 
   // Mock Data for courses
   const courses = [
@@ -50,6 +52,14 @@ const Course = () => {
     }
   ];
 
+  const filteredCourses = courses.filter(course => {
+    if (activeFilter === 'All') return true;
+    if (activeFilter === 'In Progress') return course.progress > 0 && course.progress < 100;
+    if (activeFilter === 'Completed') return course.progress === 100;
+    if (activeFilter === 'Not Started') return course.progress === 0;
+    return true;
+  });
+
   // Helper function to map colors to tailwind classes
   const getColorClasses = (color: string) => {
     switch(color) {
@@ -86,9 +96,29 @@ const Course = () => {
                 className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all font-bold text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
-            <button className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 p-2 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-sm">
-              <Filter className="w-6 h-6" />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={`border-2 p-2 rounded-xl transition-all shadow-sm flex items-center justify-center ${isFilterOpen ? 'bg-gray-100 dark:bg-gray-700 border-blue-400 dark:border-blue-500 text-blue-600 dark:text-blue-400' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500'}`}
+              >
+                <Filter className="w-6 h-6" />
+              </button>
+
+              {isFilterOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[4px_4px_0px_0px_rgba(75,85,99,1)] border-4 border-gray-300 dark:border-gray-600 z-50 overflow-hidden font-bold text-gray-700 dark:text-gray-300 flex flex-col">
+                  {['All', 'In Progress', 'Completed', 'Not Started'].map((filterType) => (
+                    <div 
+                      key={filterType}
+                      onClick={() => { setActiveFilter(filterType); setIsFilterOpen(false); }}
+                      className={`p-3 border-b-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center justify-between ${activeFilter === filterType ? 'text-blue-600 dark:text-blue-400' : ''} last:border-b-0`}
+                    >
+                      {filterType}
+                      {activeFilter === filterType && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <button 
               className="bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-2 px-6 rounded-xl shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_2px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_2px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-0.5 font-['Kalam',cursive] text-lg tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 flex-shrink-0"
               onClick={() => setIsModalOpen(true)}
@@ -100,7 +130,7 @@ const Course = () => {
 
         {/* Course Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => {
+          {filteredCourses.map((course) => {
             const styles = getColorClasses(course.color);
             return (
               <div key={course.id} className={`${styles.bg} p-6 rounded-2xl border-2 ${styles.border} ${styles.shadow} transform ${course.rotation} hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2`}>

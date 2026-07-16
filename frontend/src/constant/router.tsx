@@ -4,7 +4,8 @@ import Landing from "../pages/Landing"
 import Home from "../pages/Home"
 import Course from "../pages/Course"
 import Settings from "../pages/Settings"
-
+import Roadmap from "../pages/Roadmap"
+import Lesson from "../pages/Lesson"
 
 const router = createBrowserRouter([
     {
@@ -22,6 +23,14 @@ const router = createBrowserRouter([
     {
         path: listed.settings,
         element: <Settings/>
+    },
+    {
+        path: listed.roadmap,
+        element: <Roadmap/>
+    },
+    {
+        path: listed.lesson,
+        element: <Lesson/>
     }
 ])
 
