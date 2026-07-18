@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, ArrowRight, Moon, Sun } from 'lucide-react';
 import LoginModal from '../components/LoginModal';
 import SignUpModal from '../components/SignUpModal';

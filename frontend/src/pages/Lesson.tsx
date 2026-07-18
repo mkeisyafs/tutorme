@@ -309,9 +309,11 @@ const Lesson = () => {
               placeholder="Ask me anything..." 
               className="w-full pl-5 pr-14 py-4 border-4 border-purple-200 dark:border-purple-800/50 rounded-full bg-white/90 dark:bg-gray-900/90 focus:outline-none focus:border-purple-400 dark:focus:border-purple-500 focus:ring-4 focus:ring-purple-200 dark:focus:ring-purple-900/50 font-bold text-gray-700 dark:text-gray-200 placeholder-gray-400 transition-all shadow-inner text-lg"
             />
-            <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-full shadow-[0_4px_0px_0px_rgba(126,34,206,1)] active:translate-y-0.5 active:shadow-none transition-all">
-              <Send className="w-5 h-5" />
-            </button>
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex">
+              <button className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-full shadow-[0_4px_0px_0px_rgba(126,34,206,1)] active:translate-y-1 active:shadow-none transition-all">
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           </div>
         </aside>

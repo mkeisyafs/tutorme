@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import GenerateCourseModal from '../components/GenerateCourseModal';
 import { BookOpen, Search, Filter, Sparkles } from 'lucide-react';
+import { myCourses } from '../constant/courses';
 
 const Course = () => {
   const navigate = useNavigate();
@@ -10,51 +11,7 @@ const Course = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
 
-  // Mock Data for courses
-  const courses = [
-    {
-      id: 1,
-      title: "React Hooks Deep Dive",
-      category: "Web Development",
-      progress: 45,
-      color: "blue",
-      rotation: "rotate-1",
-    },
-    {
-      id: 2,
-      title: "Intro to UI/UX Design",
-      category: "Design",
-      progress: 80,
-      color: "yellow",
-      rotation: "-rotate-2",
-    },
-    {
-      id: 3,
-      title: "Advanced TypeScript",
-      category: "Programming",
-      progress: 15,
-      color: "green",
-      rotation: "rotate-2",
-    },
-    {
-      id: 4,
-      title: "Machine Learning Basics",
-      category: "Data Science",
-      progress: 0,
-      color: "pink",
-      rotation: "-rotate-1",
-    },
-    {
-      id: 5,
-      title: "Spanish for Beginners",
-      category: "Language",
-      progress: 100,
-      color: "purple",
-      rotation: "rotate-1",
-    }
-  ];
-
-  const filteredCourses = courses.filter(course => {
+  const filteredCourses = myCourses.filter(course => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'In Progress') return course.progress > 0 && course.progress < 100;
     if (activeFilter === 'Completed') return course.progress === 100;

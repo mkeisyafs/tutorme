@@ -6,6 +6,7 @@ import Course from "../pages/Course"
 import Settings from "../pages/Settings"
 import Roadmap from "../pages/Roadmap"
 import Lesson from "../pages/Lesson"
+import Library from "../pages/Library"
 
 const router = createBrowserRouter([
     {
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
     {
         path: listed.course,
         element: <Course/>
+    },
+    {
+        path: listed.library,
+        element: <Library/>
     },
     {
         path: listed.settings,

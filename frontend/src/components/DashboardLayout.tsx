@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, BookOpen, Settings, LogOut, Moon, Sun } from 'lucide-react';
+import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { listed } from '../constant/listed';
 
@@ -48,6 +48,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             >
               <BookOpen className="w-5 h-5" />
               <span className="hidden md:inline font-['Kalam',cursive] text-xl">Courses</span>
+            </NavLink>
+
+            <NavLink 
+              to={listed.library}
+              className={({ isActive }) => 
+                `flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 shadow-sm transform -rotate-1' : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-100'}`
+              }
+            >
+              <LibraryBig className="w-5 h-5" />
+              <span className="hidden md:inline font-['Kalam',cursive] text-xl">Library</span>
             </NavLink>
 
             <NavLink 
