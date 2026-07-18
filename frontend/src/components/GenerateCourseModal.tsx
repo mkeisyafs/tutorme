@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Check, Hourglass, Square } from 'lucide-react';
+import { Sparkles, Check, ChevronDown, Hourglass, Square } from 'lucide-react';
 
 interface GenerateCourseModalProps {
   isOpen: boolean;
@@ -11,12 +11,16 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
+  const [familiarity, setFamiliarity] = useState('Beginner');
+  const [language, setLanguage] = useState('English');
+  const [openDropdown, setOpenDropdown] = useState<'familiarity' | 'language' | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       setIsGenerating(false);
       setLoadingStep(0);
+      setOpenDropdown(null);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -87,31 +91,23 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
               <div>
                 <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">How familiar are you with this skill?</label>
                 <div className="relative">
-                  <select 
-                    className="w-full px-4 py-3 border border-pink-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 appearance-none cursor-pointer"
-                  >
-                    <option value="beginner">Beginner</option>
-                    <option value="basic">Basic</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="expert">Expert</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-pink-500 font-bold">
-                    ▼
-                  </div>
+                  <button type="button" aria-haspopup="listbox" aria-expanded={openDropdown === 'familiarity'} onClick={() => setOpenDropdown(openDropdown === 'familiarity' ? null : 'familiarity')} className={`flex w-full items-center justify-between rounded-xl border bg-white/70 px-4 py-3 text-left font-medium text-gray-800 shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-pink-400 dark:border-gray-600 dark:bg-gray-900/70 dark:text-gray-100 dark:focus:ring-pink-500 ${openDropdown === 'familiarity' ? 'border-pink-500' : 'border-pink-300/50'}`}>
+                    {familiarity}<ChevronDown className={`h-5 w-5 text-pink-500 transition-transform ${openDropdown === 'familiarity' ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openDropdown === 'familiarity' && <div role="listbox" aria-label="Skill familiarity" className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border-2 border-pink-300 bg-white shadow-[4px_4px_0_rgba(236,72,153,.25)] dark:border-pink-700 dark:bg-gray-800">
+                    {['Beginner', 'Basic', 'Intermediate', 'Expert'].map((option) => <button key={option} type="button" role="option" aria-selected={familiarity === option} onClick={() => { setFamiliarity(option); setOpenDropdown(null); }} className={`flex w-full items-center justify-between px-4 py-2.5 text-left font-medium transition-colors ${familiarity === option ? 'bg-pink-500 text-white' : 'text-gray-800 hover:bg-pink-100 dark:text-gray-100 dark:hover:bg-pink-900/40'}`}>{option}{familiarity === option && <Check className="h-4 w-4" />}</button>)}
+                  </div>}
                 </div>
               </div>
               <div>
                 <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">Language</label>
                 <div className="relative">
-                  <select 
-                    className="w-full px-4 py-3 border border-pink-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 appearance-none cursor-pointer"
-                  >
-                    <option value="english">English</option>
-                    <option value="indonesian">Indonesian</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-pink-500 font-bold">
-                    ▼
-                  </div>
+                  <button type="button" aria-haspopup="listbox" aria-expanded={openDropdown === 'language'} onClick={() => setOpenDropdown(openDropdown === 'language' ? null : 'language')} className={`flex w-full items-center justify-between rounded-xl border bg-white/70 px-4 py-3 text-left font-medium text-gray-800 shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-pink-400 dark:border-gray-600 dark:bg-gray-900/70 dark:text-gray-100 dark:focus:ring-pink-500 ${openDropdown === 'language' ? 'border-pink-500' : 'border-pink-300/50'}`}>
+                    {language}<ChevronDown className={`h-5 w-5 text-pink-500 transition-transform ${openDropdown === 'language' ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openDropdown === 'language' && <div role="listbox" aria-label="Course language" className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border-2 border-pink-300 bg-white shadow-[4px_4px_0_rgba(236,72,153,.25)] dark:border-pink-700 dark:bg-gray-800">
+                    {['English', 'Indonesian'].map((option) => <button key={option} type="button" role="option" aria-selected={language === option} onClick={() => { setLanguage(option); setOpenDropdown(null); }} className={`flex w-full items-center justify-between px-4 py-2.5 text-left font-medium transition-colors ${language === option ? 'bg-pink-500 text-white' : 'text-gray-800 hover:bg-pink-100 dark:text-gray-100 dark:hover:bg-pink-900/40'}`}>{option}{language === option && <Check className="h-4 w-4" />}</button>)}
+                  </div>}
                 </div>
               </div>
               <button 

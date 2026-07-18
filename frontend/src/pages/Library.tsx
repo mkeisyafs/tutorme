@@ -31,6 +31,11 @@ interface LibraryCourse {
   isMine?: boolean;
 }
 
+interface CourseChapter {
+  title: string;
+  lessons: string[];
+}
+
 const starterCourses: LibraryCourse[] = [
   { id: 1, title: 'Practical Python for Data', description: 'A friendly project-based path from Python basics to useful data analysis.', category: 'Data Science', creator: 'Maya Chen', lessons: 18, learners: 1240, rating: 4.9, color: 'blue' },
   { id: 2, title: 'Design Systems, Clearly', description: 'Learn to build consistent interfaces, tokens, components, and documentation.', category: 'Design', creator: 'Andi Pratama', lessons: 12, learners: 856, rating: 4.8, color: 'pink' },
@@ -50,6 +55,45 @@ const colorStyles: Record<CourseColor, { card: string; border: string; text: str
 
 const categories = ['All topics', 'Web Development', 'Data Science', 'Design', 'Languages', 'Life Skills', 'Learning'];
 
+const courseOutlines: Record<string, CourseChapter[]> = {
+  'Practical Python for Data': [
+    { title: 'Chapter 1: Python foundations', lessons: ['Welcome and setup', 'Variables, lists, and dictionaries', 'Your first data exercise'] },
+    { title: 'Chapter 2: Working with data', lessons: ['Reading CSV files', 'Cleaning missing values', 'Exploring a dataset'] },
+    { title: 'Chapter 3: Tell the story', lessons: ['Charts that answer questions', 'A mini analysis project'] },
+  ],
+  'Design Systems, Clearly': [
+    { title: 'Chapter 1: A shared design language', lessons: ['What design systems solve', 'UI inventory and foundations'] },
+    { title: 'Chapter 2: Build reusable parts', lessons: ['Tokens and variables', 'Component anatomy', 'Documenting decisions'] },
+    { title: 'Chapter 3: Put it into practice', lessons: ['Patterns and templates', 'System handoff'] },
+  ],
+  'Conversational Spanish': [
+    { title: 'Chapter 1: Start speaking', lessons: ['Greetings and introductions', 'Numbers and everyday questions', 'Pronunciation practice'] },
+    { title: 'Chapter 2: Real-life conversations', lessons: ['Ordering food', 'Getting around town', 'Talking about your day'] },
+    { title: 'Chapter 3: Build confidence', lessons: ['Past and future plans', 'Conversation challenge'] },
+  ],
+  'React from Components to Apps': [
+    { title: 'Chapter 1: Component thinking', lessons: ['Your first component', 'Props and composition', 'Rendering dynamic lists'] },
+    { title: 'Chapter 2: Interactive interfaces', lessons: ['State and events', 'Effects and data fetching', 'Reusable custom hooks'] },
+    { title: 'Chapter 3: Ship an app', lessons: ['Routing and structure', 'Final project'] },
+  ],
+  'Personal Finance Foundations': [
+    { title: 'Chapter 1: Know your money', lessons: ['Set your money goals', 'Track income and spending'] },
+    { title: 'Chapter 2: Create your system', lessons: ['A budget you can use', 'Saving and emergency funds'] },
+    { title: 'Chapter 3: Plan ahead', lessons: ['Debt and investing basics', 'Your next 90 days'] },
+  ],
+  'Productive Study Systems': [
+    { title: 'Chapter 1: Set up for focus', lessons: ['Design your study space', 'Make a realistic study plan'] },
+    { title: 'Chapter 2: Learn actively', lessons: ['Effective note-taking', 'Active recall and spaced repetition'] },
+    { title: 'Chapter 3: Review and improve', lessons: ['Weekly review ritual', 'Exam preparation plan'] },
+  ],
+};
+
+const getCourseOutline = (course: LibraryCourse): CourseChapter[] => courseOutlines[course.title] ?? [
+  { title: 'Chapter 1: Start here', lessons: ['Welcome to the course', 'Set your learning goal'] },
+  { title: 'Chapter 2: Core skills', lessons: ['Learn the key concepts', 'Practice with an activity'] },
+  { title: 'Chapter 3: Apply what you learned', lessons: ['Build a small project', 'Review and next steps'] },
+];
+
 const Library = () => {
   const navigate = useNavigate();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -64,6 +108,7 @@ const Library = () => {
   const [courseSearch, setCourseSearch] = useState('');
   const [isCoursePickerOpen, setIsCoursePickerOpen] = useState(false);
   const [formError, setFormError] = useState('');
+  const [previewCourse, setPreviewCourse] = useState<LibraryCourse | null>(null);
 
   const selectedCourse = myCourses.find((course) => course.id === selectedCourseId);
   const selectableCourses = myCourses.filter((course) => `${course.title} ${course.category}`.toLowerCase().includes(courseSearch.toLowerCase()));
@@ -169,7 +214,7 @@ const Library = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7">
           {visibleCourses.map((course, index) => {
             const style = colorStyles[course.color];
-            return <article key={course.id} className={`${style.card} ${style.border} border-2 rounded-2xl p-6 relative flex flex-col shadow-[4px_4px_0_rgba(100,116,139,.35)] ${index % 2 ? '-rotate-1' : 'rotate-1'} hover:rotate-0 transition-transform`}>
+            return <article key={course.id} role="button" tabIndex={0} onClick={() => setPreviewCourse(course)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPreviewCourse(course); } }} className={`${style.card} ${style.border} border-2 rounded-2xl p-6 relative flex flex-col shadow-[4px_4px_0_rgba(100,116,139,.35)] ${index % 2 ? '-rotate-1' : 'rotate-1'} hover:rotate-0 transition-transform cursor-pointer focus:outline-none focus:ring-4 focus:ring-purple-300`}>
               <div className={`absolute -top-2 left-1/2 h-5 w-16 -translate-x-1/2 ${style.tape} ${index % 2 ? 'rotate-3' : '-rotate-3'}`} />
               <div className="flex items-start justify-between gap-3 mb-4">
                 <span className={`rounded-md bg-white/55 dark:bg-black/20 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide ${style.text}`}>{course.category}</span>
@@ -183,7 +228,8 @@ const Library = () => {
                 <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {course.learners.toLocaleString()}</span>
                 {course.rating > 0 && <span className="flex items-center gap-1"><Star className="w-4 h-4 fill-current" /> {course.rating}</span>}
               </div>
-              <button onClick={() => reuseCourse(course)} className={`text-white rounded-xl border-2 py-2.5 font-bold font-['Kalam',cursive] text-lg transition-all hover:translate-y-0.5 hover:shadow-none ${style.button}`}>{course.isMine ? 'View course' : 'Reuse this course'}</button>
+              <button onClick={(event) => { event.stopPropagation(); setPreviewCourse(course); }} className={`mb-2 w-full rounded-xl border-2 border-transparent py-2 font-bold text-sm transition-colors hover:border-white/70 hover:bg-white/35 dark:hover:bg-black/15 ${style.text}`}>Preview chapters & lessons</button>
+              <button onClick={(event) => { event.stopPropagation(); reuseCourse(course); }} className={`text-white rounded-xl border-2 py-2.5 font-bold font-['Kalam',cursive] text-lg transition-all hover:translate-y-0.5 hover:shadow-none ${style.button}`}>{course.isMine ? 'View course' : 'Reuse this course'}</button>
             </article>;
           })}
         </div>
@@ -215,6 +261,23 @@ const Library = () => {
           <button type="submit" className="mt-7 w-full rounded-xl border-2 border-purple-700 bg-purple-500 py-3 text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_5px_0_#6b21a8] hover:translate-y-0.5 hover:shadow-[0_3px_0_#6b21a8] transition-all">Publish to library</button>
           <p className="mt-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 flex justify-center gap-1 items-center"><Clock3 className="w-3.5 h-3.5" /> Course details stay on this device in this demo.</p>
         </form>
+      </div>}
+
+      {previewCourse && <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-4 backdrop-blur-sm" onMouseDown={() => setPreviewCourse(null)}>
+        <section role="dialog" aria-modal="true" aria-labelledby="course-preview-title" onMouseDown={(event) => event.stopPropagation()} className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border-4 border-purple-400 bg-purple-50 p-7 shadow-[8px_8px_0_#a855f7] dark:border-purple-700 dark:bg-gray-800 md:p-9">
+          <button type="button" aria-label="Close course preview" onClick={() => setPreviewCourse(null)} className="absolute right-5 top-5 rounded-lg p-1 text-purple-700 transition-colors hover:bg-purple-200 dark:text-purple-300 dark:hover:bg-gray-700"><X /></button>
+          <div className="pr-10">
+            <span className="rounded-md bg-purple-200 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-purple-900 dark:bg-purple-900 dark:text-purple-100">{previewCourse.category}</span>
+            <h2 id="course-preview-title" className="mt-4 font-['Kalam',cursive] text-4xl font-bold leading-tight text-purple-950 dark:text-purple-100">{previewCourse.title}</h2>
+            <p className="mt-3 font-semibold leading-relaxed text-purple-800 dark:text-purple-200">{previewCourse.description}</p>
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-purple-800 dark:text-purple-200"><span className="flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> {previewCourse.lessons} lessons total</span><span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {previewCourse.learners.toLocaleString()} learners</span></div>
+          </div>
+          <div className="mt-8 border-t-2 border-purple-200 pt-6 dark:border-purple-800">
+            <div className="flex items-end justify-between gap-3"><div><h3 className="font-['Kalam',cursive] text-2xl font-bold text-purple-950 dark:text-purple-100">Course preview</h3><p className="font-semibold text-purple-700 dark:text-purple-300">A look at the first chapters and lessons.</p></div><span className="rounded-full bg-white/70 px-3 py-1 text-sm font-bold text-purple-800 dark:bg-gray-900 dark:text-purple-200">{getCourseOutline(previewCourse).length} chapters</span></div>
+            <div className="mt-5 space-y-4">{getCourseOutline(previewCourse).map((chapter, chapterIndex) => <article key={chapter.title} className="rounded-2xl border-2 border-purple-200 bg-white/75 p-4 dark:border-purple-800 dark:bg-gray-900/50"><h4 className="font-['Kalam',cursive] text-xl font-bold text-purple-950 dark:text-purple-100">{chapter.title}</h4><ol className="mt-3 space-y-2">{chapter.lessons.map((lesson, lessonIndex) => <li key={lesson} className="flex items-center gap-3 text-sm font-semibold text-gray-700 dark:text-gray-200"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-100 text-xs font-extrabold text-purple-700 dark:bg-purple-900/60 dark:text-purple-200">{chapterIndex + lessonIndex + 1}</span>{lesson}</li>)}</ol></article>)}</div>
+          </div>
+          <button type="button" onClick={() => { setPreviewCourse(null); reuseCourse(previewCourse); }} className="mt-8 w-full rounded-xl border-2 border-purple-700 bg-purple-500 py-3 text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_5px_0_#6b21a8] transition-all hover:translate-y-0.5 hover:shadow-[0_3px_0_#6b21a8]">{previewCourse.isMine ? 'View course' : 'Reuse this course'}</button>
+        </section>
       </div>}
     </DashboardLayout>
   );
