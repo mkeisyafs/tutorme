@@ -1,6 +1,6 @@
 import React, { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun, User, Menu, X } from 'lucide-react';
+import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun, User, Menu, X, BookMarked } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { listed } from '../constant/listed';
 
@@ -10,6 +10,7 @@ const navItems = [
   { to: listed.home, label: 'Home', icon: Home, active: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300' },
   { to: listed.course, label: 'Courses', icon: BookOpen, active: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300' },
   { to: listed.library, label: 'Library', icon: LibraryBig, active: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300' },
+  { to: listed.notebook, label: 'Notebook', icon: BookMarked, active: 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300' },
   { to: listed.profile, label: 'Profile', icon: User, active: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' },
 ];
 

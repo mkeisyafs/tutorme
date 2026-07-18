@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import GenerateCourseModal from '../components/GenerateCourseModal';
-import { BookOpen, Search, Filter, Sparkles } from 'lucide-react';
+import { BookOpen, Search, Filter, Sparkles, Pin, CircleAlert } from 'lucide-react';
 import { myCourses } from '../constant/courses';
 
 const Course = () => {
@@ -10,6 +10,31 @@ const Course = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [pinnedCourseIds, setPinnedCourseIds] = useState<number[]>(() => {
+    try {
+      const savedPins = JSON.parse(localStorage.getItem('pinnedCourseIds') ?? '[]');
+      return Array.isArray(savedPins) ? savedPins.filter((id): id is number => typeof id === 'number').slice(0, 3) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [pinLimitReached, setPinLimitReached] = useState(false);
+
+  const togglePin = (courseId: number) => {
+    const isPinned = pinnedCourseIds.includes(courseId);
+    if (!isPinned && pinnedCourseIds.length === 3) {
+      setPinLimitReached(true);
+      return;
+    }
+
+    const nextPinnedCourses = isPinned
+      ? pinnedCourseIds.filter((id) => id !== courseId)
+      : [...pinnedCourseIds, courseId];
+
+    setPinnedCourseIds(nextPinnedCourses);
+    localStorage.setItem('pinnedCourseIds', JSON.stringify(nextPinnedCourses));
+    setPinLimitReached(false);
+  };
 
   const filteredCourses = myCourses.filter(course => {
     if (activeFilter === 'All') return true;
@@ -17,7 +42,7 @@ const Course = () => {
     if (activeFilter === 'Completed') return course.progress === 100;
     if (activeFilter === 'Not Started') return course.progress === 0;
     return true;
-  });
+  }).sort((firstCourse, secondCourse) => Number(pinnedCourseIds.includes(secondCourse.id)) - Number(pinnedCourseIds.includes(firstCourse.id)));
 
   // Helper function to map colors to tailwind classes
   const getColorClasses = (color: string) => {
@@ -43,6 +68,7 @@ const Course = () => {
               My Courses
             </h1>
             <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">All your active and completed learning paths.</p>
+            <p className="mt-2 text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2"><Pin className="w-4 h-4" /> Pinned courses: {pinnedCourseIds.length}/3</p>
           </div>
           
           {/* Search and Filter */}
@@ -87,14 +113,30 @@ const Course = () => {
           </div>
         </div>
 
+        {pinLimitReached && (
+          <div className="mb-6 flex items-center gap-2 rounded-xl border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/30 px-4 py-3 font-bold text-orange-800 dark:text-orange-200">
+            <CircleAlert className="w-5 h-5 shrink-0" /> You can pin up to 3 courses. Unpin one to add another.
+          </div>
+        )}
+
         {/* Course Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredCourses.map((course) => {
             const styles = getColorClasses(course.color);
+            const isPinned = pinnedCourseIds.includes(course.id);
             return (
               <div key={course.id} className={`${styles.bg} p-6 rounded-2xl border-2 ${styles.border} ${styles.shadow} transform ${course.rotation} hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2`}>
                 {/* Sticky Tape */}
                 <div className={`absolute top-0 left-1/2 w-16 h-5 ${styles.tape} -translate-x-1/2 -translate-y-2.5 transform ${course.id % 2 === 0 ? 'rotate-2' : '-rotate-3'} backdrop-blur-sm shadow-sm`}></div>
+                <button
+                  type="button"
+                  onClick={() => togglePin(course.id)}
+                  aria-label={isPinned ? `Unpin ${course.title}` : `Pin ${course.title}`}
+                  aria-pressed={isPinned}
+                  className={`absolute right-4 top-4 z-10 rounded-xl border-2 p-2 transition-all ${isPinned ? 'border-yellow-500 bg-yellow-300 text-yellow-900 shadow-[2px_2px_0px_0px_rgba(202,138,4,0.55)]' : 'border-white/60 dark:border-gray-600 bg-white/60 dark:bg-gray-800/70 text-gray-500 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'}`}
+                >
+                  <Pin className="w-5 h-5" fill={isPinned ? 'currentColor' : 'none'} />
+                </button>
                 
                 <span className={`text-xs font-bold uppercase tracking-wider mb-3 inline-block px-2 py-1 bg-white/50 dark:bg-gray-900/30 rounded-md ${styles.text} w-max`}>
                   {course.category}

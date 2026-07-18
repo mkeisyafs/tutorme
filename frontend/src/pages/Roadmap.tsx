@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, Send, Sparkles, Sidebar, Play } from 'lucide-react';
+import SaveToNotebookButton from '../components/SaveToNotebookButton';
 
 const Roadmap = () => {
   const navigate = useNavigate();
@@ -213,6 +214,7 @@ const Roadmap = () => {
           
           <div className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-md font-bold text-gray-700 dark:text-gray-300 relative">
             Hello! I'm your AI learning assistant. Ready to start your Back-End journey?
+            <SaveToNotebookButton courseTitle="Back-End Developer" content="Hello! I'm your AI learning assistant. Ready to start your Back-End journey?" />
           </div>
           
           <div className="bg-pink-100 dark:bg-pink-900/40 border-4 border-pink-300 dark:border-pink-700 p-4 rounded-3xl rounded-tr-none shadow-[4px_4px_0px_0px_rgba(244,114,182,1)] dark:shadow-[4px_4px_0px_0px_rgba(190,24,93,0.8)] ml-4 text-md font-bold text-pink-900 dark:text-pink-100 self-end relative transform rotate-1">
@@ -221,6 +223,7 @@ const Roadmap = () => {
           
           <div className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-md font-bold text-gray-700 dark:text-gray-300 relative">
             Think of an API as a waiter in a restaurant. You (the client) give your order to the waiter (the API), who takes it to the kitchen (the server/database), and then brings your food (the data) back to you!
+            <SaveToNotebookButton courseTitle="Back-End Developer" content="Think of an API as a waiter in a restaurant. You (the client) give your order to the waiter (the API), who takes it to the kitchen (the server/database), and then brings your food (the data) back to you!" />
           </div>
 
         </div>
