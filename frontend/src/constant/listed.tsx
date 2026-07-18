@@ -5,5 +5,6 @@ export const listed = {
     library: "/library",
     settings: "/settings",
     roadmap: "/roadmap",
-    lesson: "/lesson"
+    lesson: "/lesson",
+    quiz: "/quiz"
 }
