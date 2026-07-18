@@ -7,6 +7,7 @@ import Settings from "../pages/Settings"
 import Roadmap from "../pages/Roadmap"
 import Lesson from "../pages/Lesson"
 import Library from "../pages/Library"
+import Profile from "../pages/Profile"
 import Quiz from "../pages/Quiz"
 
 const router = createBrowserRouter([
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
     {
         path: listed.library,
         element: <Library/>
+    },
+    {
+        path: listed.profile,
+        element: <Profile/>
     },
     {
         path: listed.settings,
