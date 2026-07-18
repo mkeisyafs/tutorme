@@ -14,7 +14,7 @@ const Home = () => {
 
   const handleGenerate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (topic.trim() || referenceFile) setIsGenerateModalOpen(true);
+    setIsGenerateModalOpen(true);
 
     // BACKEND TODO: Send `topic` and `referenceFile` with FormData to the course-generation endpoint.
     // The API should accept PDF/DOCX/TXT, extract text safely, then pass that text as reference context to the AI.
@@ -71,7 +71,6 @@ const Home = () => {
                 </label>
                 <button 
                 type="submit"
-                disabled={!topic.trim() && !referenceFile}
                 className="bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-4 px-8 rounded-full shadow-[0_8px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_8px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-1 font-['Kalam',cursive] text-xl tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 w-full sm:w-auto flex-shrink-0"
               >
                 Generate Course <Sparkles className="w-5 h-5" />

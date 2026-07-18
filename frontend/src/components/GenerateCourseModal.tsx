@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Check, ChevronDown, FileQuestion, Hourglass, ImagePlus, Square } from 'lucide-react';
+import { Sparkles, Check, ChevronDown, FileQuestion, Hourglass, ImagePlus, Square, Paperclip, FileText } from 'lucide-react';
 
 interface GenerateCourseModalProps {
   isOpen: boolean;
@@ -21,7 +21,8 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
   const [quizLength, setQuizLength] = useState('Random');
   const [isQuizLengthOpen, setIsQuizLengthOpen] = useState(false);
   const [courseTopic, setCourseTopic] = useState(initialTopic);
-  const totalSteps = referenceFile ? 6 : 5;
+  const [modalReferenceFile, setModalReferenceFile] = useState<File | null>(referenceFile);
+  const totalSteps = modalReferenceFile ? 6 : 5;
 
   useEffect(() => {
     if (isOpen) {
@@ -31,6 +32,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
       setOpenDropdown(null);
       setCourseTopic(initialTopic);
       setIsQuizLengthOpen(false);
+      setModalReferenceFile(referenceFile);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -61,7 +63,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
 
   const steps = [
     "Understanding your current skill level",
-    ...(referenceFile ? [`Preparing ${referenceFile.name} as your reference`] : []),
+    ...(modalReferenceFile ? [`Preparing ${modalReferenceFile.name} as your reference`] : []),
     "Identifying your learning goals",
     "Designing your learning roadmap...",
     "Estimating your study timeline",
@@ -101,10 +103,17 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
                   value={courseTopic}
                   onChange={(event) => setCourseTopic(event.target.value)}
                   className="w-full px-4 py-3 border border-pink-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                  placeholder={referenceFile ? 'Course based on attached reference' : 'e.g. Python for Beginners'}
+                  placeholder={modalReferenceFile ? 'Course based on attached reference' : 'e.g. Python for Beginners'}
                 />
-                {referenceFile && <p className="mt-2 flex items-center gap-2 text-sm font-bold text-pink-700 dark:text-pink-300">Attached reference: {referenceFile.name}</p>}
+                {modalReferenceFile && <p className="mt-2 flex items-center gap-2 text-sm font-bold text-pink-700 dark:text-pink-300">Attached reference: {modalReferenceFile.name}</p>}
               </div>
+              <section className="rounded-2xl border-2 border-dashed border-pink-300 bg-pink-50/60 p-4 dark:border-pink-700 dark:bg-pink-900/20">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div><h3 className="flex items-center gap-2 font-bold text-pink-900 dark:text-pink-200"><Paperclip className="h-5 w-5" /> Include file for more information</h3><p className="mt-1 text-sm font-semibold text-pink-800 dark:text-pink-300">Add a PDF, DOCX, or TXT file for extra context.</p></div>
+                  <label className="cursor-pointer rounded-xl border-2 border-pink-400 bg-white px-4 py-2.5 font-bold text-pink-700 transition-colors hover:bg-pink-100 dark:bg-gray-800 dark:text-pink-300 dark:hover:bg-pink-900/40"><span className="flex items-center gap-2"><Paperclip className="h-4 w-4" /> Choose file</span><input type="file" className="sr-only" accept=".pdf,.doc,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { setModalReferenceFile(event.target.files?.[0] ?? null); event.currentTarget.value = ''; }} /></label>
+                </div>
+                {modalReferenceFile && <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-pink-200 bg-white/80 px-3 py-2.5 dark:border-pink-800 dark:bg-gray-900/70"><span className="flex min-w-0 items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200"><FileText className="h-5 w-5 shrink-0 text-pink-500" /><span className="truncate">{modalReferenceFile.name}</span></span><button type="button" onClick={() => setModalReferenceFile(null)} className="text-sm font-bold text-pink-600 hover:text-pink-800 dark:text-pink-300">Remove</button></div>}
+              </section>
               <div>
                 <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">How familiar are you with this skill?</label>
                 <div className="relative">

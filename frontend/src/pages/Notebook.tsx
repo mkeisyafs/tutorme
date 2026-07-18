@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookMarked, FileText, MessageSquareText, Pin, Plus, Sparkles, FileQuestion } from 'lucide-react';
 import { myCourses } from '../constant/courses';
+import { useTheme } from '../hooks/useTheme';
 import { createNotebook, getNotebooks, updateNotebookBody, type Notebook } from '../utils/notebooks';
 
 const NotebookPage = () => {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const [notebooks, setNotebooks] = useState<Notebook[]>(getNotebooks);
   const [activeNotebookId, setActiveNotebookId] = useState<string | null>(notebooks[0]?.id ?? null);
   const [newTitle, setNewTitle] = useState('');
@@ -50,7 +52,7 @@ const NotebookPage = () => {
     navigate('/quiz', { state: { notebookTitle: activeNotebook.title, notebookContent: body } });
   };
 
-  return <div className="h-screen overflow-hidden bg-[#dbeafe] text-gray-800 dark:bg-gray-900 dark:text-gray-100 font-['Nunito',sans-serif] flex">
+  return <div className="h-screen overflow-hidden bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 font-['Nunito',sans-serif] flex">
     <aside className="w-80 shrink-0 bg-white/85 dark:bg-gray-800/90 border-r-2 border-dashed border-purple-200 dark:border-gray-700 p-5 flex flex-col shadow-[5px_0_18px_rgba(0,0,0,.04)]">
       <button onClick={() => navigate('/home')} className="mb-7 flex items-center gap-2 self-start rounded-xl px-3 py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"><ArrowLeft className="w-4 h-4" /> Back to dashboard</button>
       <div className="mb-5 flex items-center gap-3"><div className="rounded-xl bg-purple-100 p-2 text-purple-600 dark:bg-purple-900/40"><BookMarked className="w-6 h-6" /></div><div><h1 className="text-3xl font-bold font-['Kalam',cursive] text-purple-700 dark:text-purple-300">Notebook</h1><p className="text-xs font-bold text-gray-500 dark:text-gray-400">Your learning notes</p></div></div>
@@ -59,7 +61,7 @@ const NotebookPage = () => {
         <section className="mt-8 border-t-2 border-dashed border-gray-200 pt-6 dark:border-gray-700"><h2 className="mb-3 flex items-center gap-2 font-bold uppercase tracking-wider text-xs text-blue-700 dark:text-blue-300"><MessageSquareText className="w-4 h-4" /> Course chats</h2><div className="space-y-1">{myCourses.map((course) => <button key={course.id} onClick={() => navigate('/lesson', { state: { courseTitle: course.title } })} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-gray-600 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-blue-900/30 dark:hover:text-blue-300"><MessageSquareText className="w-4 h-4 shrink-0" /><span className="truncate">{course.title}</span></button>)}</div></section>
       </div>
     </aside>
-    <main className="flex-1 overflow-y-auto p-5 md:p-10" style={{ backgroundImage: 'radial-gradient(circle at 15% 20%, rgba(167,139,250,.28), transparent 24rem), radial-gradient(circle at 90% 85%, rgba(96,165,250,.30), transparent 28rem), linear-gradient(#c7d2fe 1px, transparent 1px), linear-gradient(90deg, #c7d2fe 1px, transparent 1px)', backgroundSize: 'auto, auto, 26px 26px, 26px 26px' }}>
+    <main className="flex-1 overflow-y-auto p-5 md:p-10" style={{ backgroundImage: isDark ? 'linear-gradient(#374151 1px, transparent 1px), linear-gradient(90deg, #374151 1px, transparent 1px)' : 'linear-gradient(#f0f0f0 1px, transparent 1px), linear-gradient(90deg, #f0f0f0 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
       {activeNotebook ? <div className="relative mx-auto max-w-4xl min-h-[calc(100vh-5rem)] rounded-[2rem] border-2 border-yellow-300 bg-[#fffdf5] p-7 md:p-12 shadow-[12px_12px_0px_rgba(76,29,149,.22)] dark:border-yellow-800 dark:bg-gray-800 overflow-hidden">
         <div className="absolute -top-1 left-1/2 h-7 w-32 -translate-x-1/2 rotate-[-2deg] bg-purple-300/65 dark:bg-purple-500/35" />
         <div className="absolute inset-y-0 left-9 w-px bg-red-300/70 dark:bg-red-900/60" />
