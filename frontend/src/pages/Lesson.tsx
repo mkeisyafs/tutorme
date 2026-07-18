@@ -174,7 +174,7 @@ const Lesson = () => {
         </div>
         
         <button 
-          onClick={() => navigate('/roadmap')}
+          onClick={() => navigate('/roadmap', { replace: true })}
           className="mt-8 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none w-full font-['Kalam',cursive] text-lg flex-shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -191,7 +191,7 @@ const Lesson = () => {
           {/* Top Breadcrumb & Actions */}
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
-              <span className="hover:text-blue-500 cursor-pointer" onClick={() => navigate('/roadmap')}>Back-End Developer</span>
+              <span className="hover:text-blue-500 cursor-pointer" onClick={() => navigate('/roadmap', { replace: true })}>Back-End Developer</span>
               <ChevronRight className="w-4 h-4" />
               <span>Foundations</span>
               <ChevronRight className="w-4 h-4" />

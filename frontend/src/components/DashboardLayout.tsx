@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun } from 'lucide-react';
+import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun, User } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { listed } from '../constant/listed';
 
@@ -58,6 +58,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             >
               <LibraryBig className="w-5 h-5" />
               <span className="hidden md:inline font-['Kalam',cursive] text-xl">Library</span>
+            </NavLink>
+
+            <NavLink 
+              to={listed.profile}
+              className={({ isActive }) => 
+                `flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 shadow-sm transform rotate-1' : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-100'}`
+              }
+            >
+              <User className="w-5 h-5" />
+              <span className="hidden md:inline font-['Kalam',cursive] text-xl">Profile</span>
             </NavLink>
 
             <NavLink 

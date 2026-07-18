@@ -5,15 +5,19 @@ import { Sparkles, Check, ChevronDown, Hourglass, Square } from 'lucide-react';
 interface GenerateCourseModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTopic?: string;
+  referenceFile?: File | null;
 }
 
-const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClose }) => {
+const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClose, initialTopic = '', referenceFile = null }) => {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [familiarity, setFamiliarity] = useState('Beginner');
   const [language, setLanguage] = useState('English');
   const [openDropdown, setOpenDropdown] = useState<'familiarity' | 'language' | null>(null);
+  const [courseTopic, setCourseTopic] = useState(initialTopic);
+  const totalSteps = referenceFile ? 6 : 5;
 
   useEffect(() => {
     if (isOpen) {
@@ -21,6 +25,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
       setIsGenerating(false);
       setLoadingStep(0);
       setOpenDropdown(null);
+      setCourseTopic(initialTopic);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -31,23 +36,27 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
-    if (isGenerating && loadingStep < 5) {
+    if (isGenerating && loadingStep < totalSteps) {
+      // BACKEND TODO: Replace this simulated progress with the generation job status from the API.
+      // The API should receive multipart/form-data (topic + optional referenceFile), extract the document,
+      // generate a course from its contents, and return the generated roadmap ID before navigation.
       timer = setTimeout(() => {
         setLoadingStep(prev => prev + 1);
       }, 1000); 
-    } else if (isGenerating && loadingStep === 5) {
+    } else if (isGenerating && loadingStep === totalSteps) {
       timer = setTimeout(() => {
         onClose();
         navigate('/roadmap');
       }, 800);
     }
     return () => clearTimeout(timer);
-  }, [isGenerating, loadingStep, onClose, navigate]);
+  }, [isGenerating, loadingStep, totalSteps, onClose, navigate]);
 
   if (!isOpen) return null;
 
   const steps = [
     "Understanding your current skill level",
+    ...(referenceFile ? [`Preparing ${referenceFile.name} as your reference`] : []),
     "Identifying your learning goals",
     "Designing your learning roadmap...",
     "Estimating your study timeline",
@@ -84,9 +93,12 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
                 <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">What course do you want to learn?</label>
                 <input 
                   type="text" 
+                  value={courseTopic}
+                  onChange={(event) => setCourseTopic(event.target.value)}
                   className="w-full px-4 py-3 border border-pink-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                  placeholder="e.g. Python for Beginners"
+                  placeholder={referenceFile ? 'Course based on attached reference' : 'e.g. Python for Beginners'}
                 />
+                {referenceFile && <p className="mt-2 flex items-center gap-2 text-sm font-bold text-pink-700 dark:text-pink-300">Attached reference: {referenceFile.name}</p>}
               </div>
               <div>
                 <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">How familiar are you with this skill?</label>
