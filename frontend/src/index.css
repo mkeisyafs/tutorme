@@ -37,3 +37,24 @@
     background-color: #64748b; /* slate-500 */
   }
 }
+
+/* Keep the two dashboard navigations mutually exclusive. These selectors live
+   outside Tailwind's utility layer so display styles cannot collide at md. */
+.mobile-dashboard-nav {
+  display: flex !important;
+}
+
+.desktop-dashboard-nav {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-dashboard-nav,
+  .mobile-dashboard-drawer {
+    display: none !important;
+  }
+
+  .desktop-dashboard-nav {
+    display: flex !important;
+  }
+}
