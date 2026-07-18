@@ -58,3 +58,37 @@
     display: flex !important;
   }
 }
+
+/* Colored content cards should stay opaque in dark mode. The notebook-grid
+   background is useful around cards, but should not bleed through them. */
+.dark .dark\:bg-blue-900\/20,
+.dark .dark\:bg-blue-900\/30,
+.dark .dark\:bg-blue-900\/35,
+.dark .dark\:bg-blue-900\/40,
+.dark .dark\:bg-blue-900\/60 { background-color: #172554 !important; }
+
+.dark .dark\:bg-yellow-900\/20,
+.dark .dark\:bg-yellow-900\/40 { background-color: #422006 !important; }
+
+.dark .dark\:bg-green-900\/25,
+.dark .dark\:bg-green-900\/30,
+.dark .dark\:bg-green-900\/35,
+.dark .dark\:bg-green-900\/40 { background-color: #052e16 !important; }
+
+.dark .dark\:bg-pink-900\/25,
+.dark .dark\:bg-pink-900\/35,
+.dark .dark\:bg-pink-900\/40 { background-color: #500724 !important; }
+
+.dark .dark\:bg-purple-900\/30,
+.dark .dark\:bg-purple-900\/35,
+.dark .dark\:bg-purple-900\/40,
+.dark .dark\:bg-purple-900\/60 { background-color: #3b0764 !important; }
+
+.dark .dark\:bg-orange-900\/25,
+.dark .dark\:bg-orange-900\/30,
+.dark .dark\:bg-orange-900\/40 { background-color: #431407 !important; }
+
+.dark .dark\:bg-red-900\/20,
+.dark .dark\:bg-red-900\/25 { background-color: #450a0a !important; }
+
+.dark .dark\:bg-amber-900\/40 { background-color: #451a03 !important; }
