@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import GenerateCourseModal from '../components/GenerateCourseModal';
 import { BookOpen, Search, Filter, Sparkles } from 'lucide-react';
 
 const Course = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
@@ -154,7 +156,10 @@ const Course = () => {
                     <div className={`${styles.barFill} h-full rounded-full transition-all duration-1000`} style={{ width: `${course.progress}%` }}></div>
                   </div>
                   
-                  <button className={`w-full py-2 rounded-xl font-bold font-['Kalam',cursive] text-lg border-2 border-transparent transition-all hover:bg-white/40 dark:hover:bg-gray-900/20 ${styles.text} hover:border-white/60 dark:hover:border-gray-900/40`}>
+                  <button 
+                    onClick={() => navigate('/lesson')}
+                    className={`w-full py-2 rounded-xl font-bold font-['Kalam',cursive] text-lg border-2 border-transparent transition-all hover:bg-white/40 dark:hover:bg-gray-900/20 ${styles.text} hover:border-white/60 dark:hover:border-gray-900/40`}
+                  >
                     {course.progress === 100 ? 'Review Course' : course.progress === 0 ? 'Start Learning' : 'Continue'}
                   </button>
                 </div>
