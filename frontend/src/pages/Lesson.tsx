@@ -199,9 +199,9 @@ const Lesson = () => {
               <span className="text-gray-800 dark:text-gray-200">What is back end?</span>
             </div>
             
-            <button className="px-5 py-2 rounded-xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none flex items-center gap-2">
+            <button onClick={() => navigate('/quiz')} className="px-5 py-2 rounded-xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-500" />
-              Mark as Complete
+              Take lesson quiz
             </button>
           </div>
 
@@ -245,8 +245,8 @@ const Lesson = () => {
               <ChevronLeft className="w-5 h-5" />
               Previous Lesson
             </button>
-            <button className="px-8 py-4 rounded-2xl font-bold text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-900 border-2 border-blue-400 dark:border-blue-700 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[4px_4px_0px_0px_rgba(30,58,138,0.8)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(96,165,250,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] transition-all flex items-center gap-3 font-['Kalam',cursive] text-xl">
-              Next Lesson
+            <button onClick={() => navigate('/quiz')} className="px-8 py-4 rounded-2xl font-bold text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-900 border-2 border-blue-400 dark:border-blue-700 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(96,165,250,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] transition-all flex items-center gap-3 font-['Kalam',cursive] text-xl">
+              Take lesson quiz
               <ChevronRight className="w-6 h-6" />
             </button>
           </div>

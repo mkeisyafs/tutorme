@@ -7,5 +7,6 @@ export const listed = {
     profile: "/profile",
     settings: "/settings",
     roadmap: "/roadmap",
-    lesson: "/lesson"
+    lesson: "/lesson",
+    quiz: "/quiz"
 }

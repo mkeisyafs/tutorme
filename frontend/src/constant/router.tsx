@@ -9,6 +9,7 @@ import Lesson from "../pages/Lesson"
 import Library from "../pages/Library"
 import Profile from "../pages/Profile"
 import Notebook from "../pages/Notebook"
+import Quiz from "../pages/Quiz"
 
 const router = createBrowserRouter([
     {
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
     {
         path: listed.lesson,
         element: <Lesson/>
+    },
+    {
+        path: listed.quiz,
+        element: <Quiz/>
     }
 ])
 
