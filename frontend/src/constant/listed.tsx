@@ -3,7 +3,6 @@ export const listed = {
     home: "/home",
     course: "/course",
     library: "/library",
-    notebook: "/notebook",
     profile: "/profile",
     settings: "/settings",
     roadmap: "/roadmap",
