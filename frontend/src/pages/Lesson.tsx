@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Play, CheckCircle2, Lock, Plus, Minus, Sidebar, ChevronLeft, ChevronRight, Sparkles, Send, X } from 'lucide-react';
+import PomodoroTimer from '../components/PomodoroTimer';
 
 const Lesson = () => {
   const navigate = useNavigate();
@@ -186,6 +187,9 @@ const Lesson = () => {
 
       {/* Main Lesson Content */}
       <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-8 md:p-12">
+        <div style={{ position: 'fixed', top: '2rem', right: isAIAssistantOpen ? `calc(2rem + ${rightSidebarWidth}px)` : '2rem', zIndex: 50, transition: 'right 300ms ease-in-out' }}>
+          <PomodoroTimer />
+        </div>
         <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
           
           {/* Top Breadcrumb & Actions */}

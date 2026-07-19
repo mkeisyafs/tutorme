@@ -1,11 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { Settings as SettingsIcon, Bell, Shield, Moon, Sun, Trash2 } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Shield, Moon, Sun, Trash2, Clock } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 
 const Settings = () => {
   const { isDark, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
+  const [pomodoroEnabled, setPomodoroEnabled] = useState(true);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('tutorme-pomodoro-enabled');
+    if (stored !== null) {
+      setPomodoroEnabled(stored === 'true');
+    }
+  }, []);
+
+  const togglePomodoro = () => {
+    const newValue = !pomodoroEnabled;
+    setPomodoroEnabled(newValue);
+    localStorage.setItem('tutorme-pomodoro-enabled', String(newValue));
+    window.dispatchEvent(new Event('pomodoro-settings-changed'));
+  };
 
   return (
     <DashboardLayout>
@@ -26,6 +41,10 @@ const Settings = () => {
               <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800/50">
                 <div className="flex items-center gap-3"><div className="bg-blue-200 dark:bg-blue-800 p-2 rounded-lg"><Bell className="w-6 h-6 text-blue-700 dark:text-blue-300" /></div><div><h3 className="font-bold text-blue-950 dark:text-blue-100 text-lg">Study Reminders</h3><p className="text-blue-800 dark:text-blue-300 text-sm font-medium">Get notifications to keep your streak</p></div></div>
                 <button onClick={() => setNotifications(!notifications)} aria-label="Toggle study reminders" className={`w-14 h-8 rounded-full p-1 transition-colors ${notifications ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}><div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${notifications ? 'translate-x-6' : 'translate-x-0'}`} /></button>
+              </div>
+              <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800/50">
+                <div className="flex items-center gap-3"><div className="bg-blue-200 dark:bg-blue-800 p-2 rounded-lg"><Clock className="w-6 h-6 text-blue-700 dark:text-blue-300" /></div><div><h3 className="font-bold text-blue-950 dark:text-blue-100 text-lg">Pomodoro Timer</h3><p className="text-blue-800 dark:text-blue-300 text-sm font-medium">Enable focus timer across your learning sessions</p></div></div>
+                <button onClick={togglePomodoro} aria-label="Toggle Pomodoro Timer" className={`w-14 h-8 rounded-full p-1 transition-colors ${pomodoroEnabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}><div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform ${pomodoroEnabled ? 'translate-x-6' : 'translate-x-0'}`} /></button>
               </div>
             </div>
           </section>

@@ -1,16 +1,11 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import GenerateCourseModal from '../components/GenerateCourseModal';
-import { Play, Flame, Clock, Sparkles, Paperclip, FileText, X } from 'lucide-react';
+import { Play, Flame, Clock, Sparkles } from 'lucide-react';
 
 const Home = () => {
   const [topic, setTopic] = useState('');
-  const [referenceFile, setReferenceFile] = useState<File | null>(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
-
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setReferenceFile(event.target.files?.[0] ?? null);
-  };
 
   const handleGenerate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,10 +60,6 @@ const Home = () => {
                   className="w-full px-6 py-4 rounded-full border-2 border-pink-200 dark:border-pink-800/50 shadow-inner bg-white/90 dark:bg-gray-800/90 backdrop-blur-md focus:outline-none focus:border-pink-400 dark:focus:border-pink-500/50 focus:ring-4 focus:ring-pink-300/50 dark:focus:ring-pink-900/50 font-['Nunito',sans-serif] text-lg text-gray-800 dark:text-gray-100 font-bold transition-all placeholder-gray-400 dark:placeholder-gray-500"
                 />
                 </div>
-                <label className="w-full sm:w-auto cursor-pointer bg-white/90 dark:bg-gray-800/90 hover:bg-pink-50 dark:hover:bg-gray-700 border-2 border-dashed border-pink-400 dark:border-pink-500 text-pink-700 dark:text-pink-300 font-bold py-4 px-5 rounded-full transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-                  <Paperclip className="w-5 h-5" /> Add file
-                  <input type="file" className="sr-only" accept=".pdf,.doc,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileChange} />
-                </label>
                 <button 
                 type="submit"
                 className="bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-4 px-8 rounded-full shadow-[0_8px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_8px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-1 font-['Kalam',cursive] text-xl tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 w-full sm:w-auto flex-shrink-0"
@@ -76,12 +67,6 @@ const Home = () => {
                 Generate Course <Sparkles className="w-5 h-5" />
               </button>
               </div>
-              {referenceFile ? (
-                <div className="flex items-center justify-between gap-3 bg-white/70 dark:bg-gray-800/70 border-2 border-pink-200 dark:border-pink-800/60 rounded-2xl px-4 py-3">
-                  <div className="flex items-center gap-3 min-w-0"><FileText className="w-6 h-6 text-pink-500 shrink-0" /><div className="min-w-0"><p className="font-bold text-gray-800 dark:text-gray-100 truncate">{referenceFile.name}</p><p className="text-sm font-semibold text-pink-700 dark:text-pink-300">Will be used as a course reference</p></div></div>
-                  <button type="button" onClick={() => setReferenceFile(null)} aria-label="Remove selected file" className="p-2 text-pink-600 hover:bg-pink-100 dark:hover:bg-pink-900/40 rounded-lg"><X className="w-5 h-5" /></button>
-                </div>
-              ) : <p className="text-sm font-semibold text-pink-800 dark:text-pink-200/80">Supports PDF, DOCX, and TXT. You can generate a course using a file only.</p>}
             </form>
           </div>
         </section>
@@ -153,7 +138,6 @@ const Home = () => {
         isOpen={isGenerateModalOpen}
         onClose={() => setIsGenerateModalOpen(false)}
         initialTopic={topic}
-        referenceFile={referenceFile}
       />
     </DashboardLayout>
   );

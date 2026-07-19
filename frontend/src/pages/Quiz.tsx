@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, CheckCircle2, FileImage, Lightbulb, Lock, Minus, Plus, Send, Sidebar, Sparkles, Target, XCircle } from 'lucide-react';
+import PomodoroTimer from '../components/PomodoroTimer';
 
 type QuestionType = 'multiple-choice' | 'essay';
 
@@ -10,6 +11,7 @@ interface QuizQuestion {
   type: QuestionType;
   prompt: string;
   options?: string[];
+  explanations?: string[];
   correctAnswer?: number;
   requiresImage?: boolean;
 }
@@ -27,11 +29,61 @@ const defaultSettings: QuizSettings = {
 };
 
 const multipleChoiceBank = [
-  { prompt: 'Which responsibility belongs to the back end of an application?', options: ['Styling buttons and layouts', 'Storing data and processing requests', 'Writing page headlines', 'Choosing brand colours'], correctAnswer: 1 },
-  { prompt: 'In the restaurant analogy, what does the server side most closely represent?', options: ['The dining room', 'The printed menu', 'The kitchen that prepares orders', 'The restaurant sign'], correctAnswer: 2 },
-  { prompt: 'Which component is responsible for keeping an application’s information?', options: ['Database', 'Button', 'Browser tab', 'Style sheet'], correctAnswer: 0 },
-  { prompt: 'What happens first when a user asks an app to load data?', options: ['The database sends a styled page', 'The front end makes a request to the server', 'The server changes the browser layout', 'The user writes a new database'], correctAnswer: 1 },
-  { prompt: 'Which is an example of front-end work rather than back-end work?', options: ['Validating a request', 'Saving a profile', 'Designing a navigation menu', 'Querying a database'], correctAnswer: 2 },
+  { 
+    prompt: 'Which responsibility belongs to the back end of an application?', 
+    options: ['Styling buttons and layouts', 'Storing data and processing requests', 'Writing page headlines', 'Choosing brand colours'], 
+    correctAnswer: 1,
+    explanations: [
+      'Incorrect. Styling is handled by the front end using CSS.',
+      'Correct! The back end handles databases and server logic to process user requests.',
+      'Incorrect. Content layout and text styling is front-end work.',
+      'Incorrect. Brand colours are part of the visual design implemented on the front end.'
+    ]
+  },
+  { 
+    prompt: 'In the restaurant analogy, what does the server side most closely represent?', 
+    options: ['The dining room', 'The printed menu', 'The kitchen that prepares orders', 'The restaurant sign'], 
+    correctAnswer: 2,
+    explanations: [
+      'Incorrect. The dining room is where the customer interacts, representing the front end.',
+      'Incorrect. The menu is part of the interface presented to the user.',
+      'Correct! The kitchen receives orders, processes them, and sends the results back—just like a back-end server.',
+      'Incorrect. The sign is a front-facing element for users to see.'
+    ]
+  },
+  { 
+    prompt: 'Which component is responsible for keeping an application’s information?', 
+    options: ['Database', 'Button', 'Browser tab', 'Style sheet'], 
+    correctAnswer: 0,
+    explanations: [
+      'Correct! A database securely stores and organizes application data on the back end.',
+      'Incorrect. A button is an interactive element on the front end.',
+      'Incorrect. A browser tab displays the front end to the user.',
+      'Incorrect. A style sheet dictates the visual appearance of the front end.'
+    ]
+  },
+  { 
+    prompt: 'What happens first when a user asks an app to load data?', 
+    options: ['The database sends a styled page', 'The front end makes a request to the server', 'The server changes the browser layout', 'The user writes a new database'], 
+    correctAnswer: 1,
+    explanations: [
+      'Incorrect. The database only returns raw data, not styled pages.',
+      'Correct! The process starts when the front-end interface requests data from the back-end server.',
+      'Incorrect. The server sends data back; the front end is responsible for changing the layout.',
+      'Incorrect. Users do not write databases to load data; they simply interact with the front end.'
+    ]
+  },
+  { 
+    prompt: 'Which is an example of front-end work rather than back-end work?', 
+    options: ['Validating a request', 'Saving a profile', 'Designing a navigation menu', 'Querying a database'], 
+    correctAnswer: 2,
+    explanations: [
+      'Incorrect. Validating requests securely is typically a back-end responsibility.',
+      'Incorrect. Saving data like user profiles requires a back-end database.',
+      'Correct! Designing and implementing menus is what the user sees, making it front-end work.',
+      'Incorrect. Querying a database happens entirely on the back end.'
+    ]
+  },
 ];
 
 const essayBank = [
@@ -134,7 +186,10 @@ const Quiz = () => {
   };
 
   return <div className="min-h-screen bg-gray-50 font-['Nunito',sans-serif] text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100">
-    <main className="min-h-screen px-6 py-8 lg:ml-72 md:px-12">
+    <main className="min-h-screen px-6 py-8 lg:ml-72 md:px-12 relative">
+      <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 50 }}>
+        <PomodoroTimer />
+      </div>
     <div className="mx-auto max-w-5xl pb-16">
       <button onClick={() => requestNavigation('/lesson')} className="mb-7 flex items-center gap-2 font-bold text-gray-500 transition-colors hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"><ArrowLeft className="h-5 w-5" /> Back to lesson</button>
       <div className="block">
@@ -173,7 +228,68 @@ const Quiz = () => {
         {questions.map((question, index) => <section key={question.id} className="rounded-3xl border-3 border-gray-300 bg-white/85 p-6 shadow-[4px_4px_0_rgba(100,116,139,.25)] dark:border-gray-700 dark:bg-gray-800/85"><p className="text-sm font-extrabold uppercase tracking-wider text-pink-600 dark:text-pink-400">Question {index + 1} · {question.type === 'multiple-choice' ? 'Multiple choice' : 'Written response'}</p><h2 className="mt-2 text-xl font-bold leading-relaxed text-gray-900 dark:text-gray-100">{question.prompt}</h2>{question.type === 'multiple-choice' ? <div className="mt-5 space-y-3">{question.options?.map((option, optionIndex) => <label key={option} className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 font-semibold transition-colors ${answers[question.id] === String(optionIndex) ? 'border-blue-500 bg-blue-50 text-blue-950 dark:bg-blue-900/35 dark:text-blue-100' : 'border-gray-200 hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-700'}`}><input type="radio" name={question.id} checked={answers[question.id] === String(optionIndex)} onChange={() => { setAnswers((current) => ({ ...current, [question.id]: String(optionIndex) })); setError(''); }} className="h-4 w-4 accent-blue-500" />{option}</label>)}</div> : <div className="mt-5"><textarea value={answers[question.id] ?? ''} onChange={(event) => { setAnswers((current) => ({ ...current, [question.id]: event.target.value })); setError(''); }} placeholder="Write your answer here..." className="min-h-36 w-full rounded-xl border-2 border-gray-200 bg-white p-4 font-medium text-gray-800 outline-none transition-colors focus:border-pink-400 focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-pink-500 dark:focus:ring-pink-900/40" />{question.requiresImage && <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-pink-300 bg-pink-50 px-4 py-3 font-bold text-pink-700 transition-colors hover:bg-pink-100 dark:border-pink-700 dark:bg-pink-900/25 dark:text-pink-200"><FileImage className="h-5 w-5" />{attachments[question.id] || 'Attach a required image'}<input type="file" accept="image/*" onChange={(event) => addAttachment(question.id, event)} className="hidden" /></label>}{!question.requiresImage && <p className="mt-4 text-sm font-bold text-gray-500 dark:text-gray-400">Image uploads are disabled for this quiz by the course creator.</p>}</div>}</section>)}
         {error && <p className="rounded-xl border-2 border-red-300 bg-red-50 p-4 font-bold text-red-700 dark:border-red-700 dark:bg-red-900/25 dark:text-red-200">{error}</p>}
         <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-pink-700 bg-pink-500 py-4 font-['Kalam',cursive] text-2xl font-bold text-white shadow-[0_6px_0_#be185d] transition-all hover:translate-y-0.5 hover:shadow-[0_4px_0_#be185d]"><Send className="h-5 w-5" /> Submit quiz for feedback</button>
-      </form> : <section className="mt-9 space-y-6"><div className="rounded-3xl border-4 border-green-300 bg-green-100 p-7 shadow-[7px_7px_0_#4ade80] dark:border-green-700 dark:bg-green-900/35 dark:shadow-[7px_7px_0_#166534]"><div className="flex items-start gap-4"><div className="rounded-2xl bg-white/70 p-3 text-green-600 dark:bg-gray-900/60 dark:text-green-300"><Sparkles className="h-8 w-8 fill-current" /></div><div><p className="text-sm font-extrabold uppercase tracking-wider text-green-700 dark:text-green-300">Quiz complete</p><h2 className="font-['Kalam',cursive] text-3xl font-bold text-green-950 dark:text-green-100">{score}% on multiple choice</h2><p className="mt-1 font-semibold text-green-800 dark:text-green-200">Review your answers and personalized suggestions below before continuing.</p></div></div></div>{questions.map((question, index) => { const result = feedback.find((item) => item.id === question.id)!; const answer = question.type === 'multiple-choice' ? question.options?.[Number(answers[question.id])] : answers[question.id]; return <article key={question.id} className={`rounded-2xl border-2 p-6 ${result.isCorrect ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/25' : 'border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/25'}`}><div className="flex items-start gap-3">{result.isCorrect ? <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-green-500" /> : <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-orange-500" />}<div className="min-w-0"><p className="text-sm font-extrabold uppercase tracking-wider opacity-70">Question {index + 1}</p><h3 className="mt-1 text-lg font-bold text-gray-900 dark:text-gray-100">{question.prompt}</h3><p className="mt-3 rounded-xl bg-white/65 p-3 font-semibold text-gray-700 dark:bg-gray-900/45 dark:text-gray-200"><span className="font-extrabold">Your answer: </span>{answer}</p>{attachments[question.id] && <p className="mt-2 text-sm font-bold text-gray-600 dark:text-gray-300">Attached image: {attachments[question.id]}</p>}<div className="mt-4 flex gap-2"><Lightbulb className="h-5 w-5 shrink-0 text-pink-500" /><div><h4 className="font-['Kalam',cursive] text-xl font-bold text-gray-900 dark:text-gray-100">AI feedback: {result.title}</h4><p className="mt-1 font-semibold leading-relaxed text-gray-700 dark:text-gray-200">{result.detail}</p></div></div></div></div></article>; })}<button onClick={() => navigate('/lesson')} className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-blue-700 bg-blue-500 py-4 font-['Kalam',cursive] text-2xl font-bold text-white shadow-[0_6px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_4px_0_#1d4ed8]"><Check className="h-6 w-6" /> Continue to next lesson</button></section>}
+      </form> : <section className="mt-9 space-y-6"><div className="rounded-3xl border-4 border-green-300 bg-green-100 p-7 shadow-[7px_7px_0_#4ade80] dark:border-green-700 dark:bg-green-900/35 dark:shadow-[7px_7px_0_#166534]"><div className="flex items-start gap-4"><div className="rounded-2xl bg-white/70 p-3 text-green-600 dark:bg-gray-900/60 dark:text-green-300"><Sparkles className="h-8 w-8 fill-current" /></div><div><p className="text-sm font-extrabold uppercase tracking-wider text-green-700 dark:text-green-300">Quiz complete</p><h2 className="font-['Kalam',cursive] text-3xl font-bold text-green-950 dark:text-green-100">{score}% on multiple choice</h2><p className="mt-1 font-semibold text-green-800 dark:text-green-200">Review your answers and personalized suggestions below before continuing.</p></div></div></div>{questions.map((question, index) => {
+  const result = feedback.find((item) => item.id === question.id)!;
+  const answer = question.type === 'multiple-choice' ? question.options?.[Number(answers[question.id])] : answers[question.id];
+  
+  return (
+    <article key={question.id} className={`rounded-2xl border-2 p-6 ${result.isCorrect ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/25' : 'border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/25'}`}>
+      <div className="flex items-start gap-3">
+        {result.isCorrect ? <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-green-500" /> : <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-orange-500" />}
+        <div className="min-w-0 w-full">
+          <p className="text-sm font-extrabold uppercase tracking-wider opacity-70">Question {index + 1}</p>
+          <h3 className="mt-1 text-lg font-bold text-gray-900 dark:text-gray-100">{question.prompt}</h3>
+          
+          {question.type === 'multiple-choice' ? (
+            <div className="mt-5 space-y-3">
+              {question.options?.map((option, optIdx) => {
+                const isSelected = String(optIdx) === answers[question.id];
+                const isCorrectOption = optIdx === question.correctAnswer;
+                
+                let optionClasses = 'border-gray-200 bg-white/60 dark:border-gray-700 dark:bg-gray-800/60';
+                let icon = <div className="h-5 w-5 rounded-full border-2 border-gray-300 dark:border-gray-600 shrink-0" />;
+                
+                if (isCorrectOption) {
+                  optionClasses = 'border-green-400 bg-green-100 dark:border-green-600 dark:bg-green-900/40 ring-1 ring-green-400 dark:ring-green-600';
+                  icon = <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />;
+                } else if (isSelected) {
+                  optionClasses = 'border-red-400 bg-red-100 dark:border-red-600 dark:bg-red-900/40 ring-1 ring-red-400 dark:ring-red-600';
+                  icon = <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />;
+                }
+
+                return (
+                  <div key={option} className={`rounded-xl border-2 p-4 transition-all ${optionClasses}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5">{icon}</div>
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-gray-100">{option}</p>
+                        <p className="mt-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          {question.explanations?.[optIdx]}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <>
+              <p className="mt-3 rounded-xl bg-white/65 p-3 font-semibold text-gray-700 dark:bg-gray-900/45 dark:text-gray-200"><span className="font-extrabold">Your answer: </span>{answer}</p>
+              {attachments[question.id] && <p className="mt-2 text-sm font-bold text-gray-600 dark:text-gray-300">Attached image: {attachments[question.id]}</p>}
+              <div className="mt-4 flex gap-2">
+                <Lightbulb className="h-5 w-5 shrink-0 text-pink-500" />
+                <div>
+                  <h4 className="font-['Kalam',cursive] text-xl font-bold text-gray-900 dark:text-gray-100">AI feedback: {result.title}</h4>
+                  <p className="mt-1 font-semibold leading-relaxed text-gray-700 dark:text-gray-200">{result.detail}</p>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+})}<button onClick={() => navigate('/lesson')} className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-blue-700 bg-blue-500 py-4 font-['Kalam',cursive] text-2xl font-bold text-white shadow-[0_6px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_4px_0_#1d4ed8]"><Check className="h-6 w-6" /> Continue to next lesson</button></section>}
         </div>
       </div>
     </div>
