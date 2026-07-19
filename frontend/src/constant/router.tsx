@@ -9,7 +9,8 @@ import Lesson from "../pages/Lesson"
 import Library from "../pages/Library"
 import Profile from "../pages/Profile"
 import Quiz from "../pages/Quiz"
-
+import FinalExam from "../pages/FinalExam"
+import CourseAnalysis from "../pages/CourseAnalysis"
 const router = createBrowserRouter([
     {
         path: listed.landing,
@@ -46,6 +47,14 @@ const router = createBrowserRouter([
     {
         path: listed.quiz,
         element: <Quiz/>
+    },
+    {
+        path: listed.finalExam,
+        element: <FinalExam/>
+    },
+    {
+        path: listed.analysis,
+        element: <CourseAnalysis/>
     }
 ])
 

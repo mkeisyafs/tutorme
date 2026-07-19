@@ -7,5 +7,7 @@ export const listed = {
     settings: "/settings",
     roadmap: "/roadmap",
     lesson: "/lesson",
-    quiz: "/quiz"
+    quiz: "/quiz",
+    finalExam: "/final-exam",
+    analysis: "/analysis"
 }

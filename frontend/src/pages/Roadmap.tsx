@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, Send, Sparkles, Sidebar, Play } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Send, Sparkles, Sidebar, Play, Target } from 'lucide-react';
 
 const Roadmap = () => {
   const navigate = useNavigate();
@@ -180,15 +180,22 @@ const Roadmap = () => {
                     <div className="overflow-hidden">
                       <div className="px-5 pb-6 pt-4 pl-24 border-t-2 border-gray-200 dark:border-gray-700 border-dashed bg-white dark:bg-gray-800">
                         <ul className="space-y-5">
-                          {module.items.map((item, index) => (
-                            <li 
-                              key={index} 
-                              onClick={() => navigate('/lesson')}
-                              className="flex items-center gap-4 text-gray-700 dark:text-gray-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors group text-lg"
-                            >
-                              <span>{item.name}</span>
-                            </li>
-                          ))}
+                          {module.items.map((item, index) => {
+                            const isExam = (item as any).isExam;
+                            return (
+                              <li 
+                                key={index} 
+                                onClick={() => navigate(isExam ? '/final-exam' : '/lesson')}
+                                className={`flex items-center justify-between gap-4 font-bold cursor-pointer transition-colors group text-lg p-3 rounded-xl border-2 ${isExam ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40' : 'text-gray-700 dark:text-gray-300 border-transparent hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
+                              >
+                                <span className="flex items-center gap-3">
+                                  {isExam && <Target className="w-5 h-5" />}
+                                  {item.name}
+                                </span>
+                                {isExam && <span className="text-xs font-bold uppercase tracking-wider bg-red-100 dark:bg-red-900/40 px-2 py-1 rounded-md text-red-700 dark:text-red-300">Timed</span>}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     </div>
@@ -196,6 +203,25 @@ const Roadmap = () => {
                 </div>
               );
             })}
+          </div>
+
+          {/* Final Course Exam */}
+          <div className="mt-8 bg-red-50 dark:bg-red-900/20 rounded-3xl border-4 border-red-200 dark:border-red-800 p-8 shadow-[8px_8px_0px_0px_rgba(254,202,202,1)] dark:shadow-[8px_8px_0px_0px_rgba(153,27,27,0.5)] relative overflow-hidden group hover:border-red-400 dark:hover:border-red-600 transition-colors cursor-pointer" onClick={() => navigate('/final-exam')}>
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-red-200 dark:bg-red-800/50 rounded-full blur-3xl opacity-50 group-hover:scale-110 transition-transform"></div>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-6">
+                <div className="w-20 h-20 rounded-2xl bg-red-100 dark:bg-red-900/40 border-4 border-red-300 dark:border-red-700 flex items-center justify-center shadow-sm transform -rotate-6 group-hover:rotate-0 transition-transform">
+                  <Target className="w-10 h-10 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-['Kalam',cursive] font-bold text-red-700 dark:text-red-400 mb-1">Course Final Exam</h2>
+                  <p className="text-red-800/80 dark:text-red-300/80 font-bold text-lg">Test your knowledge across all modules</p>
+                </div>
+              </div>
+              <button className="w-full md:w-auto px-8 py-4 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 border-2 border-red-700 shadow-[4px_4px_0px_0px_rgba(185,28,28,1)] transition-all active:translate-y-1 active:shadow-none text-xl font-['Kalam',cursive] tracking-wider flex justify-center items-center gap-3 whitespace-nowrap">
+                Start Final Exam <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
           </div>
           
         </div>
