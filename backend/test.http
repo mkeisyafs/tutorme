@@ -1,0 +1,320 @@
+
+### Health Check
+GET {{baseUrl}}/health
+
+# ==========================================
+# USERS
+# ==========================================
+
+### List Users
+GET {{baseUrl}}/users
+
+### Create User
+# @name createUser
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+
+{
+  "email": "test@example.com",
+  "passwordHash": "hashed_password",
+  "fullName": "Test User"
+}
+
+### Get User by ID
+@userId = {{createUser.response.body.id}}
+GET {{baseUrl}}/users/{{userId}}
+
+### Update User
+PATCH {{baseUrl}}/users/{{userId}}
+Content-Type: {{contentType}}
+
+{
+  "fullName": "Updated Test User",
+  "streakCount": 5
+}
+
+# ==========================================
+# COURSES
+# ==========================================
+
+### List Courses
+GET {{baseUrl}}/courses
+
+### Create Course
+# @name createCourse
+POST {{baseUrl}}/courses
+Content-Type: {{contentType}}
+
+{
+  "title": "Introduction to Elysia",
+  "description": "Learn the fastest Bun framework",
+  "category": "Web Development",
+  "level": "Beginner",
+  "color": "blue",
+  "creatorId": "{{userId}}",
+  "isPublic": true
+}
+
+### Get Course by ID
+@courseId = {{createCourse.response.body.id}}
+GET {{baseUrl}}/courses/{{courseId}}
+
+### Update Course
+PATCH {{baseUrl}}/courses/{{courseId}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Introduction to ElysiaJS (Updated)"
+}
+
+# ==========================================
+# MODULES
+# ==========================================
+
+### List Modules (by courseId)
+GET {{baseUrl}}/modules?courseId={{courseId}}
+
+### Create Module
+# @name createModule
+POST {{baseUrl}}/modules
+Content-Type: {{contentType}}
+
+{
+  "courseId": "{{courseId}}",
+  "title": "Getting Started",
+  "description": "Setting up the project"
+}
+
+### Get Module by ID
+@moduleId = {{createModule.response.body.id}}
+GET {{baseUrl}}/modules/{{moduleId}}
+
+### Update Module
+PATCH {{baseUrl}}/modules/{{moduleId}}
+Content-Type: {{contentType}}
+
+{
+  "title": "Getting Started with Bun"
+}
+
+# ==========================================
+# LESSONS
+# ==========================================
+
+### List Lessons (by moduleId)
+GET {{baseUrl}}/lessons?moduleId={{moduleId}}
+
+### Create Lesson
+# @name createLesson
+POST {{baseUrl}}/lessons
+Content-Type: {{contentType}}
+
+{
+  "moduleId": "{{moduleId}}",
+  "title": "Installation",
+  "content": "Install bun with curl -fsSL https://bun.sh/install | bash"
+}
+
+### Get Lesson by ID
+@lessonId = {{createLesson.response.body.id}}
+GET {{baseUrl}}/lessons/{{lessonId}}
+
+
+# ==========================================
+# ENROLLMENTS (USER COURSE)
+# ==========================================
+
+### List Enrollments
+GET {{baseUrl}}/enrollments
+
+### Create Enrollment
+# @name createEnrollment
+POST {{baseUrl}}/enrollments
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "courseId": "{{courseId}}"
+}
+
+### Update Enrollment
+@enrollmentId = {{createEnrollment.response.body.id}}
+PATCH {{baseUrl}}/enrollments/{{enrollmentId}}
+Content-Type: {{contentType}}
+
+{
+  "progressPercentage": 50
+}
+
+
+# ==========================================
+# LESSON PROGRESS
+# ==========================================
+
+### List Lesson Progress
+GET {{baseUrl}}/lesson-progress
+
+### Create/Upsert Lesson Progress
+# @name createLessonProgress
+POST {{baseUrl}}/lesson-progress
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "lessonId": "{{lessonId}}",
+  "status": "COMPLETED"
+}
+
+### Update Lesson Progress
+@progressId = {{createLessonProgress.response.body.id}}
+PATCH {{baseUrl}}/lesson-progress/{{progressId}}
+Content-Type: {{contentType}}
+
+{
+  "status": "IN_PROGRESS"
+}
+
+
+# ==========================================
+# COURSE GENERATIONS
+# ==========================================
+
+### List Generations
+GET {{baseUrl}}/course-generations
+
+### Create Generation Request
+# @name createGeneration
+POST {{baseUrl}}/course-generations
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "promptTopic": "Advanced Rust Programming",
+  "familiarity": "Intermediate"
+}
+
+### Update Generation Status
+@generationId = {{createGeneration.response.body.id}}
+PATCH {{baseUrl}}/course-generations/{{generationId}}
+Content-Type: {{contentType}}
+
+{
+  "status": "COMPLETED",
+  "resultCourseId": "{{courseId}}"
+}
+
+
+# ==========================================
+# QUIZZES
+# ==========================================
+
+### List Quizzes
+GET {{baseUrl}}/quizzes
+
+### Create Quiz
+# @name createQuiz
+POST {{baseUrl}}/quizzes
+Content-Type: {{contentType}}
+
+{
+  "courseId": "{{courseId}}",
+  "title": "Midterm Exam",
+  "type": "FINAL_EXAM",
+  "passingScore": 80
+}
+
+### Get Quiz by ID
+@quizId = {{createQuiz.response.body.id}}
+GET {{baseUrl}}/quizzes/{{quizId}}
+
+
+# ==========================================
+# QUESTIONS
+# ==========================================
+
+### List Questions
+GET {{baseUrl}}/questions
+
+### Create Question
+# @name createQuestion
+POST {{baseUrl}}/questions
+Content-Type: {{contentType}}
+
+{
+  "quizId": "{{quizId}}",
+  "type": "MULTIPLE_CHOICE",
+  "prompt": "What is the fastest JS runtime?",
+  "options": ["Node", "Deno", "Bun"],
+  "correctAnswer": 2
+}
+
+### Get Question by ID
+@questionId = {{createQuestion.response.body.id}}
+GET {{baseUrl}}/questions/{{questionId}}
+
+
+# ==========================================
+# EXAM SUBMISSIONS
+# ==========================================
+
+### List Submissions
+GET {{baseUrl}}/exam-submissions
+
+### Submit Exam
+# @name submitExam
+POST {{baseUrl}}/exam-submissions
+Content-Type: {{contentType}}
+
+{
+  "userId": "{{userId}}",
+  "quizId": "{{quizId}}",
+  "score": 100,
+  "correctCount": 1,
+  "totalQuestions": 1,
+  "timeSpentSec": 120,
+  "gradeLetter": "A",
+  "userAnswers": {
+    "{{questionId}}": 2
+  }
+}
+
+### Update Submission (AI Feedback)
+@submissionId = {{submitExam.response.body.id}}
+PATCH {{baseUrl}}/exam-submissions/{{submissionId}}
+Content-Type: {{contentType}}
+
+{
+  "aiFeedback": "Excellent work!"
+}
+
+
+# ==========================================
+# CLEANUP (DELETE)
+# ==========================================
+
+### Delete Question
+DELETE {{baseUrl}}/questions/{{questionId}}
+
+### Delete Quiz
+DELETE {{baseUrl}}/quizzes/{{quizId}}
+
+### Delete Generation
+DELETE {{baseUrl}}/course-generations/{{generationId}}
+
+### Delete Lesson Progress
+DELETE {{baseUrl}}/lesson-progress/{{progressId}}
+
+### Delete Enrollment
+DELETE {{baseUrl}}/enrollments/{{enrollmentId}}
+
+### Delete Lesson
+DELETE {{baseUrl}}/lessons/{{lessonId}}
+
+### Delete Module
+DELETE {{baseUrl}}/modules/{{moduleId}}
+
+### Delete Course
+DELETE {{baseUrl}}/courses/{{courseId}}
+
+### Delete User
+DELETE {{baseUrl}}/users/{{userId}}

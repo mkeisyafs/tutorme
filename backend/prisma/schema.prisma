@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ------------------------------------------------------
+// 1. USER & AUTHENTICATION
+// ------------------------------------------------------
+model User {
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String
+  fullName             String
+
+  // Gamification & Stats
+  streakCount          Int                  @default(0)
+
+  // Settings
+  notificationsEnabled Boolean              @default(true)
+  pomodoroEnabled      Boolean              @default(true)
+
+  // Relations
+  createdCourses       Course[]             @relation("CreatedCourses")
+  enrollments          UserCourse[]
+  lessonProgress       UserLessonProgress[]
+  examSubmissions      ExamSubmission[]
+  courseGenerations    CourseGeneration[]
+
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+}
+
+// ------------------------------------------------------
+// 2. COURSES, MODULES & LESSONS
+// ------------------------------------------------------
+enum CourseColor {
+  blue
+  yellow
+  green
+  pink
+  purple
+}
+
+model Course {
+  id             String             @id @default(uuid())
+  title          String
+  description    String             @db.Text
+  category       String
+  
+  level          String             @default("Beginner") // Beginner, Basic, Intermediate, Expert
+  color          CourseColor        @default(blue)
+  rotation       String             @default("rotate-1")
+
+  creatorId      String
+  creator        User               @relation("CreatedCourses", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  isPublic       Boolean            @default(false)
+  downloadsCount Int                @default(0)
+  likesCount     Int                @default(0)
+
+  modules        Module[]
+  quizzes        Quiz[]
+  enrollments    UserCourse[]
+  generations    CourseGeneration[]
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model Module {
+  id          String   @id @default(uuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String?  @db.Text
+  orderIndex  Int      @default(0)
+
+  lessons     Lesson[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum LessonStatus {
+  LOCKED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Lesson {
+  id         String               @id @default(uuid())
+  moduleId   String
+  module     Module               @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title      String
+  content    String?              @db.LongText
+  videoUrl   String?
+  orderIndex Int                  @default(0)
+
+  progress   UserLessonProgress[]
+
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+}
+
+// Progress user mengambil course tertentu
+model UserCourse {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId           String
+  course             Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  progressPercentage Int      @default(0)
+  isCompleted        Boolean  @default(false)
+  enrolledAt         DateTime @default(now())
+  lastAccessedAt     DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+// Detail progress user di setiap lesson
+model UserLessonProgress {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  status      LessonStatus @default(LOCKED)
+  completedAt DateTime?
+
+  @@unique([userId, lessonId])
+}
+
+// ------------------------------------------------------
+// 3. AI ROADMAP GENERATION
+// ------------------------------------------------------
+enum GenerationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model CourseGeneration {
+  id                     String           @id @default(uuid())
+  userId                 String
+  user                   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  promptTopic            String
+  familiarity            String
+  enableEssayQuestions   Boolean          @default(true)
+  requireImageSubmission Boolean          @default(false)
+
+  status                 GenerationStatus @default(PENDING)
+  resultCourseId         String?
+  resultCourse           Course?          @relation(fields: [resultCourseId], references: [id], onDelete: SetNull)
+  errorMessage           String?          @db.Text
+
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+}
+
+// ------------------------------------------------------
+// 4. QUIZ, EXAM & QUESTION BANK
+// ------------------------------------------------------
+enum QuizType {
+  CHAPTER_QUIZ
+  FINAL_EXAM
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  ESSAY
+}
+
+model Quiz {
+  id           String           @id @default(uuid())
+  courseId     String
+  course       Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title        String
+  type         QuizType         @default(FINAL_EXAM)
+  passingScore Int              @default(70)
+
+  questions    Question[]
+  submissions  ExamSubmission[]
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model Question {
+  id            String       @id @default(uuid())
+  quizId        String
+  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  type          QuestionType
+  prompt        String       @db.Text
+
+  // Format JSON untuk opsi & penjelasan (Pilihan Ganda)
+  options       Json? // Array string: ["Opsi A", "Opsi B", ...]
+  explanations  Json? // Array string penjelasan per opsi
+  correctAnswer Int? // Index jawaban yang benar (0-based)
+  requiresImage Boolean      @default(false) // Khusus Esai
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model ExamSubmission {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId         String
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  score          Int // 0 - 100
+  correctCount   Int
+  totalQuestions Int
+  timeSpentSec   Int // Waktu pengerjaan dalam detik
+  gradeLetter    String // 'A', 'B', 'C', 'Review'
+
+  // Simpan detail jawaban user: { "question_id": "jawaban_user", ... }
+  userAnswers    Json
+  essayImageUrl  String?
+  aiFeedback     String?  @db.Text
+
+  submittedAt    DateTime @default(now())
+}

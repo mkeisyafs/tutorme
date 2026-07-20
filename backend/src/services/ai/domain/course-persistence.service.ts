@@ -1,0 +1,70 @@
+import prisma from "../../../lib/prisma";
+import { outlineCache } from "./outline-cache.service";
+import { status } from "elysia";
+
+export class CoursePersistenceService {
+  /**
+   * Persists a cached draft outline to the real database.
+   * This is triggered when the user clicks "Start Learning".
+   */
+  static async publishDraft(draftId: string): Promise<string> {
+    const draft = outlineCache.get(draftId);
+    
+    if (!draft) {
+      throw new Error("Draft not found or expired.");
+    }
+
+    // Use Prisma transaction to ensure atomic saves
+    const course = await prisma.$transaction(async (tx) => {
+      // 1. Create the Course
+      const createdCourse = await tx.course.create({
+        data: {
+          title: draft.courseTitle,
+          description: draft.courseDescription,
+          category: draft.courseCategory,
+          level: draft.courseLevel,
+          creatorId: draft.userId, // The user who generated it becomes the creator/owner
+          isPublic: false,
+        },
+      });
+
+      // 2. Create Modules and Lessons
+      for (const mod of draft.modules) {
+        const createdModule = await tx.module.create({
+          data: {
+            courseId: createdCourse.id,
+            title: mod.title,
+            description: mod.description,
+            orderIndex: mod.orderIndex,
+          },
+        });
+
+        for (const lesson of mod.lessons) {
+          await tx.lesson.create({
+            data: {
+              moduleId: createdModule.id,
+              title: lesson.title,
+              orderIndex: lesson.orderIndex,
+              // content and videoUrl remain null. Generated on demand later.
+            },
+          });
+        }
+      }
+
+      return createdCourse;
+    });
+
+    // Enqueue an enrollment for the user automatically
+    await prisma.userCourse.create({
+      data: {
+        userId: draft.userId,
+        courseId: course.id,
+      }
+    });
+
+    // Cleanup the cache
+    outlineCache.delete(draftId);
+
+    return course.id;
+  }
+}

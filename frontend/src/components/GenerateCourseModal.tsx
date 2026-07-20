@@ -22,6 +22,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
   const [isQuizLengthOpen, setIsQuizLengthOpen] = useState(false);
   const [courseTopic, setCourseTopic] = useState(initialTopic);
   const [modalReferenceFile, setModalReferenceFile] = useState<File | null>(referenceFile);
+  const [draftId, setDraftId] = useState<string | null>(null);
   const totalSteps = modalReferenceFile ? 6 : 5;
 
   useEffect(() => {
@@ -44,20 +45,48 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (isGenerating && loadingStep < totalSteps) {
-      // BACKEND TODO: Replace this simulated progress with the generation job status from the API.
-      // The API should receive multipart/form-data (topic + optional referenceFile), extract the document,
-      // generate a course from its contents, and return the generated roadmap ID before navigation.
       timer = setTimeout(() => {
         setLoadingStep(prev => prev + 1);
       }, 1000); 
-    } else if (isGenerating && loadingStep === totalSteps) {
+    } else if (isGenerating && loadingStep === totalSteps && draftId) {
       timer = setTimeout(() => {
         onClose();
-        navigate('/roadmap');
+        // Pass draftId via state to the roadmap/editor page
+        navigate('/roadmap', { state: { draftId } });
       }, 800);
     }
     return () => clearTimeout(timer);
-  }, [isGenerating, loadingStep, totalSteps, onClose, navigate]);
+  }, [isGenerating, loadingStep, totalSteps, onClose, navigate, draftId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); 
+    localStorage.setItem('tutorme-course-quiz-settings', JSON.stringify({ enableEssayQuestions, requireImageSubmission: enableEssayQuestions && requireImageSubmission, quizLength })); 
+    setIsGenerating(true); 
+
+    try {
+      // Mock user ID until auth is implemented
+      const userId = "00000000-0000-0000-0000-000000000000"; 
+      
+      const res = await fetch("http://localhost:5000/api/generation/outline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          topic: courseTopic,
+          familiarity,
+          language
+        })
+      });
+      
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setDraftId(data.draftId);
+    } catch (err) {
+      console.error(err);
+      setIsGenerating(false);
+      alert("Failed to generate course. Please try again.");
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -98,7 +127,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
                   Magic Course
                 </h2>
             
-            <form className="space-y-6 font-['Nunito',sans-serif]" onSubmit={(e) => { e.preventDefault(); localStorage.setItem('tutorme-course-quiz-settings', JSON.stringify({ enableEssayQuestions, requireImageSubmission: enableEssayQuestions && requireImageSubmission, quizLength })); setIsGenerating(true); }}>
+            <form className="space-y-6 font-['Nunito',sans-serif]" onSubmit={handleSubmit}>
               <div>
                 <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">What course do you want to learn?</label>
                 <input 
