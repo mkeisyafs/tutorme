@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Check, ChevronDown, FileQuestion, Hourglass, ImagePlus, Square, Paperclip, FileText } from 'lucide-react';
+import { Sparkles, Check, ChevronDown, FileQuestion, Hourglass, ImagePlus, Square } from 'lucide-react';
+import { ApiError, apiRequest } from '../lib/api';
+import { useAuth } from '../auth/useAuth';
+
+interface OutlineCreationResponse {
+  draftId: string;
+}
 
 interface GenerateCourseModalProps {
   isOpen: boolean;
@@ -11,6 +17,7 @@ interface GenerateCourseModalProps {
 
 const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClose, initialTopic = '', referenceFile = null }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [familiarity, setFamiliarity] = useState('Beginner');
@@ -22,7 +29,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
   const [isQuizLengthOpen, setIsQuizLengthOpen] = useState(false);
   const [courseTopic, setCourseTopic] = useState(initialTopic);
   const [modalReferenceFile, setModalReferenceFile] = useState<File | null>(referenceFile);
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
   const totalSteps = modalReferenceFile ? 6 : 5;
 
   useEffect(() => {
@@ -34,6 +41,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
       setCourseTopic(initialTopic);
       setIsQuizLengthOpen(false);
       setModalReferenceFile(referenceFile);
+      setErrorMessage('');
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -43,48 +51,60 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
   }, [isOpen]);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    if (isGenerating && loadingStep < totalSteps) {
-      timer = setTimeout(() => {
-        setLoadingStep(prev => prev + 1);
-      }, 1000); 
-    } else if (isGenerating && loadingStep === totalSteps && draftId) {
-      timer = setTimeout(() => {
-        onClose();
-        // Pass draftId via state to the roadmap/editor page
-        navigate('/roadmap', { state: { draftId } });
-      }, 800);
-    }
+    if (!isGenerating || loadingStep >= totalSteps - 1) return;
+
+    const timer = setTimeout(() => {
+      setLoadingStep((step) => step + 1);
+    }, 900);
+
     return () => clearTimeout(timer);
-  }, [isGenerating, loadingStep, totalSteps, onClose, navigate, draftId]);
+  }, [isGenerating, loadingStep, totalSteps]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); 
-    localStorage.setItem('tutorme-course-quiz-settings', JSON.stringify({ enableEssayQuestions, requireImageSubmission: enableEssayQuestions && requireImageSubmission, quizLength })); 
-    setIsGenerating(true); 
+    e.preventDefault();
+
+    const topic = courseTopic.trim();
+    if (!topic) {
+      setErrorMessage('Please enter a course topic.');
+      return;
+    }
+
+    if (!user?.id) {
+      setErrorMessage('Please sign in before creating a course draft.');
+      return;
+    }
+
+    // These remain device-only preferences until the generation contract supports them.
+    localStorage.setItem('tutorme-course-quiz-settings', JSON.stringify({ enableEssayQuestions, requireImageSubmission: enableEssayQuestions && requireImageSubmission, quizLength }));
+    setErrorMessage('');
+    setLoadingStep(0);
+    setIsGenerating(true);
 
     try {
-      // Mock user ID until auth is implemented
-      const userId = "00000000-0000-0000-0000-000000000000"; 
-      
-      const res = await fetch("http://localhost:5000/api/generation/outline", {
+      const data = await apiRequest<OutlineCreationResponse>('/generation/outline', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          topic: courseTopic,
+        body: {
+          userId: user.id,
+          topic,
           familiarity,
           language
-        })
+        }
       });
-      
-      if (!res.ok) throw new Error("Generation failed");
-      const data = await res.json();
-      setDraftId(data.draftId);
-    } catch (err) {
-      console.error(err);
+
+      if (!data.draftId) {
+        throw new Error('The server did not return a draft ID.');
+      }
+
+      setLoadingStep(totalSteps);
+      onClose();
+      navigate(`/drafts/${encodeURIComponent(data.draftId)}`);
+    } catch (error) {
       setIsGenerating(false);
-      alert("Failed to generate course. Please try again.");
+      setErrorMessage(
+        error instanceof ApiError || error instanceof Error
+          ? error.message
+          : 'Failed to generate your course draft. Please try again.'
+      );
     }
   };
 
@@ -134,6 +154,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
                   type="text" 
                   value={courseTopic}
                   onChange={(event) => setCourseTopic(event.target.value)}
+                  required
                   className="w-full px-4 py-3 border border-pink-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder={modalReferenceFile ? 'Course based on attached reference' : 'e.g. Python for Beginners'}
                 />
@@ -174,10 +195,16 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
               </section>
               <button 
                 type="submit" 
+                disabled={!courseTopic.trim() || !user?.id}
                 className="w-full mt-8 bg-pink-400 dark:bg-pink-500 hover:bg-pink-500 dark:hover:bg-pink-600 text-white font-bold py-4 px-6 rounded-xl shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[4px_4px_0px_0px_rgba(157,23,77,1)] active:translate-y-1 active:shadow-none transform transition focus:outline-none focus:ring-4 focus:ring-pink-400/50 font-['Kalam',cursive] text-2xl tracking-wide flex justify-center items-center gap-3 border-2 border-pink-600 dark:border-pink-700"
               >
                 Generate Curriculum <Sparkles className="w-5 h-5" />
               </button>
+              {errorMessage && (
+                <p role="alert" className="rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 text-center font-bold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+                  {errorMessage}
+                </p>
+              )}
             </form>
           </>
         ) : (

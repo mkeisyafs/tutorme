@@ -37,6 +37,17 @@ export class QuizGeneratorService {
     // The schema says Quiz belongs to Course. We'll create a CHAPTER_QUIZ for the course based on this lesson.
     const quizTitle = `Quiz for Lesson: ${lesson.title}`;
 
+    const existingQuiz = await prisma.quiz.findFirst({
+      where: {
+        courseId: lesson.module.courseId,
+        title: quizTitle,
+        type: "CHAPTER_QUIZ",
+        questions: { some: {} },
+      },
+      select: { id: true },
+    });
+    if (existingQuiz) return existingQuiz.id;
+
     const prompt = `Generate a short quiz for the following educational content. 
 Include 3 multiple choice questions and 1 essay question.
 Lesson Content:
@@ -51,16 +62,43 @@ ${lesson.content}`;
       system
     );
 
-    // Persist to DB
-    await prisma.$transaction(async (tx) => {
-      const quiz = await tx.quiz.create({
-        data: {
+    if (result.questions.length === 0) {
+      throw new Error("The model did not return any quiz questions.");
+    }
+
+    // Persist to DB. Re-check inside the transaction because a retry or another
+    // in-process request can finish while the model call is still running.
+    const quizId = await prisma.$transaction(async (tx) => {
+      const completedQuiz = await tx.quiz.findFirst({
+        where: {
           courseId: lesson.module.courseId,
           title: quizTitle,
           type: "CHAPTER_QUIZ",
-          passingScore: 70,
+          questions: { some: {} },
         },
+        select: { id: true },
       });
+      if (completedQuiz) return completedQuiz.id;
+
+      const emptyQuiz = await tx.quiz.findFirst({
+        where: {
+          courseId: lesson.module.courseId,
+          title: quizTitle,
+          type: "CHAPTER_QUIZ",
+        },
+        select: { id: true },
+      });
+      const quiz =
+        emptyQuiz ??
+        (await tx.quiz.create({
+          data: {
+            courseId: lesson.module.courseId,
+            title: quizTitle,
+            type: "CHAPTER_QUIZ",
+            passingScore: 70,
+          },
+          select: { id: true },
+        }));
 
       for (const q of result.questions) {
         await tx.question.create({
@@ -75,8 +113,11 @@ ${lesson.content}`;
           },
         });
       }
+
+      return quiz.id;
     });
 
-    console.log(`Quiz generated successfully for lesson ${lessonId}`);
+    console.log(`Quiz generated successfully for lesson ${lessonId}: ${quizId}`);
+    return quizId;
   }
 }

@@ -1,399 +1,394 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, CheckCircle2, Lock, Plus, Minus, Sidebar, ChevronLeft, ChevronRight, Sparkles, Send, X, Target, ShieldAlert, Clock, AlertCircle, PlayCircle } from 'lucide-react';
-import PomodoroTimer from '../components/PomodoroTimer';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Bot,
+  CheckCircle2,
+  CircleAlert,
+  ClipboardCheck,
+  LoaderCircle,
+  MessageCircle,
+  Play,
+  RefreshCw,
+  Send,
+  Video,
+} from 'lucide-react';
+import { useAuth } from '../auth/useAuth';
+import { apiRequest, getApiErrorMessage } from '../lib/api';
+
+interface LessonRecord {
+  id: string;
+  title: string;
+  content: string | null;
+  videoUrl: string | null;
+  module: {
+    id: string;
+    title: string;
+    courseId: string;
+  };
+}
+
+interface LessonGenerationStatus {
+  state: 'ready' | 'generating' | 'not_started';
+  isGenerated: boolean;
+  isGenerating: boolean;
+  contentLength: number;
+}
+
+interface QuizGenerationStatus {
+  state: 'blocked' | 'not_started' | 'queued' | 'generating' | 'failed' | 'ready';
+  isGenerated: boolean;
+  isGenerating: boolean;
+  quizId?: string;
+  reason?: string;
+}
+
+interface ListResponse<T> {
+  data: T[];
+}
+
+interface LessonProgress {
+  status: 'LOCKED' | 'IN_PROGRESS' | 'COMPLETED';
+}
+
+interface TutorMessage {
+  id: string;
+  role: 'assistant' | 'user';
+  content: string;
+}
+
+interface TutorResponse {
+  reply?: string;
+}
+
+function makeMessage(role: TutorMessage['role'], content: string): TutorMessage {
+  return {
+    id: role + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+    role,
+    content,
+  };
+}
+
+const initialQuizStatus: QuizGenerationStatus = {
+  state: 'blocked',
+  isGenerated: false,
+  isGenerating: false,
+  reason: 'Generate this lesson before its quiz can be created.',
+};
 
 const Lesson = () => {
   const navigate = useNavigate();
-  const [sidebarExpandedModule, setSidebarExpandedModule] = useState<number | null>(1);
-  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isFinalExamModalOpen, setIsFinalExamModalOpen] = useState(false);
-  const [leftSidebarWidth, setLeftSidebarWidth] = useState(288);
-  const [isDraggingLeft, setIsDraggingLeft] = useState(false);
-  const [rightSidebarWidth, setRightSidebarWidth] = useState(320);
-  const [isDraggingRight, setIsDraggingRight] = useState(false);
+  const { courseId: routeCourseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
+  const { user } = useAuth();
+  const [lesson, setLesson] = useState<LessonRecord | null>(null);
+  const [generationStatus, setGenerationStatus] = useState<LessonGenerationStatus | null>(null);
+  const [quizStatus, setQuizStatus] = useState<QuizGenerationStatus>(initialQuizStatus);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [error, setError] = useState('');
+  const [chatError, setChatError] = useState('');
+  const [chatInput, setChatInput] = useState('');
+  const [isChatting, setIsChatting] = useState(false);
+  const [messages, setMessages] = useState<TutorMessage[]>([]);
+
+  const courseId = routeCourseId || lesson?.module.courseId || '';
+  const isLessonReady = Boolean(lesson?.content) || generationStatus?.state === 'ready';
+  const isQuizReady = quizStatus.state === 'ready' && Boolean(quizStatus.quizId);
+
+  const loadProgress = useCallback(async () => {
+    if (!lessonId || !user?.id) {
+      setIsCompleted(false);
+      return;
+    }
+
+    const response = await apiRequest<ListResponse<LessonProgress>>(
+      '/lesson-progress?userId=' + encodeURIComponent(user.id) + '&lessonId=' + encodeURIComponent(lessonId) + '&take=1'
+    );
+    setIsCompleted(response.data.some((entry) => entry.status === 'COMPLETED'));
+  }, [lessonId, user?.id]);
+
+  const refreshStatuses = useCallback(async () => {
+    if (!lessonId) return;
+
+    const [nextLessonStatus, nextQuizStatus] = await Promise.all([
+      apiRequest<LessonGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId) + '/status'),
+      apiRequest<QuizGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId) + '/quiz-status'),
+    ]);
+    setGenerationStatus(nextLessonStatus);
+    setQuizStatus(nextQuizStatus);
+
+    if (nextLessonStatus.state === 'ready') {
+      const nextLesson = await apiRequest<LessonRecord>('/lessons/' + encodeURIComponent(lessonId));
+      setLesson(nextLesson);
+    }
+  }, [lessonId]);
+
+  const loadLesson = useCallback(async () => {
+    if (!lessonId) {
+      setError('This lesson link is missing its lesson ID.');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const [nextLesson, nextLessonStatus, nextQuizStatus] = await Promise.all([
+        apiRequest<LessonRecord>('/lessons/' + encodeURIComponent(lessonId)),
+        apiRequest<LessonGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId) + '/status'),
+        apiRequest<QuizGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId) + '/quiz-status'),
+      ]);
+      setLesson(nextLesson);
+      setGenerationStatus(nextLessonStatus);
+      setQuizStatus(nextQuizStatus);
+      await loadProgress();
+      if (nextLesson.content) {
+        setMessages([
+          makeMessage(
+            'assistant',
+            'I am Assistant 2. Ask me anything about the lesson material you are reading.'
+          ),
+        ]);
+      } else {
+        setMessages([]);
+      }
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, 'We could not load this lesson.'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [lessonId, loadProgress]);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDraggingLeft) {
-        const newWidth = e.clientX;
-        if (newWidth > 200 && newWidth < 600) {
-          setLeftSidebarWidth(newWidth);
+    void loadLesson();
+  }, [loadLesson]);
+
+  useEffect(() => {
+    if (!lessonId || (!isGenerating && !quizStatus.isGenerating && quizStatus.state !== 'queued')) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      void refreshStatuses().catch(() => undefined);
+    }, 2500);
+
+    return () => window.clearInterval(interval);
+  }, [isGenerating, lessonId, quizStatus.isGenerating, quizStatus.state, refreshStatuses]);
+
+  const handleGenerateLesson = async () => {
+    if (!lessonId || isGenerating) return;
+
+    setError('');
+    setIsGenerating(true);
+    try {
+      const generatedLesson = await apiRequest<LessonRecord>(
+        '/generation/lesson/' + encodeURIComponent(lessonId) + '/generate',
+        { method: 'POST' }
+      );
+      setLesson(generatedLesson);
+      setMessages([
+        makeMessage(
+          'assistant',
+          'Your lesson is ready. I can help explain the material, examples, and exercises on this page.'
+        ),
+      ]);
+      await refreshStatuses();
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, 'The lesson could not be generated. Please try again.'));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCompleteLesson = async () => {
+    if (!lessonId || !user?.id || isCompleting || !isLessonReady) return;
+
+    setError('');
+    setIsCompleting(true);
+    try {
+      await apiRequest('/lesson-progress', {
+        method: 'POST',
+        body: {
+          userId: user.id,
+          lessonId,
+          status: 'COMPLETED',
+        },
+      });
+      setIsCompleted(true);
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, 'We could not save your lesson completion.'));
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  const handleTutorMessage = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const content = chatInput.trim();
+    if (!lessonId || !content || !isLessonReady || isChatting) return;
+
+    const userMessage = makeMessage('user', content);
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
+    setChatInput('');
+    setChatError('');
+    setIsChatting(true);
+
+    try {
+      const response = await apiRequest<TutorResponse>(
+        '/generation/lesson/' + encodeURIComponent(lessonId) + '/chat',
+        {
+          method: 'POST',
+          body: {
+            messages: nextMessages.map(({ role, content: messageContent }) => ({
+              role,
+              content: messageContent,
+            })),
+          },
         }
-      } else if (isDraggingRight) {
-        const newWidth = window.innerWidth - e.clientX;
-        if (newWidth > 250 && newWidth < 800) {
-          setRightSidebarWidth(newWidth);
-        }
+      );
+      const reply = response.reply?.trim();
+      if (!reply) {
+        throw new Error('The lesson assistant did not return a response.');
       }
-    };
-
-    const handleMouseUp = () => {
-      setIsDraggingLeft(false);
-      setIsDraggingRight(false);
-    };
-
-    if (isDraggingLeft || isDraggingRight) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.userSelect = 'none';
-    } else {
-      document.body.style.userSelect = '';
+      setMessages((currentMessages) => [...currentMessages, makeMessage('assistant', reply)]);
+    } catch (requestError) {
+      setChatError(getApiErrorMessage(requestError, 'Assistant 2 could not answer that question.'));
+    } finally {
+      setIsChatting(false);
     }
+  };
 
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDraggingLeft, isDraggingRight]);
+  const lessonContent = useMemo(() => lesson?.content?.trim() || '', [lesson?.content]);
 
-  const modules = [
-    {
-      id: 1,
-      title: "Foundations",
-      lessons: "4 Lesson",
-      desc: "Start with the concept",
-      items: [
-        { name: "What is back end?", status: "completed" },
-        { name: "History of backend", status: "completed" },
-        { name: "Request & Response", status: "locked" },
-        { name: "APIs", status: "locked" }
-      ]
-    },
-    {
-      id: 2,
-      title: "Node.js & Express",
-      lessons: "5 Lesson",
-      desc: "Learn the core syntax",
-      items: [
-        { name: "V8 Engine", status: "locked" },
-        { name: "Event Loop", status: "locked" },
-        { name: "Routing", status: "locked" },
-        { name: "Middleware", status: "locked" },
-        { name: "Error Handling", status: "locked" }
-      ]
-    }
-  ];
-
-  return (
-    <div className="h-screen w-full flex bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-['Nunito',sans-serif] overflow-hidden transition-colors duration-300 relative">
-      
-      {/* Floating button to open left sidebar */}
-      {!isSidebarOpen && (
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="absolute top-6 left-6 z-30 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
-        >
-          <Sidebar className="w-6 h-6" />
-        </button>
-      )}
-
-      {/* Left Sidebar */}
-      {isSidebarOpen && (
-      <aside 
-        style={{ width: `${leftSidebarWidth}px` }}
-        className="relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border-r-2 border-dashed border-gray-300 dark:border-gray-700 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 flex-shrink-0 transition-colors duration-300"
-      >
-        <div 
-          onMouseDown={() => setIsDraggingLeft(true)}
-          className={`absolute top-0 -right-2 bottom-0 w-4 cursor-col-resize hover:bg-blue-500/20 active:bg-blue-500/40 z-30 transition-colors ${isDraggingLeft ? 'bg-blue-500/40' : ''}`}
-        />
-        <div className="flex flex-col justify-between h-full p-6 overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col gap-6">
-          <div className="flex justify-between items-center mt-2">
-            <div 
-              className="text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400 cursor-pointer transform -rotate-2"
-              onClick={() => navigate('/home')}
-            >
-              TutorMe
-            </div>
-            <button 
-              onClick={() => setIsSidebarOpen(false)}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              <Sidebar className="w-6 h-6" />
-            </button>
-          </div>
-          
-          {/* Course Progress Card */}
-          <div className="bg-blue-100 dark:bg-blue-900/40 p-5 rounded-2xl border-4 border-blue-300 dark:border-blue-700/50 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[4px_4px_0px_0px_rgba(30,58,138,0.8)] transform -rotate-1 relative">
-            <div className="absolute -top-3 -right-2 w-8 h-4 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none"></div>
-            <span className="text-xs font-bold uppercase tracking-wider mb-2 inline-block text-blue-800 dark:text-blue-300">Your course</span>
-            <h3 className="text-2xl font-bold font-['Kalam',cursive] text-blue-950 dark:text-blue-100 mb-4 leading-tight">Back-End Developer</h3>
-            
-            <div className="w-full bg-blue-200 dark:bg-blue-800/50 rounded-full h-2 mb-2 border border-blue-300 dark:border-blue-700">
-              <div className="bg-blue-500 dark:bg-blue-400 h-full rounded-full w-[35%]"></div>
-            </div>
-            <div className="flex justify-between text-xs font-bold text-blue-700 dark:text-blue-300">
-              <span>4/12 Lesson</span>
-              <span>35%</span>
-            </div>
-          </div>
-
-          {/* Sidebar Course Roadmap Nav */}
-          <div className="mt-4 flex flex-col gap-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Course Roadmap</span>
-            
-            <div className="flex flex-col gap-2">
-              {modules.map((module) => (
-                <div key={`sidebar-${module.id}`} className="flex flex-col gap-2">
-                  <div 
-                    className="flex justify-between items-center cursor-pointer group"
-                    onClick={() => setSidebarExpandedModule(sidebarExpandedModule === module.id ? null : module.id)}
-                  >
-                    <h4 className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-[15px]">
-                      0{module.id} {module.title}
-                    </h4>
-                    <button className="text-gray-400 group-hover:text-blue-500">
-                      {sidebarExpandedModule === module.id ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  
-                  {sidebarExpandedModule === module.id && (
-                    <div className="flex flex-col gap-3 pl-2 mt-1 mb-2">
-                      {module.items.map((item, index) => (
-                        <div 
-                          key={index} 
-                          className="flex items-center gap-3 text-[14px] cursor-pointer group"
-                        >
-                          {item.status === 'completed' ? (
-                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <Lock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          )}
-                          <span className={`font-semibold group-hover:text-blue-500 transition-colors ${item.status === 'completed' ? 'text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'} ${item.name === 'What is back end?' ? 'text-blue-600 dark:text-blue-400' : ''}`}>
-                            {item.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-              
-              <div 
-                className="mt-2 flex items-center justify-between p-3 rounded-xl border-2 border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors group shadow-sm hover:border-red-300 dark:hover:border-red-700"
-                onClick={() => setIsFinalExamModalOpen(true)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="bg-red-200 dark:bg-red-800/80 p-1.5 rounded-lg border border-red-300 dark:border-red-700 transform -rotate-3 group-hover:rotate-0 transition-transform">
-                    <Target className="w-4 h-4 text-red-700 dark:text-red-300" />
-                  </div>
-                  <span className="font-bold text-[15px] group-hover:text-red-800 dark:group-hover:text-red-300 transition-colors">Course Final Exam</span>
-                </div>
-                <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <button 
-          onClick={() => navigate('/roadmap', { replace: true })}
-          className="mt-8 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none w-full font-['Kalam',cursive] text-lg flex-shrink-0"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Roadmap
-        </button>
-        </div>
-      </aside>
-      )}
-
-      {/* Main Lesson Content */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-8 md:p-12">
-        <div style={{ position: 'fixed', top: '2rem', right: isAIAssistantOpen ? `calc(2rem + ${rightSidebarWidth}px)` : '2rem', zIndex: 50, transition: 'right 300ms ease-in-out' }}>
-          <PomodoroTimer />
-        </div>
-        <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
-          
-          {/* Top Breadcrumb & Actions */}
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
-              <span className="hover:text-blue-500 cursor-pointer" onClick={() => navigate('/roadmap', { replace: true })}>Back-End Developer</span>
-              <ChevronRight className="w-4 h-4" />
-              <span>Foundations</span>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-gray-800 dark:text-gray-200">What is back end?</span>
-            </div>
-            
-            <button onClick={() => navigate('/quiz')} className="px-5 py-2 rounded-xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              Take lesson quiz
-            </button>
-          </div>
-
-          {/* Lesson Video Placeholder */}
-          <div className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 flex items-center justify-center relative overflow-hidden group cursor-pointer">
-            <div className="absolute inset-0 bg-blue-900/20 group-hover:bg-transparent transition-colors z-10"></div>
-            <div className="w-20 h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] transform group-hover:scale-110 transition-transform z-20">
-              <Play className="w-10 h-10 text-white fill-white ml-2" />
-            </div>
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="font-bold">What is back end? - Introduction</div>
-              <div className="font-bold text-sm bg-black/50 px-3 py-1 rounded-lg backdrop-blur-sm">10:45</div>
-            </div>
-          </div>
-
-          {/* Lesson Content Area */}
-          <div className="bg-white dark:bg-gray-800 p-8 md:p-12 rounded-3xl border-4 border-gray-300 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(156,163,175,1)] dark:shadow-[8px_8px_0px_0px_rgba(55,65,81,0.8)] relative">
-            <div className="absolute -top-4 -right-4 w-12 h-6 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600"></div>
-            
-            <h1 className="text-4xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-6">What is Back-End?</h1>
-            
-            <div className="prose prose-lg dark:prose-invert max-w-none font-bold text-gray-600 dark:text-gray-300">
-              <p className="mb-4">
-                The back end, or the "server side", is the part of a website or software application that users don't see. It is responsible for storing and organizing data, and ensuring everything on the client side actually works. 
-              </p>
-              <p className="mb-4">
-                Think of a restaurant. The front end is the dining room and the menu — everything the customer interacts with. The back end is the kitchen, where the food (data) is prepared, cooked, and organized before being sent out to the customer.
-              </p>
-              <h3 className="text-2xl font-['Kalam',cursive] text-gray-800 dark:text-gray-200 mt-8 mb-4">Key Components</h3>
-              <ul className="list-disc pl-6 space-y-2 mb-6">
-                <li><strong>Server:</strong> The computer that receives requests from the front end.</li>
-                <li><strong>Application:</strong> The logic that processes those requests.</li>
-                <li><strong>Database:</strong> Where all the information is stored.</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Next/Prev Navigation */}
-          <div className="flex justify-between items-center mt-12 pb-12">
-            <button className="px-6 py-4 rounded-2xl font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 shadow-sm transition-all flex items-center gap-3 opacity-50 cursor-not-allowed">
-              <ChevronLeft className="w-5 h-5" />
-              Previous Lesson
-            </button>
-            <button onClick={() => navigate('/quiz')} className="px-8 py-4 rounded-2xl font-bold text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-900 border-2 border-blue-400 dark:border-blue-700 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(96,165,250,1)] dark:hover:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] transition-all flex items-center gap-3 font-['Kalam',cursive] text-xl">
-              Take lesson quiz
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
-
+  if (isLoading) {
+    return (
+      <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
+        <div className="rounded-3xl border-4 border-blue-300 bg-white p-10 text-center shadow-[8px_8px_0_#60a5fa] dark:border-blue-800 dark:bg-gray-800">
+          <LoaderCircle className="mx-auto h-12 w-12 animate-spin text-blue-500" />
+          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">Loading lesson</h1>
         </div>
       </main>
+    );
+  }
 
-      {/* Floating Button to open AI */}
-      {!isAIAssistantOpen && (
-        <button 
-          onClick={() => setIsAIAssistantOpen(true)}
-          className="absolute bottom-8 right-8 z-30 bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-full shadow-[4px_4px_0px_0px_rgba(126,34,206,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(126,34,206,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center"
-        >
-          <Sparkles className="w-8 h-8 fill-purple-200 text-purple-200" />
-        </button>
-      )}
+  if (error && !lesson) {
+    return (
+      <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
+        <section className="max-w-lg rounded-3xl border-4 border-red-300 bg-white p-10 text-center shadow-[8px_8px_0_#f87171] dark:border-red-800 dark:bg-gray-800">
+          <CircleAlert className="mx-auto h-12 w-12 text-red-500" />
+          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">Lesson unavailable</h1>
+          <p role="alert" className="mt-3 font-bold text-red-700 dark:text-red-300">{error}</p>
+          <button onClick={() => void loadLesson()} className="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-blue-700 bg-blue-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#1d4ed8]">
+            <RefreshCw className="h-5 w-5" /> Try again
+          </button>
+        </section>
+      </main>
+    );
+  }
 
-      {/* Right Sidebar - AI Assistant */}
-      {isAIAssistantOpen && (
-        <aside 
-          style={{ width: `${rightSidebarWidth}px` }}
-          className="relative bg-purple-50/50 dark:bg-gray-800/40 backdrop-blur-xl border-l-2 border-dashed border-gray-300 dark:border-gray-700 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-40 flex-shrink-0 transition-all duration-300 absolute right-0 top-0 bottom-0 md:relative"
-        >
-          <div 
-            onMouseDown={() => setIsDraggingRight(true)}
-            className={`absolute top-0 -left-2 bottom-0 w-4 cursor-col-resize hover:bg-purple-500/20 active:bg-purple-500/40 z-50 transition-colors ${isDraggingRight ? 'bg-purple-500/40' : ''}`}
-          />
-          <div className="flex flex-col h-full p-6 overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-['Kalam',cursive] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-3 tracking-wide transform -rotate-1">
-              <Sparkles className="w-8 h-8 fill-purple-500 text-purple-500" /> 
-              AI Assistant
-            </h2>
-            <button 
-              onClick={() => setIsAIAssistantOpen(false)}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-white/50 dark:bg-gray-800/50 rounded-full p-1"
-            >
-              <X className="w-6 h-6" />
+  return (
+    <main className="min-h-screen bg-gray-50 px-4 py-6 font-['Nunito',sans-serif] text-gray-800 dark:bg-gray-900 dark:text-gray-100 sm:px-8">
+      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <section className="min-w-0">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 py-2 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0_#9ca3af] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
+              <ArrowLeft className="h-5 w-5" /> Back
             </button>
-          </div>
-          
-          {/* Chat Area */}
-          <div className="flex-1 overflow-y-auto flex flex-col gap-6 pb-4 pr-2 custom-scrollbar">
-            <div className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-md font-bold text-gray-700 dark:text-gray-300 relative">
-              Hello! I'm your AI learning assistant. Ready to start your Back-End journey?
-            </div>
-            
-            <div className="bg-pink-100 dark:bg-pink-900/40 border-4 border-pink-300 dark:border-pink-700 p-4 rounded-3xl rounded-tr-none shadow-[4px_4px_0px_0px_rgba(244,114,182,1)] dark:shadow-[4px_4px_0px_0px_rgba(190,24,93,0.8)] ml-4 text-md font-bold text-pink-900 dark:text-pink-100 self-end relative transform rotate-1">
-              What is an API? I'm confused about the concept.
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-md font-bold text-gray-700 dark:text-gray-300 relative">
-              Think of an API as a waiter in a restaurant. You (the client) give your order to the waiter (the API), who takes it to the kitchen (the server/database), and then brings your food (the data) back to you!
-            </div>
-          </div>
-          
-          {/* Input Area */}
-          <div className="mt-4 relative">
-            <input 
-              type="text" 
-              placeholder="Ask me anything..." 
-              className="w-full pl-5 pr-14 py-4 border-4 border-purple-200 dark:border-purple-800/50 rounded-full bg-white/90 dark:bg-gray-900/90 focus:outline-none focus:border-purple-400 dark:focus:border-purple-500 focus:ring-4 focus:ring-purple-200 dark:focus:ring-purple-900/50 font-bold text-gray-700 dark:text-gray-200 placeholder-gray-400 transition-all shadow-inner text-lg"
-            />
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex">
-              <button className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-full shadow-[0_4px_0px_0px_rgba(126,34,206,1)] active:translate-y-1 active:shadow-none transition-all">
-                <Send className="w-5 h-5" />
+            {isLessonReady && (
+              <button
+                onClick={() => void handleCompleteLesson()}
+                disabled={isCompleted || isCompleting}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-4 py-2 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-default disabled:opacity-70"
+              >
+                {isCompleting ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                {isCompleted ? 'Lesson completed' : 'Mark complete'}
               </button>
+            )}
+          </div>
+
+          <article className="rounded-3xl border-4 border-blue-300 bg-white p-6 shadow-[8px_8px_0_#60a5fa] dark:border-blue-800 dark:bg-gray-800 sm:p-9">
+            <p className="font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300">{lesson?.module.title || 'Course lesson'}</p>
+            <h1 className="mt-2 font-['Kalam',cursive] text-4xl font-bold text-blue-950 dark:text-blue-100">{lesson?.title || 'Lesson'}</h1>
+
+            {!isLessonReady ? (
+              <div className="mt-8 rounded-2xl border-2 border-pink-300 bg-pink-50 p-6 text-center dark:border-pink-800 dark:bg-pink-950/30">
+                {isGenerating ? (
+                  <>
+                    <LoaderCircle className="mx-auto h-10 w-10 animate-spin text-pink-500" />
+                    <h2 className="mt-3 font-['Kalam',cursive] text-2xl font-bold text-pink-900 dark:text-pink-100">Generating this lesson</h2>
+                    <p className="mt-2 font-semibold text-pink-800 dark:text-pink-200">Researching materials and preparing one lesson only. Its quiz will start in the background afterward.</p>
+                  </>
+                ) : (
+                  <>
+                    <Play className="mx-auto h-10 w-10 fill-pink-500 text-pink-500" />
+                    <h2 className="mt-3 font-['Kalam',cursive] text-2xl font-bold text-pink-900 dark:text-pink-100">Ready to generate this lesson?</h2>
+                    <p className="mt-2 font-semibold text-pink-800 dark:text-pink-200">TutorMe will generate this lesson, not the remaining course.</p>
+                    <button onClick={() => void handleGenerateLesson()} className="mt-5 inline-flex items-center gap-2 rounded-xl border-2 border-pink-700 bg-pink-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#be185d]">
+                      <Play className="h-5 w-5 fill-current" /> Generate lesson
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="mt-7 whitespace-pre-wrap leading-8 text-gray-700 dark:text-gray-200">{lessonContent}</div>
+                {lesson?.videoUrl && (
+                  <a href={lesson.videoUrl} target="_blank" rel="noreferrer" className="mt-8 flex items-center gap-3 rounded-2xl border-2 border-red-300 bg-red-50 p-4 font-bold text-red-800 transition-colors hover:bg-red-100 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
+                    <Video className="h-6 w-6" />
+                    Watch the optional supporting video
+                  </a>
+                )}
+              </>
+            )}
+          </article>
+
+          {error && <p role="alert" className="mt-5 rounded-xl border-2 border-red-300 bg-red-50 p-4 font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{error}</p>}
+
+          <section className="mt-6 rounded-3xl border-4 border-purple-300 bg-purple-50 p-6 shadow-[6px_6px_0_#c084fc] dark:border-purple-800 dark:bg-purple-950/30">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="flex items-center gap-2 font-['Kalam',cursive] text-2xl font-bold text-purple-950 dark:text-purple-100"><ClipboardCheck className="h-6 w-6" /> Lesson quiz</h2>
+                <p className="mt-1 font-semibold text-purple-800 dark:text-purple-200">
+                  {quizStatus.reason || (isQuizReady ? 'Your background-generated quiz is ready.' : 'Quiz status will appear after lesson generation.')}
+                </p>
+              </div>
+              {isQuizReady ? (
+                <button onClick={() => navigate('/courses/' + encodeURIComponent(courseId) + '/quizzes/' + encodeURIComponent(quizStatus.quizId || ''))} className="rounded-xl border-2 border-purple-700 bg-purple-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce]">
+                  Take quiz
+                </button>
+              ) : quizStatus.isGenerating || quizStatus.state === 'queued' ? (
+                <span className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-300 bg-white px-4 py-3 font-bold text-purple-700 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-200"><LoaderCircle className="h-5 w-5 animate-spin" /> Generating quiz…</span>
+              ) : (
+                <span className="rounded-xl border-2 border-purple-200 bg-white px-4 py-3 font-bold text-purple-700 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-200">Waiting for lesson</span>
+              )}
             </div>
+          </section>
+        </section>
+
+        <aside className="flex min-h-[32rem] flex-col rounded-3xl border-4 border-yellow-300 bg-yellow-50 p-5 shadow-[6px_6px_0_#facc15] dark:border-yellow-800 dark:bg-gray-800">
+          <h2 className="flex items-center gap-2 font-['Kalam',cursive] text-2xl font-bold text-yellow-900 dark:text-yellow-200"><Bot className="h-6 w-6" /> Assistant 2</h2>
+          <p className="mt-1 text-sm font-bold text-yellow-800 dark:text-yellow-300">Ask about the current lesson only.</p>
+          <div className="mt-5 flex flex-1 flex-col gap-3 overflow-y-auto" aria-live="polite">
+            {!isLessonReady && <p className="rounded-xl bg-white/70 p-4 font-bold text-gray-600 dark:bg-gray-900/50 dark:text-gray-300">Generate the lesson before chatting about its material.</p>}
+            {messages.map((message) => (
+              <div key={message.id} className={message.role === 'assistant' ? 'mr-4 rounded-2xl border-2 border-yellow-200 bg-white p-3 font-semibold text-gray-700 dark:border-yellow-700 dark:bg-gray-900 dark:text-gray-200' : 'ml-4 rounded-2xl border-2 border-pink-300 bg-pink-100 p-3 font-semibold text-pink-900 dark:border-pink-700 dark:bg-pink-950/40 dark:text-pink-100'}>
+                {message.content}
+              </div>
+            ))}
+            {isChatting && <div className="mr-4 inline-flex items-center gap-2 rounded-2xl border-2 border-yellow-200 bg-white p-3 font-bold text-gray-600 dark:border-yellow-700 dark:bg-gray-900 dark:text-gray-300"><LoaderCircle className="h-5 w-5 animate-spin" /> Thinking…</div>}
           </div>
-          </div>
+          {chatError && <p role="alert" className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 p-3 font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{chatError}</p>}
+          <form onSubmit={handleTutorMessage} className="mt-4 flex gap-2">
+            <input value={chatInput} onChange={(event) => setChatInput(event.target.value)} disabled={!isLessonReady || isChatting} placeholder="Ask about this lesson…" className="min-w-0 flex-1 rounded-xl border-2 border-yellow-300 bg-white px-3 py-3 font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-yellow-700 dark:bg-gray-900 dark:text-white" />
+            <button type="submit" disabled={!chatInput.trim() || !isLessonReady || isChatting} className="rounded-xl border-2 border-yellow-700 bg-yellow-400 p-3 text-yellow-950 shadow-[2px_2px_0_#a16207] disabled:cursor-not-allowed disabled:opacity-60"><Send className="h-5 w-5" /></button>
+          </form>
+          {isCompleted && courseId && <button onClick={() => navigate('/courses/' + encodeURIComponent(courseId) + '/final-exam')} className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-red-700 bg-red-500 px-4 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#b91c1c]"><MessageCircle className="h-5 w-5" /> Check final exam</button>}
         </aside>
-      )}
-
-      {/* Final Exam Modal */}
-      {isFinalExamModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm transition-all duration-300">
-          <div className="max-w-2xl w-full bg-white dark:bg-gray-800 rounded-3xl p-10 border-4 border-red-300 dark:border-red-700 shadow-[12px_12px_0px_0px_rgba(252,165,165,1)] dark:shadow-[12px_12px_0px_0px_rgba(185,28,28,0.5)] transform -rotate-1 relative animate-in fade-in zoom-in duration-300">
-            <div className="absolute -top-4 left-1/2 w-24 h-8 bg-yellow-400/80 dark:bg-yellow-500/40 transform -translate-x-1/2 -rotate-3 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600 z-10"></div>
-            <div className="absolute -top-6 -right-6 bg-red-100 dark:bg-red-900/50 p-4 rounded-full border-4 border-red-300 dark:border-red-700 shadow-[4px_4px_0px_0px_rgba(252,165,165,1)] dark:shadow-[4px_4px_0px_0px_rgba(185,28,28,0.8)] animate-bounce">
-              <ShieldAlert className="w-12 h-12 text-red-600 dark:text-red-400" />
-            </div>
-            
-            <h1 className="text-6xl font-['Kalam',cursive] font-bold text-red-600 dark:text-red-400 mb-6 mt-2">Module Final Exam</h1>
-            <p className="text-xl text-gray-700 dark:text-gray-300 font-bold mb-8">
-              You are about to begin the final exam for "Back-End Developer: Foundations".
-            </p>
-            
-            <div className="space-y-4 mb-10 bg-red-50 dark:bg-red-950/30 p-6 rounded-2xl border-4 border-red-100 dark:border-red-900/50">
-              <div className="flex items-center gap-4 text-xl font-bold text-gray-700 dark:text-gray-300">
-                <div className="p-2 bg-white dark:bg-gray-800 rounded-xl border-2 border-red-200 dark:border-red-800 shadow-sm">
-                  <Clock className="w-6 h-6 text-red-500" />
-                </div>
-                Time Limit: 10 Minutes
-              </div>
-              <div className="flex items-center gap-4 text-xl font-bold text-gray-700 dark:text-gray-300">
-                <div className="p-2 bg-white dark:bg-gray-800 rounded-xl border-2 border-green-200 dark:border-green-800 shadow-sm">
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
-                </div>
-                Questions: 6 Mixed Format
-              </div>
-              <div className="flex items-center gap-4 text-xl font-bold text-gray-700 dark:text-gray-300">
-                <div className="p-2 bg-white dark:bg-gray-800 rounded-xl border-2 border-yellow-200 dark:border-yellow-800 shadow-sm">
-                  <AlertCircle className="w-6 h-6 text-yellow-500" />
-                </div>
-                Auto-submits when time runs out
-              </div>
-            </div>
-            
-            <div className="flex gap-6">
-              <button 
-                onClick={() => setIsFinalExamModalOpen(false)}
-                className="flex-1 px-6 py-4 rounded-2xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-4 border-gray-300 dark:border-gray-600 shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[4px_4px_0px_0px_rgba(75,85,99,1)] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(156,163,175,1)] dark:hover:shadow-[6px_6px_0px_0px_rgba(75,85,99,1)] active:translate-y-1 active:shadow-none text-xl flex justify-center items-center gap-2"
-              >
-                <ArrowLeft className="w-6 h-6" /> Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  setIsFinalExamModalOpen(false);
-                  navigate('/final-exam');
-                }}
-                className="flex-[2] px-6 py-4 rounded-2xl font-bold text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 border-4 border-red-700 shadow-[6px_6px_0px_0px_rgba(153,27,27,1)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(153,27,27,1)] active:translate-y-2 active:shadow-none text-2xl font-['Kalam',cursive] tracking-wider flex justify-center items-center gap-3"
-              >
-                <PlayCircle className="w-8 h-8" /> Start Exam
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
+      </div>
+    </main>
   );
 };
 

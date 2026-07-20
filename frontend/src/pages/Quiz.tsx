@@ -1,301 +1,200 @@
-import { useMemo, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, CheckCircle2, FileImage, Lightbulb, Lock, Minus, Plus, Send, Sidebar, Sparkles, Target, XCircle } from 'lucide-react';
-import PomodoroTimer from '../components/PomodoroTimer';
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  CircleAlert,
+  ClipboardCheck,
+  LoaderCircle,
+  RefreshCw,
+  Send,
+} from 'lucide-react';
+import { apiRequest, getApiErrorMessage } from '../lib/api';
 
-type QuestionType = 'multiple-choice' | 'essay';
-
-interface QuizQuestion {
+type LearnerQuestion = {
   id: string;
-  type: QuestionType;
+  type: 'MULTIPLE_CHOICE' | 'ESSAY';
   prompt: string;
-  options?: string[];
-  explanations?: string[];
-  correctAnswer?: number;
-  requiresImage?: boolean;
-}
-
-interface QuizSettings {
-  enableEssayQuestions: boolean;
-  requireImageSubmission: boolean;
-  quizLength: string;
-}
-
-const defaultSettings: QuizSettings = {
-  enableEssayQuestions: true,
-  requireImageSubmission: false,
-  quizLength: 'Random',
+  options: string[];
+  requiresImage: boolean;
 };
 
-const multipleChoiceBank = [
-  { 
-    prompt: 'Which responsibility belongs to the back end of an application?', 
-    options: ['Styling buttons and layouts', 'Storing data and processing requests', 'Writing page headlines', 'Choosing brand colours'], 
-    correctAnswer: 1,
-    explanations: [
-      'Incorrect. Styling is handled by the front end using CSS.',
-      'Correct! The back end handles databases and server logic to process user requests.',
-      'Incorrect. Content layout and text styling is front-end work.',
-      'Incorrect. Brand colours are part of the visual design implemented on the front end.'
-    ]
-  },
-  { 
-    prompt: 'In the restaurant analogy, what does the server side most closely represent?', 
-    options: ['The dining room', 'The printed menu', 'The kitchen that prepares orders', 'The restaurant sign'], 
-    correctAnswer: 2,
-    explanations: [
-      'Incorrect. The dining room is where the customer interacts, representing the front end.',
-      'Incorrect. The menu is part of the interface presented to the user.',
-      'Correct! The kitchen receives orders, processes them, and sends the results back—just like a back-end server.',
-      'Incorrect. The sign is a front-facing element for users to see.'
-    ]
-  },
-  { 
-    prompt: 'Which component is responsible for keeping an application’s information?', 
-    options: ['Database', 'Button', 'Browser tab', 'Style sheet'], 
-    correctAnswer: 0,
-    explanations: [
-      'Correct! A database securely stores and organizes application data on the back end.',
-      'Incorrect. A button is an interactive element on the front end.',
-      'Incorrect. A browser tab displays the front end to the user.',
-      'Incorrect. A style sheet dictates the visual appearance of the front end.'
-    ]
-  },
-  { 
-    prompt: 'What happens first when a user asks an app to load data?', 
-    options: ['The database sends a styled page', 'The front end makes a request to the server', 'The server changes the browser layout', 'The user writes a new database'], 
-    correctAnswer: 1,
-    explanations: [
-      'Incorrect. The database only returns raw data, not styled pages.',
-      'Correct! The process starts when the front-end interface requests data from the back-end server.',
-      'Incorrect. The server sends data back; the front end is responsible for changing the layout.',
-      'Incorrect. Users do not write databases to load data; they simply interact with the front end.'
-    ]
-  },
-  { 
-    prompt: 'Which is an example of front-end work rather than back-end work?', 
-    options: ['Validating a request', 'Saving a profile', 'Designing a navigation menu', 'Querying a database'], 
-    correctAnswer: 2,
-    explanations: [
-      'Incorrect. Validating requests securely is typically a back-end responsibility.',
-      'Incorrect. Saving data like user profiles requires a back-end database.',
-      'Correct! Designing and implementing menus is what the user sees, making it front-end work.',
-      'Incorrect. Querying a database happens entirely on the back end.'
-    ]
-  },
-];
-
-const essayBank = [
-  'In your own words, explain the difference between the front end and back end. Use the restaurant analogy if it helps.',
-  'Describe how information could travel when a learner opens a course in TutorMe, from click to displayed lesson.',
-  'Choose one back-end component (server, application, or database) and explain why it matters to an app user.',
-];
-
-const shuffle = <T,>(items: T[]) => [...items].sort(() => Math.random() - 0.5);
-
-const getQuizSettings = (): QuizSettings => {
-  try {
-    const stored = localStorage.getItem('tutorme-course-quiz-settings');
-    if (!stored) return defaultSettings;
-    const parsed = JSON.parse(stored) as Partial<QuizSettings>;
-    return {
-      enableEssayQuestions: parsed.enableEssayQuestions ?? defaultSettings.enableEssayQuestions,
-      requireImageSubmission: Boolean(parsed.requireImageSubmission && parsed.enableEssayQuestions),
-      quizLength: ['3 questions', '5 questions', '8 questions', 'Random'].includes(parsed.quizLength ?? '') ? parsed.quizLength! : defaultSettings.quizLength,
-    };
-  } catch {
-    return defaultSettings;
-  }
+type QuizAttempt = {
+  quiz: {
+    id: string;
+    title: string;
+    type: 'CHAPTER_QUIZ' | 'FINAL_EXAM';
+    passingScore: number;
+  };
+  questions: LearnerQuestion[];
 };
 
-const generateQuiz = (settings: QuizSettings): QuizQuestion[] => {
-  const total = settings.quizLength === 'Random' ? 3 + Math.floor(Math.random() * 3) : Number(settings.quizLength.split(' ')[0]);
-  const essayCount = settings.enableEssayQuestions ? Math.min(Math.max(1, Math.floor(total / 3)), total) : 0;
-  const mcCount = total - essayCount;
-  const multipleChoice = Array.from({ length: mcCount }, (_, index) => {
-    const source = shuffle(multipleChoiceBank)[index % multipleChoiceBank.length];
-    return { id: `mc-${index}-${Date.now()}`, type: 'multiple-choice' as const, ...source };
-  });
-  const essays = Array.from({ length: essayCount }, (_, index) => ({
-    id: `essay-${index}-${Date.now()}`,
-    type: 'essay' as const,
-    prompt: shuffle(essayBank)[index % essayBank.length],
-    requiresImage: settings.requireImageSubmission,
-  }));
-  return shuffle([...multipleChoice, ...essays]);
+type SubmissionResult = {
+  submissionId: string;
+  score: number;
+  correctCount: number;
+  gradedQuestionCount: number;
+  totalQuestions: number;
+  gradeLetter: string;
+  passed: boolean;
+  essayQuestionCount: number;
 };
 
 const Quiz = () => {
   const navigate = useNavigate();
-  const [{ questions, settings }] = useState(() => {
-    const generatedSettings = getQuizSettings();
-    return { questions: generateQuiz(generatedSettings), settings: generatedSettings };
-  });
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [attachments, setAttachments] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const { quizId } = useParams<{ quizId: string }>();
+  const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string | number | boolean | null>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [isFoundationsOpen, setIsFoundationsOpen] = useState(true);
-  const [showQuizRequiredNotice, setShowQuizRequiredNotice] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<{ path: string; replace: boolean } | null>(null);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const startedAt = useRef<number>(0);
 
-  const multipleChoiceQuestions = questions.filter((question) => question.type === 'multiple-choice');
-  const correctCount = multipleChoiceQuestions.filter((question) => answers[question.id] === String(question.correctAnswer)).length;
-  const score = multipleChoiceQuestions.length ? Math.round((correctCount / multipleChoiceQuestions.length) * 100) : 100;
-
-  const feedback = useMemo(() => questions.map((question) => {
-    const answer = answers[question.id]?.trim();
-    if (question.type === 'multiple-choice') {
-      const isCorrect = answer === String(question.correctAnswer);
-      const selected = answer ? question.options?.[Number(answer)] : 'No answer selected';
-      return { id: question.id, isCorrect, title: isCorrect ? 'You got it!' : 'A useful correction', detail: isCorrect
-        ? `You chose “${selected}.” Great job connecting the back end with its role behind the scenes. Apply this idea to the next example you see.`
-        : `You chose “${selected}.” The back end handles data and request processing; visible layout is front-end work. Revisit the Server, Application, and Database section, then explain how those pieces work together.` };
-    }
-    const wordCount = answer ? answer.split(/\s+/).filter(Boolean).length : 0;
-    const isDetailed = wordCount >= 12;
-    return { id: question.id, isCorrect: isDetailed, title: isDetailed ? 'Thoughtful explanation' : 'Build out your explanation', detail: isDetailed
-      ? `You gave a ${wordCount}-word explanation${question.requiresImage ? ' with the required image evidence' : ''}. Next, trace one real request from the interface to the server and database to reinforce your reasoning.`
-      : 'Add a little more detail: identify what the learner sees on the front end, what the server does on the back end, and how data moves between them. The restaurant analogy is a useful structure.' };
-  }), [answers, questions]);
-
-  const submitQuiz = (event: FormEvent) => {
-    event.preventDefault();
-    if (questions.some((question) => !answers[question.id]?.trim())) {
-      setError('Answer every question before submitting your quiz.');
+  const loadAttempt = useCallback(async () => {
+    if (!quizId) {
+      setError('This quiz link is missing its quiz ID.');
+      setIsLoading(false);
       return;
     }
-    if (questions.some((question) => question.requiresImage && !attachments[question.id])) {
-      setError('Attach an image for each essay question that requires image submission.');
-      return;
-    }
+
+    setIsLoading(true);
+    setIsBlocked(false);
     setError('');
-    setSubmitted(true);
+    try {
+      const nextAttempt = await apiRequest<QuizAttempt>(
+        '/generation/quiz/' + encodeURIComponent(quizId) + '/attempt'
+      );
+      setAttempt(nextAttempt);
+      setAnswers({});
+      startedAt.current = Date.now();
+    } catch (requestError) {
+      const message = getApiErrorMessage(requestError, 'We could not load this quiz.');
+      setError(message);
+      const status = requestError instanceof Error && 'status' in requestError
+        ? Number((requestError as { status?: number }).status)
+        : 0;
+      setIsBlocked(status === 401 || status === 403 || status === 409);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [quizId]);
+
+  useEffect(() => {
+    void loadAttempt();
+  }, [loadAttempt]);
+
+  const setAnswer = (questionId: string, answer: string | number) => {
+    setAnswers((currentAnswers) => ({ ...currentAnswers, [questionId]: answer }));
   };
 
-  const addAttachment = (questionId: string, event: ChangeEvent<HTMLInputElement>) => setAttachments((current) => ({ ...current, [questionId]: event.target.files?.[0]?.name ?? '' }));
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!quizId || !attempt || isSubmitting) return;
 
-  const requestNavigation = (path: string, replace = false) => {
-    if (!submitted) {
-      setPendingNavigation({ path, replace });
-      setShowQuizRequiredNotice(true);
+    const unanswered = attempt.questions.some((question) => {
+      const answer = answers[question.id];
+      return answer === undefined || answer === null || answer === '';
+    });
+    if (unanswered) {
+      setError('Answer every question before you submit.');
       return;
     }
-    navigate(path, { replace });
+
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const result = await apiRequest<SubmissionResult>(
+        '/generation/quiz/' + encodeURIComponent(quizId) + '/submit',
+        {
+          method: 'POST',
+          body: {
+            answers,
+            timeSpentSec: Math.floor((Date.now() - startedAt.current) / 1000),
+          },
+        }
+      );
+      navigate('/submissions/' + encodeURIComponent(result.submissionId), {
+        state: { result },
+      });
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, 'We could not submit your quiz.'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  return <div className="min-h-screen bg-gray-50 font-['Nunito',sans-serif] text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100">
-    <main className="min-h-screen px-6 py-8 lg:ml-72 md:px-12 relative">
-      <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 50 }}>
-        <PomodoroTimer />
-      </div>
-    <div className="mx-auto max-w-5xl pb-16">
-      <button onClick={() => requestNavigation('/lesson')} className="mb-7 flex items-center gap-2 font-bold text-gray-500 transition-colors hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"><ArrowLeft className="h-5 w-5" /> Back to lesson</button>
-      <div className="block">
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 overflow-y-auto border-r-2 border-dashed border-gray-300 bg-white/80 p-6 shadow-[4px_0_24px_rgba(0,0,0,.02)] backdrop-blur-xl dark:border-gray-700 dark:bg-gray-800/80 lg:block">
-          <div className="flex h-full flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <button onClick={() => requestNavigation('/home')} className="font-['Kalam',cursive] text-3xl font-bold text-blue-600 transition-transform hover:-rotate-2 dark:text-blue-400">TutorMe</button>
-                <button type="button" aria-label="Collapse course sidebar" className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"><Sidebar className="h-6 w-6" /></button>
-              </div>
-              <div className="relative mt-10 rounded-2xl border-4 border-blue-300 bg-blue-100 p-5 shadow-[4px_4px_0_#60a5fa] dark:border-blue-700/60 dark:bg-blue-900/40 dark:shadow-[4px_4px_0_#1e3a8a]"><div className="absolute -right-2 -top-3 h-4 w-8 rotate-12 bg-yellow-400/80 dark:bg-yellow-500/40" /><span className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">Your course</span><h2 className="mt-1 font-['Kalam',cursive] text-2xl font-bold leading-tight text-blue-950 dark:text-blue-100">Back-End Developer</h2><div className="mt-5 h-2 overflow-hidden rounded-full border border-blue-300 bg-blue-200 dark:border-blue-700 dark:bg-blue-800/50"><div className="h-full w-[35%] rounded-full bg-blue-500 dark:bg-blue-400" /></div><div className="mt-2 flex justify-between text-xs font-bold text-blue-700 dark:text-blue-300"><span>4/12 Lesson</span><span>35%</span></div></div>
-              <section className="mt-10"><p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Course roadmap</p><div className="mt-5 space-y-5"><div><button type="button" onClick={() => setIsFoundationsOpen((open) => !open)} className="flex w-full items-center justify-between text-left font-bold text-gray-800 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400"><span>01 Foundations</span>{isFoundationsOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}</button>{isFoundationsOpen && <div className="mt-4 space-y-3 pl-2">{['What is back end?', 'History of backend'].map((lesson) => <button key={lesson} type="button" onClick={() => requestNavigation('/lesson')} className={`flex items-center gap-3 text-left text-sm font-semibold ${lesson === 'History of backend' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-200'}`}><CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />{lesson}</button>)}<button type="button" onClick={() => requestNavigation('/lesson')} className="flex items-center gap-3 text-sm font-semibold text-gray-500 dark:text-gray-400"><Lock className="h-4 w-4 shrink-0" />Request &amp; Response</button><button type="button" onClick={() => requestNavigation('/lesson')} className="flex items-center gap-3 text-sm font-semibold text-gray-500 dark:text-gray-400"><Lock className="h-4 w-4 shrink-0" />APIs</button></div>}</div><button type="button" onClick={() => requestNavigation('/lesson')} className="flex w-full items-center justify-between text-left font-bold text-gray-800 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400"><span>02 Node.js &amp; Express</span><Plus className="h-4 w-4 text-gray-400" /></button></div></section>
-            </div>
-            <button onClick={() => requestNavigation('/roadmap', true)} className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-100 px-4 py-3 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0_rgba(156,163,175,1)] transition-all hover:bg-gray-200 active:translate-y-0.5 active:shadow-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"><ArrowLeft className="h-5 w-5" /> Back to Roadmap</button>
-          </div>
-          <div className="hidden">
-          <button onClick={() => navigate('/home')} className="font-['Kalam',cursive] text-3xl font-bold text-blue-600 transition-transform hover:-rotate-2 dark:text-blue-400">TutorMe</button>
-          <div className="mt-10">
-          <p className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Your course</p>
-          <h2 className="mt-1 font-['Kalam',cursive] text-2xl font-bold text-gray-900 dark:text-gray-100">Back-End Developer</h2>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-blue-100 dark:bg-blue-900/60"><div className="h-full w-[35%] rounded-full bg-blue-500" /></div>
-          <p className="mt-2 text-sm font-bold text-blue-700 dark:text-blue-300">4 of 12 lessons complete</p>
-          <div className="mt-7 space-y-5">
-            <div><p className="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">Chapter 1 · Foundations</p><ul className="mt-3 space-y-3 border-l-2 border-dashed border-blue-200 pl-4 dark:border-blue-800"><li className="flex items-center gap-2 text-sm font-bold text-green-600 dark:text-green-400"><CheckCircle2 className="h-4 w-4 shrink-0" /> What is back end?</li><li className="-ml-[7px] flex items-center gap-2 rounded-lg border-2 border-pink-300 bg-pink-100 px-3 py-2 text-sm font-bold text-pink-800 dark:border-pink-700 dark:bg-pink-900/35 dark:text-pink-200"><Target className="h-4 w-4 shrink-0" /> Lesson quiz</li><li className="flex items-center gap-2 text-sm font-semibold text-gray-400 dark:text-gray-500"><span className="ml-1 h-2.5 w-2.5 rounded-full bg-gray-300 dark:bg-gray-600" /> Request &amp; Response</li><li className="flex items-center gap-2 text-sm font-semibold text-gray-400 dark:text-gray-500"><span className="ml-1 h-2.5 w-2.5 rounded-full bg-gray-300 dark:bg-gray-600" /> APIs</li></ul></div>
-            <div><p className="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">Chapter 2 · Node.js &amp; Express</p><p className="mt-2 text-sm font-semibold text-gray-400 dark:text-gray-500">5 lessons locked</p></div>
-          </div>
-          <p className="mt-7 rounded-xl bg-blue-50 p-3 text-sm font-bold text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">Finish this quiz to unlock Request &amp; Response.</p>
-          </div>
-          <button onClick={() => requestNavigation('/roadmap', true)} className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-100 px-4 py-3 font-['Kalam',cursive] text-lg font-bold text-gray-700 transition-colors hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"><ArrowLeft className="h-5 w-5" /> Back to Roadmap</button>
-          </div>
-        </aside>
-        <div className="min-w-0">
-      <header className="rounded-3xl border-4 border-blue-300 bg-blue-100 p-7 shadow-[7px_7px_0_#60a5fa] dark:border-blue-700 dark:bg-blue-900/35 dark:shadow-[7px_7px_0_#1e3a8a]"><p className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300"><Target className="h-4 w-4" /> Automatically generated lesson quiz</p><h1 className="mt-2 font-['Kalam',cursive] text-4xl font-bold text-blue-950 dark:text-blue-100">What is Back-End?</h1><p className="mt-2 font-semibold text-blue-800 dark:text-blue-200">{questions.length} questions · {settings.quizLength === 'Random' ? 'Random length selected by your course creator' : settings.quizLength} · Complete this quiz to unlock the next lesson.</p></header>
+  if (isLoading) {
+    return (
+      <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
+        <section className="rounded-3xl border-4 border-purple-300 bg-white p-10 text-center shadow-[8px_8px_0_#c084fc] dark:border-purple-800 dark:bg-gray-800">
+          <LoaderCircle className="mx-auto h-12 w-12 animate-spin text-purple-500" />
+          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">Loading your quiz</h1>
+        </section>
+      </main>
+    );
+  }
 
-      {!submitted ? <form onSubmit={submitQuiz} className="mt-9 space-y-7">
-        {questions.map((question, index) => <section key={question.id} className="rounded-3xl border-3 border-gray-300 bg-white/85 p-6 shadow-[4px_4px_0_rgba(100,116,139,.25)] dark:border-gray-700 dark:bg-gray-800/85"><p className="text-sm font-extrabold uppercase tracking-wider text-pink-600 dark:text-pink-400">Question {index + 1} · {question.type === 'multiple-choice' ? 'Multiple choice' : 'Written response'}</p><h2 className="mt-2 text-xl font-bold leading-relaxed text-gray-900 dark:text-gray-100">{question.prompt}</h2>{question.type === 'multiple-choice' ? <div className="mt-5 space-y-3">{question.options?.map((option, optionIndex) => <label key={option} className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 font-semibold transition-colors ${answers[question.id] === String(optionIndex) ? 'border-blue-500 bg-blue-50 text-blue-950 dark:bg-blue-900/35 dark:text-blue-100' : 'border-gray-200 hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-700'}`}><input type="radio" name={question.id} checked={answers[question.id] === String(optionIndex)} onChange={() => { setAnswers((current) => ({ ...current, [question.id]: String(optionIndex) })); setError(''); }} className="h-4 w-4 accent-blue-500" />{option}</label>)}</div> : <div className="mt-5"><textarea value={answers[question.id] ?? ''} onChange={(event) => { setAnswers((current) => ({ ...current, [question.id]: event.target.value })); setError(''); }} placeholder="Write your answer here..." className="min-h-36 w-full rounded-xl border-2 border-gray-200 bg-white p-4 font-medium text-gray-800 outline-none transition-colors focus:border-pink-400 focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-pink-500 dark:focus:ring-pink-900/40" />{question.requiresImage && <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-pink-300 bg-pink-50 px-4 py-3 font-bold text-pink-700 transition-colors hover:bg-pink-100 dark:border-pink-700 dark:bg-pink-900/25 dark:text-pink-200"><FileImage className="h-5 w-5" />{attachments[question.id] || 'Attach a required image'}<input type="file" accept="image/*" onChange={(event) => addAttachment(question.id, event)} className="hidden" /></label>}{!question.requiresImage && <p className="mt-4 text-sm font-bold text-gray-500 dark:text-gray-400">Image uploads are disabled for this quiz by the course creator.</p>}</div>}</section>)}
-        {error && <p className="rounded-xl border-2 border-red-300 bg-red-50 p-4 font-bold text-red-700 dark:border-red-700 dark:bg-red-900/25 dark:text-red-200">{error}</p>}
-        <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-pink-700 bg-pink-500 py-4 font-['Kalam',cursive] text-2xl font-bold text-white shadow-[0_6px_0_#be185d] transition-all hover:translate-y-0.5 hover:shadow-[0_4px_0_#be185d]"><Send className="h-5 w-5" /> Submit quiz for feedback</button>
-      </form> : <section className="mt-9 space-y-6"><div className="rounded-3xl border-4 border-green-300 bg-green-100 p-7 shadow-[7px_7px_0_#4ade80] dark:border-green-700 dark:bg-green-900/35 dark:shadow-[7px_7px_0_#166534]"><div className="flex items-start gap-4"><div className="rounded-2xl bg-white/70 p-3 text-green-600 dark:bg-gray-900/60 dark:text-green-300"><Sparkles className="h-8 w-8 fill-current" /></div><div><p className="text-sm font-extrabold uppercase tracking-wider text-green-700 dark:text-green-300">Quiz complete</p><h2 className="font-['Kalam',cursive] text-3xl font-bold text-green-950 dark:text-green-100">{score}% on multiple choice</h2><p className="mt-1 font-semibold text-green-800 dark:text-green-200">Review your answers and personalized suggestions below before continuing.</p></div></div></div>{questions.map((question, index) => {
-  const result = feedback.find((item) => item.id === question.id)!;
-  const answer = question.type === 'multiple-choice' ? question.options?.[Number(answers[question.id])] : answers[question.id];
-  
+  if (error && (!attempt || isBlocked)) {
+    return (
+      <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
+        <section className="max-w-lg rounded-3xl border-4 border-red-300 bg-white p-10 text-center shadow-[8px_8px_0_#f87171] dark:border-red-800 dark:bg-gray-800">
+          <CircleAlert className="mx-auto h-12 w-12 text-red-500" />
+          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">{isBlocked ? 'Quiz not ready' : 'Quiz unavailable'}</h1>
+          <p role="alert" className="mt-3 font-bold text-red-700 dark:text-red-300">{error}</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {!isBlocked && <button onClick={() => void loadAttempt()} className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce]"><RefreshCw className="h-5 w-5" /> Try again</button>}
+            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-100 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> Go back</button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
-    <article key={question.id} className={`rounded-2xl border-2 p-6 ${result.isCorrect ? 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/25' : 'border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/25'}`}>
-      <div className="flex items-start gap-3">
-        {result.isCorrect ? <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-green-500" /> : <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-orange-500" />}
-        <div className="min-w-0 w-full">
-          <p className="text-sm font-extrabold uppercase tracking-wider opacity-70">Question {index + 1}</p>
-          <h3 className="mt-1 text-lg font-bold text-gray-900 dark:text-gray-100">{question.prompt}</h3>
-          
-          {question.type === 'multiple-choice' ? (
-            <div className="mt-5 space-y-3">
-              {question.options?.map((option, optIdx) => {
-                const isSelected = String(optIdx) === answers[question.id];
-                const isCorrectOption = optIdx === question.correctAnswer;
-                
-                let optionClasses = 'border-gray-200 bg-white/60 dark:border-gray-700 dark:bg-gray-800/60';
-                let icon = <div className="h-5 w-5 rounded-full border-2 border-gray-300 dark:border-gray-600 shrink-0" />;
-                
-                if (isCorrectOption) {
-                  optionClasses = 'border-green-400 bg-green-100 dark:border-green-600 dark:bg-green-900/40 ring-1 ring-green-400 dark:ring-green-600';
-                  icon = <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />;
-                } else if (isSelected) {
-                  optionClasses = 'border-red-400 bg-red-100 dark:border-red-600 dark:bg-red-900/40 ring-1 ring-red-400 dark:ring-red-600';
-                  icon = <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />;
-                }
+    <main className="min-h-screen bg-gray-50 px-4 py-7 font-['Nunito',sans-serif] text-gray-800 dark:bg-gray-900 dark:text-gray-100 sm:px-8">
+      <div className="mx-auto max-w-4xl">
+        <button onClick={() => navigate(-1)} disabled={isSubmitting} className="mb-6 inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 py-2 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0_#9ca3af] disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> Back</button>
+        <header className="rounded-3xl border-4 border-purple-300 bg-purple-100 p-7 shadow-[8px_8px_0_#a855f7] dark:border-purple-800 dark:bg-purple-950/35">
+          <p className="font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">{attempt?.quiz.type === 'FINAL_EXAM' ? 'Final exam' : 'Lesson quiz'}</p>
+          <h1 className="mt-2 flex items-center gap-3 font-['Kalam',cursive] text-4xl font-bold text-purple-950 dark:text-purple-100"><ClipboardCheck className="h-9 w-9" /> {attempt?.quiz.title}</h1>
+          <p className="mt-3 font-semibold text-purple-800 dark:text-purple-200">Your answers are graded on the server after submission. Correct answers stay hidden until the result flow.</p>
+        </header>
 
-                return (
-                  <div key={option} className={`rounded-xl border-2 p-4 transition-all ${optionClasses}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">{icon}</div>
-                      <div>
-                        <p className="font-bold text-gray-900 dark:text-gray-100">{option}</p>
-                        <p className="mt-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          {question.explanations?.[optIdx]}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <>
-              <p className="mt-3 rounded-xl bg-white/65 p-3 font-semibold text-gray-700 dark:bg-gray-900/45 dark:text-gray-200"><span className="font-extrabold">Your answer: </span>{answer}</p>
-              {attachments[question.id] && <p className="mt-2 text-sm font-bold text-gray-600 dark:text-gray-300">Attached image: {attachments[question.id]}</p>}
-              <div className="mt-4 flex gap-2">
-                <Lightbulb className="h-5 w-5 shrink-0 text-pink-500" />
-                <div>
-                  <h4 className="font-['Kalam',cursive] text-xl font-bold text-gray-900 dark:text-gray-100">AI feedback: {result.title}</h4>
-                  <p className="mt-1 font-semibold leading-relaxed text-gray-700 dark:text-gray-200">{result.detail}</p>
+        <form onSubmit={handleSubmit} className="mt-7 space-y-6">
+          {attempt?.questions.map((question, index) => (
+            <article key={question.id} className="rounded-3xl border-4 border-gray-300 bg-white p-6 shadow-[6px_6px_0_#d1d5db] dark:border-gray-700 dark:bg-gray-800">
+              <p className="font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Question {index + 1}</p>
+              <h2 className="mt-2 text-xl font-bold leading-relaxed text-gray-900 dark:text-white">{question.prompt}</h2>
+              {question.type === 'MULTIPLE_CHOICE' ? (
+                <div className="mt-5 space-y-3">
+                  {question.options.map((option, optionIndex) => {
+                    const isSelected = answers[question.id] === optionIndex;
+                    return (
+                      <label key={question.id + '-' + optionIndex} className={'flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-4 font-bold transition-colors ' + (isSelected ? 'border-purple-500 bg-purple-100 text-purple-950 dark:border-purple-400 dark:bg-purple-950/45 dark:text-purple-100' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-purple-300 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200')}>
+                        <input type="radio" name={question.id} checked={isSelected} onChange={() => setAnswer(question.id, optionIndex)} className="h-4 w-4 accent-purple-600" />
+                        <span>{option}</span>
+                      </label>
+                    );
+                  })}
                 </div>
-              </div>
-            </>
-          )}
-        </div>
+              ) : (
+                <div className="mt-5">
+                  <textarea value={String(answers[question.id] ?? '')} onChange={(event) => setAnswer(question.id, event.target.value)} rows={6} placeholder="Write your answer…" className="w-full rounded-2xl border-2 border-gray-300 bg-gray-50 p-4 font-semibold text-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:focus:border-purple-400" />
+                  {question.requiresImage && <p className="mt-3 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">This question requests an image, but a secure upload contract is not configured yet. Save the written answer and ask an instructor before submitting an image.</p>}
+                </div>
+              )}
+            </article>
+          ))}
+
+          {error && <p role="alert" className="rounded-xl border-2 border-red-300 bg-red-50 p-4 font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{error}</p>}
+          <button disabled={isSubmitting || !attempt} type="submit" className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-purple-800 bg-purple-600 py-4 font-['Kalam',cursive] text-2xl font-bold text-white shadow-[0_6px_0_#6b21a8] disabled:cursor-wait disabled:opacity-70">
+            {isSubmitting ? <LoaderCircle className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
+            {isSubmitting ? 'Submitting answers…' : 'Submit for server grading'}
+          </button>
+        </form>
       </div>
-    </article>
-  );
-})}<button onClick={() => navigate('/lesson')} className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-blue-700 bg-blue-500 py-4 font-['Kalam',cursive] text-2xl font-bold text-white shadow-[0_6px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_4px_0_#1d4ed8]"><Check className="h-6 w-6" /> Continue to next lesson</button></section>}
-        </div>
-      </div>
-    </div>
     </main>
-    {showQuizRequiredNotice && <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-4 backdrop-blur-sm"><section role="dialog" aria-modal="true" aria-labelledby="quiz-required-title" className="w-full max-w-md rounded-3xl border-4 border-pink-400 bg-pink-50 p-7 text-center shadow-[7px_7px_0_#ec4899] dark:border-pink-700 dark:bg-gray-800"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-100 text-pink-500 dark:bg-pink-900/40"><Target className="h-7 w-7" /></div><h2 id="quiz-required-title" className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-pink-950 dark:text-pink-100">Leave this quiz?</h2><p className="mt-2 font-semibold leading-relaxed text-pink-800 dark:text-pink-200">Your current answers and any attached images have not been submitted. If you leave now, they will be reset and you will need to answer the generated quiz again.</p><div className="mt-6 grid gap-3 sm:grid-cols-2"><button type="button" onClick={() => { setShowQuizRequiredNotice(false); setPendingNavigation(null); }} className="rounded-xl border-2 border-pink-300 bg-white py-3 font-['Kalam',cursive] text-lg font-bold text-pink-800 transition-colors hover:bg-pink-100 dark:border-pink-700 dark:bg-gray-900 dark:text-pink-200 dark:hover:bg-pink-900/30">Keep answering</button><button type="button" onClick={() => { const destination = pendingNavigation; setAnswers({}); setAttachments({}); setSubmitted(false); setShowQuizRequiredNotice(false); setPendingNavigation(null); if (destination) navigate(destination.path, { replace: destination.replace }); }} className="rounded-xl border-2 border-pink-700 bg-pink-500 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[0_4px_0_#be185d] transition-all hover:translate-y-0.5 hover:shadow-[0_2px_0_#be185d]">Leave &amp; reset</button></div></section></div>}
-  </div>;
+  );
 };
 
 export default Quiz;

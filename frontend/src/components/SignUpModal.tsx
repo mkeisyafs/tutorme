@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
+import { getApiErrorMessage } from '../lib/api';
 
 interface SignUpModalProps {
   isOpen: boolean;
@@ -6,6 +9,14 @@ interface SignUpModalProps {
 }
 
 const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -18,6 +29,22 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      await register({ fullName: fullName.trim(), email: email.trim(), password });
+      onClose();
+      navigate('/home');
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, 'We could not create your account. Please try again.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/20 dark:bg-gray-900/40 backdrop-blur-md transition-opacity" onClick={onClose}>
@@ -37,11 +64,14 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
 
         <h2 className="text-4xl font-bold mb-8 font-['Kalam',cursive] text-green-900 dark:text-green-300 text-center">Join TutorMe!</h2>
         
-        <form className="space-y-5 font-['Nunito',sans-serif]" onSubmit={(e) => e.preventDefault()}>
+        <form className="space-y-5 font-['Nunito',sans-serif]" onSubmit={handleSubmit}>
           <div>
             <label className="block text-green-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">Full Name</label>
             <input 
               type="text" 
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              required
               className="w-full px-4 py-3 border border-green-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-green-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               placeholder="John Doe"
             />
@@ -50,6 +80,9 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
             <label className="block text-green-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">Email</label>
             <input 
               type="email" 
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
               className="w-full px-4 py-3 border border-green-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-green-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               placeholder="student@example.com"
             />
@@ -58,15 +91,20 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
             <label className="block text-green-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">Password</label>
             <input 
               type="password" 
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
               className="w-full px-4 py-3 border border-green-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-green-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               placeholder="••••••••"
             />
           </div>
+          {error && <p role="alert" className="rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 font-bold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
           <button 
+            disabled={isSubmitting}
             type="submit" 
-            className="w-full mt-8 bg-green-400 hover:bg-green-500 text-green-950 font-bold py-4 px-6 rounded-xl shadow-[0_8px_20px_-6px_rgba(74,222,128,0.6)] dark:shadow-[0_8px_20px_-6px_rgba(74,222,128,0.2)] transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-green-400/50 font-['Kalam',cursive] text-2xl tracking-wide"
+            className="w-full mt-8 bg-green-400 hover:bg-green-500 disabled:cursor-wait disabled:opacity-70 text-green-950 font-bold py-4 px-6 rounded-xl shadow-[0_8px_20px_-6px_rgba(74,222,128,0.2)] transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-green-400/50 font-['Kalam',cursive] text-2xl tracking-wide"
           >
-            Sign Up
+            {isSubmitting ? 'Creating Account…' : 'Sign Up'}
           </button>
         </form>
       </div>

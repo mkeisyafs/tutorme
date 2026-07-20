@@ -5,6 +5,12 @@ import { QuizWorkerService } from "../workers/quiz-worker.service";
 import { getPowerfulModel } from "../core/ai-providers";
 
 export class LessonGeneratorService {
+  private static generationJobs = new Map<string, Promise<any>>();
+
+  static isGenerating(lessonId: string) {
+    return this.generationJobs.has(lessonId);
+  }
+
   /**
    * Generates content for a specific lesson on-demand.
    * 
@@ -15,6 +21,20 @@ export class LessonGeneratorService {
    * 4. Asynchronously kick off the quiz generation worker.
    */
   static async generateLessonOnDemand(lessonId: string) {
+    const existingJob = this.generationJobs.get(lessonId);
+    if (existingJob) return existingJob;
+
+    const job = this.generateLesson(lessonId);
+    this.generationJobs.set(lessonId, job);
+
+    try {
+      return await job;
+    } finally {
+      this.generationJobs.delete(lessonId);
+    }
+  }
+
+  private static async generateLesson(lessonId: string) {
     const lesson = await prisma.lesson.findUnique({
       where: { id: lessonId },
       include: {
@@ -27,7 +47,14 @@ export class LessonGeneratorService {
     });
 
     if (!lesson) throw new Error("Lesson not found");
-    if (lesson.content) return lesson; // Already generated
+    if (lesson.content) {
+      // A previous server restart or transient worker failure should not leave a
+      // generated lesson permanently without its background quiz.
+      QuizWorkerService.enqueueQuizGeneration(lessonId).catch((err) => {
+        console.error(`Failed to enqueue quiz for lesson ${lessonId}:`, err);
+      });
+      return lesson;
+    }
 
     const courseTitle = lesson.module.course.title;
     const moduleTitle = lesson.module.title;
@@ -55,15 +82,13 @@ Use the youtubeSearchTool to find a relevant educational video URL if possible.`
     // Assuming the AI might just embed it or we can run a separate quick extract if needed.
     // To keep it simple, we'll just save the generated text to content. 
     
-    // Attempt simple extraction of a youtube URL if the AI included one in raw text
-    let videoUrl = null;
-    const ytIdx = content.indexOf("https://www.youtube.com/watch?v=");
-    if (ytIdx !== -1) {
-      const endIdx = content.indexOf(" ", ytIdx);
-      videoUrl = endIdx !== -1 ? content.substring(ytIdx, endIdx) : content.substring(ytIdx);
-      // clean up any trailing punctuation
-      videoUrl = videoUrl.replace(/[.,!?)\]]*$/, "");
-    }
+    // Video is optional. If the model includes one, accept normal YouTube watch
+    // links with or without www plus short youtu.be links, then strip Markdown
+    // punctuation without turning a missing video into an error.
+    const youtubeMatch = content.match(
+      /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s<>{}\[\]]+|youtu\.be\/[A-Za-z0-9_-]+(?:\?[^\s<>{}\[\]]+)*)/i
+    );
+    const videoUrl = youtubeMatch?.[0]?.replace(/[.,!?)\]]+$/, "") ?? null;
 
     const updatedLesson = await prisma.lesson.update({
       where: { id: lessonId },

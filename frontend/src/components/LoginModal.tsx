@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
+import { getApiErrorMessage } from '../lib/api';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -8,8 +10,11 @@ interface LoginModalProps {
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -24,13 +29,19 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
 
-    // Temporary client-side login until the authentication API is available.
-    if (email.trim() && password.trim()) {
+    try {
+      await login({ email: email.trim(), password });
       onClose();
       navigate('/home');
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError, 'We could not log you in. Please check your details.'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -75,12 +86,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               placeholder="••••••••"
             />
           </div>
+          {error && <p role="alert" className="rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 font-bold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
           <button 
-            onClick={()=>handleSubmit}
+            disabled={isSubmitting}
             type="submit" 
-            className="w-full mt-8 bg-yellow-400 hover:bg-yellow-500 text-yellow-950 font-bold py-4 px-6 rounded-xl shadow-[0_8px_20px_-6px_rgba(234,179,8,0.6)] dark:shadow-[0_8px_20px_-6px_rgba(234,179,8,0.2)] transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-yellow-400/50 font-['Kalam',cursive] text-2xl tracking-wide"
+            className="w-full mt-8 bg-yellow-400 hover:bg-yellow-500 disabled:cursor-wait disabled:opacity-70 text-yellow-950 font-bold py-4 px-6 rounded-xl shadow-[0_8px_20px_-6px_rgba(234,179,8,0.6)] dark:shadow-[0_8px_20px_-6px_rgba(234,179,8,0.2)] transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-yellow-400/50 font-['Kalam',cursive] text-2xl tracking-wide"
           >
-            Log In
+            {isSubmitting ? 'Logging In…' : 'Log In'}
           </button>
         </form>
       </div>

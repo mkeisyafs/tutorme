@@ -1,8 +1,9 @@
 import React, { useState, type ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun, User, Menu, X } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { listed } from '../constant/listed';
+import { useAuth } from '../auth/useAuth';
 
 interface DashboardLayoutProps { children: ReactNode; }
 
@@ -15,7 +16,15 @@ const navItems = [
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { isDark, toggleTheme } = useTheme();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    setIsMobileMenuOpen(false);
+    navigate('/');
+  };
 
   const navLinkClass = (activeClass: string, isActive: boolean, mobile = false) =>
     `flex items-center gap-3 rounded-xl font-bold transition-all ${mobile ? 'px-3 py-2.5 text-base' : 'px-4 py-3'} ${isActive ? `${activeClass} shadow-sm` : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-100'}`;
@@ -50,7 +59,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {navigation(true)}
           <div className="mt-auto pt-6 border-t-2 border-dashed border-gray-200 dark:border-gray-700 space-y-2">
             <NavLink to={listed.settings} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => navLinkClass('bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200', isActive, true)}><Settings className="w-5 h-5" /><span className="font-['Kalam',cursive] text-lg">Settings</span></NavLink>
-            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-lg"><LogOut className="w-5 h-5" /> Log Out</button>
+            <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-lg"><LogOut className="w-5 h-5" /> Log Out</button>
           </div>
         </aside>
       </div>}
@@ -63,7 +72,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </div>
         <div className="mt-auto pt-6 border-t-2 border-dashed border-gray-200 dark:border-gray-700 space-y-2">
           <NavLink to={listed.settings} className={({ isActive }) => navLinkClass('bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200', isActive)}><Settings className="w-5 h-5" /><span className="font-['Kalam',cursive] text-xl">Settings</span></NavLink>
-          <button className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-xl"><LogOut className="w-5 h-5" /> Log Out</button>
+          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-xl"><LogOut className="w-5 h-5" /> Log Out</button>
         </div>
       </aside>
 

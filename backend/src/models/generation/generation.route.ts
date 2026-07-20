@@ -4,8 +4,93 @@ import { CoursePersistenceService } from "../../services/ai/domain/course-persis
 import { LessonGeneratorService } from "../../services/ai/domain/lesson-generator.service";
 import { EditorAssistantService } from "../../services/ai/assistants/editor-assistant.service";
 import { LearningAssistantService } from "../../services/ai/assistants/learning-assistant.service";
+import { FinalExamGeneratorService } from "../../services/ai/domain/final-exam-generator.service";
+import { LearnerAssessmentService } from "../../services/ai/domain/learner-assessment.service";
 import { outlineCache } from "../../services/ai/domain/outline-cache.service";
+import { QuizWorkerService } from "../../services/ai/workers/quiz-worker.service";
 import prisma from "../../lib/prisma";
+import { authMiddleware } from "../../middleware/auth";
+
+// The existing outline and lesson routes intentionally remain compatible with
+// their current client-supplied user IDs. Final-exam eligibility is different:
+// it is tied to a learner's persisted progress, so this nested route derives
+// that learner from the verified JWT rather than accepting a spoofable userId.
+const protectedAssessmentRoute = new Elysia()
+  .use(authMiddleware.as("scoped"))
+  .onBeforeHandle(({ user, set }: any) => {
+    if (!user) {
+      set.status = 401;
+      return { message: "Unauthorized: Invalid or missing token" };
+    }
+  })
+  .post(
+    "/course/:courseId/final-exam",
+    async ({ params, user }: any) => {
+      return FinalExamGeneratorService.requestGeneration(user.sub, params.courseId);
+    },
+    {
+      params: t.Object({ courseId: t.String() }),
+    }
+  )
+  .get(
+    "/course/:courseId/final-exam",
+    async ({ params, user }: any) => {
+      return FinalExamGeneratorService.getStatus(user.sub, params.courseId);
+    },
+    {
+      params: t.Object({ courseId: t.String() }),
+    }
+  )
+  .get(
+    "/quiz/:quizId/attempt",
+    async ({ params, user, set }: any) => {
+      const result = await LearnerAssessmentService.getAttempt(user.sub, params.quizId);
+      if (!result.ok) {
+        set.status = result.status;
+        return { message: result.message };
+      }
+      return result.data;
+    },
+    {
+      params: t.Object({ quizId: t.String() }),
+    }
+  )
+  .post(
+    "/quiz/:quizId/submit",
+    async ({ params, body, user, set }: any) => {
+      const result = await LearnerAssessmentService.submit(user.sub, params.quizId, body);
+      if (!result.ok) {
+        set.status = result.status;
+        return { message: result.message };
+      }
+      return result.data;
+    },
+    {
+      params: t.Object({ quizId: t.String() }),
+      body: t.Object({
+        answers: t.Record(t.String(), t.Any()),
+        timeSpentSec: t.Optional(t.Number({ minimum: 0 })),
+        essayImageUrl: t.Optional(t.Nullable(t.String())),
+      }),
+    }
+  )
+  .get(
+    "/submission/:submissionId",
+    async ({ params, user, set }: any) => {
+      const result = await LearnerAssessmentService.getSubmission(
+        user.sub,
+        params.submissionId
+      );
+      if (!result.ok) {
+        set.status = result.status;
+        return { message: result.message };
+      }
+      return result.data;
+    },
+    {
+      params: t.Object({ submissionId: t.String() }),
+    }
+  );
 
 export const generationController = new Elysia({ prefix: "/generation" })
 
@@ -101,8 +186,11 @@ export const generationController = new Elysia({ prefix: "/generation" })
     async ({ params, error }) => {
       const lesson = await prisma.lesson.findUnique({ where: { id: params.lessonId } });
       if (!lesson) return error(404, "Lesson not found");
+      const isGenerating = LessonGeneratorService.isGenerating(params.lessonId);
       return { 
+        state: lesson.content ? "ready" : isGenerating ? "generating" : "not_started",
         isGenerated: !!lesson.content,
+        isGenerating,
         contentLength: lesson.content?.length || 0
       };
     }
@@ -123,10 +211,25 @@ export const generationController = new Elysia({ prefix: "/generation" })
         where: {
           courseId: lesson.module.courseId,
           title: `Quiz for Lesson: ${lesson.title}`,
+          type: "CHAPTER_QUIZ",
+          questions: { some: {} },
         }
       });
+
+      const workerState = QuizWorkerService.getStatus(params.lessonId);
+      const state = quiz
+        ? "ready"
+        : workerState ?? (lesson.content ? "not_started" : "blocked");
       
-      return { isGenerated: !!quiz, quizId: quiz?.id };
+      return {
+        state,
+        isGenerated: !!quiz,
+        isGenerating: workerState === "queued" || workerState === "generating",
+        quizId: quiz?.id,
+        reason: lesson.content
+          ? undefined
+          : "Generate the lesson before its quiz can be generated.",
+      };
     }
   )
 
@@ -146,6 +249,8 @@ export const generationController = new Elysia({ prefix: "/generation" })
         messages: t.Array(t.Any()),
       }),
     }
-  );
+  )
+
+  .use(protectedAssessmentRoute);
 
 export default generationController;

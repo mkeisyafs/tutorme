@@ -1,5 +1,7 @@
 import { createBrowserRouter } from "react-router-dom"
+import type { ReactNode } from "react"
 import { listed } from "./listed"
+import { ProtectedRoute } from "../auth/ProtectedRoute"
 import Landing from "../pages/Landing"
 import Home from "../pages/Home"
 import Course from "../pages/Course"
@@ -11,6 +13,9 @@ import Profile from "../pages/Profile"
 import Quiz from "../pages/Quiz"
 import FinalExam from "../pages/FinalExam"
 import CourseAnalysis from "../pages/CourseAnalysis"
+
+const protectedPage = (page: ReactNode) => <ProtectedRoute>{page}</ProtectedRoute>
+
 const router = createBrowserRouter([
     {
         path: listed.landing,
@@ -18,43 +23,71 @@ const router = createBrowserRouter([
     },
     {
         path : listed.home,
-        element: <Home/>
+        element: protectedPage(<Home/>)
     },
     {
         path: listed.course,
-        element: <Course/>
+        element: protectedPage(<Course/>)
+    },
+    {
+        path: "/courses",
+        element: protectedPage(<Course/>)
+    },
+    {
+        path: "/courses/:courseId",
+        element: protectedPage(<Course/>)
     },
     {
         path: listed.library,
-        element: <Library/>
+        element: protectedPage(<Library/>)
     },
     {
         path: listed.profile,
-        element: <Profile/>
+        element: protectedPage(<Profile/>)
     },
     {
         path: listed.settings,
-        element: <Settings/>
+        element: protectedPage(<Settings/>)
     },
     {
         path: listed.roadmap,
-        element: <Roadmap/>
+        element: protectedPage(<Roadmap/>)
+    },
+    {
+        path: "/drafts/:draftId",
+        element: protectedPage(<Roadmap/>)
     },
     {
         path: listed.lesson,
-        element: <Lesson/>
+        element: protectedPage(<Lesson/>)
+    },
+    {
+        path: "/courses/:courseId/lessons/:lessonId",
+        element: protectedPage(<Lesson/>)
     },
     {
         path: listed.quiz,
-        element: <Quiz/>
+        element: protectedPage(<Quiz/>)
+    },
+    {
+        path: "/courses/:courseId/quizzes/:quizId",
+        element: protectedPage(<Quiz/>)
     },
     {
         path: listed.finalExam,
-        element: <FinalExam/>
+        element: protectedPage(<FinalExam/>)
+    },
+    {
+        path: "/courses/:courseId/final-exam",
+        element: protectedPage(<FinalExam/>)
     },
     {
         path: listed.analysis,
-        element: <CourseAnalysis/>
+        element: protectedPage(<CourseAnalysis/>)
+    },
+    {
+        path: "/submissions/:submissionId",
+        element: protectedPage(<CourseAnalysis/>)
     }
 ])
 

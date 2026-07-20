@@ -2,8 +2,10 @@ import { useState, type FormEvent } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import GenerateCourseModal from '../components/GenerateCourseModal';
 import { Play, Flame, Clock, Sparkles } from 'lucide-react';
+import { useAuth } from '../auth/useAuth';
 
 const Home = () => {
+  const { user } = useAuth();
   const [topic, setTopic] = useState('');
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
@@ -22,7 +24,7 @@ const Home = () => {
         {/* Header Area */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
-            <h1 className="text-5xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome back, Andi! 👋</h1>
+            <h1 className="text-5xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome back, {user?.fullName ?? 'Learner'}! 👋</h1>
             <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">Ready to continue your learning journey?</p>
           </div>
           
