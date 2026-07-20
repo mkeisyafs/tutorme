@@ -51,6 +51,16 @@ function errorMessage(payload: unknown, fallback: string): string {
   return fallback;
 }
 
+function fallbackMessageForStatus(status: number): string {
+  if (status === 0) return "Unable to reach the server. Please check your connection and try again.";
+  if (status === 400 || status === 422) return "Please check the information you entered and try again.";
+  if (status === 401) return "Email or password is incorrect.";
+  if (status === 403) return "You do not have permission to perform this action.";
+  if (status === 404) return "The requested service could not be found.";
+  if (status >= 500) return "Invalid Credentials";
+  return "Something went wrong. Please try again.";
+}
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const { body, ...requestOptions } = options;
 
@@ -64,9 +74,10 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const payload = error.response?.data;
+      const status = error.response?.status ?? 0;
       throw new ApiError(
-        error.response?.status ?? 0,
-        errorMessage(payload, error.message || "Network request failed."),
+        status,
+        errorMessage(payload, fallbackMessageForStatus(status)),
         payload,
       );
     }
@@ -76,7 +87,10 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
 export function getApiErrorMessage(error: unknown, fallback = "Something went wrong. Please try again."): string {
   if (error instanceof ApiError) return error.message;
-  if (axios.isAxiosError(error)) return errorMessage(error.response?.data, error.message || fallback);
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status ?? 0;
+    return errorMessage(error.response?.data, fallbackMessageForStatus(status));
+  }
   if (error instanceof Error && error.message) return error.message;
   return fallback;
 }

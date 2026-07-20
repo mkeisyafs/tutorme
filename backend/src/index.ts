@@ -15,39 +15,43 @@ import authRoute from "./models/auth/auth.route";
 import GenerationController from "./models/generation/generation.route";
 import { swagger } from "@elysiajs/swagger";
 
-const app = new Elysia({ prefix: "/api" })
-  // Swagger OpenAPI documentation
-  .use(
-    swagger({
-      documentation: {
-        info: {
-          title: "TutorMe API",
-          version: "1.0.0",
-        },
-      },
-    })
-  )
-
-  // Health check
+const app = new Elysia()
+  // Health check at root level (e.g. for external monitoring/pinging)
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
 
-  // AI Generation Routes
-  .use(GenerationController)
+  // Group all API routes under /api
+  .group("/api", (api) =>
+    api
+      // Swagger OpenAPI documentation
+      .use(
+        swagger({
+          documentation: {
+            info: {
+              title: "TutorMe API",
+              version: "1.0.0",
+            },
+          },
+        })
+      )
 
-  // Auth Routes
-  .use(authRoute)
+      // AI Generation Routes
+      .use(GenerationController)
 
-  // Model routes
-  .use(userRoute)
-  .use(courseRoute)
-  .use(moduleRoute)
-  .use(lessonRoute)
-  .use(userCourseRoute)
-  .use(userLessonProgressRoute)
-  .use(courseGenerationRoute)
-  .use(quizRoute)
-  .use(questionRoute)
-  .use(examSubmissionRoute)
+      // Auth Routes
+      .use(authRoute)
+
+      // Model routes
+      .use(userRoute)
+      .use(courseRoute)
+      .use(moduleRoute)
+      .use(lessonRoute)
+      .use(userCourseRoute)
+      .use(userLessonProgressRoute)
+      .use(courseGenerationRoute)
+      .use(quizRoute)
+      .use(questionRoute)
+      .use(examSubmissionRoute)
+  )
 
   .listen(process.env.PORT || 5000);
 

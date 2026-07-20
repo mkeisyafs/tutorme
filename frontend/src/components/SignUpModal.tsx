@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
+import { getPasswordValidationMessage } from '../auth/passwordValidation';
 import { getApiErrorMessage } from '../lib/api';
 
 interface SignUpModalProps {
@@ -14,6 +16,9 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,6 +38,18 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+
+    const passwordError = getPasswordValidationMessage(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -87,16 +104,44 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose }) => {
               placeholder="student@example.com"
             />
           </div>
-          <div>
+          <div className="relative">
             <label className="block text-green-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">Password</label>
             <input 
-              type="password" 
+              type={isPasswordVisible ? 'text' : 'password'}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
-              className="w-full px-4 py-3 border border-green-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-green-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="••••••••"
+              className="w-full px-4 py-3 pr-12 border border-green-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-green-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+              placeholder="Create your password"
             />
+            <button
+              type="button"
+              onClick={() => setIsPasswordVisible((visible) => !visible)}
+              className="absolute bottom-0 right-0 flex h-12 w-12 items-center justify-center text-green-700 hover:text-green-950 dark:text-gray-400 dark:hover:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+              aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+            >
+              {isPasswordVisible ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
+            </button>
+          </div>
+          <div className="relative">
+            <label className="block text-green-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">Confirm Password</label>
+            <input
+              type={isConfirmPasswordVisible ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+              aria-invalid={Boolean(error && password !== confirmPassword)}
+              className="w-full px-4 py-3 pr-12 border border-green-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-green-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+              placeholder="Confirm your password"
+            />
+            <button
+              type="button"
+              onClick={() => setIsConfirmPasswordVisible((visible) => !visible)}
+              className="absolute bottom-0 right-0 flex h-12 w-12 items-center justify-center text-green-700 hover:text-green-950 dark:text-gray-400 dark:hover:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+              aria-label={isConfirmPasswordVisible ? 'Hide password confirmation' : 'Show password confirmation'}
+            >
+              {isConfirmPasswordVisible ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
+            </button>
           </div>
           {error && <p role="alert" className="rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 font-bold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
           <button 
