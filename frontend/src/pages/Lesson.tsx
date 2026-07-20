@@ -21,7 +21,7 @@ interface LessonRecord {
   title: string;
   content: string | null;
   videoUrl: string | null;
-  module: {
+  module?: {
     id: string;
     title: string;
     courseId: string;
@@ -93,7 +93,7 @@ const Lesson = () => {
   const [isChatting, setIsChatting] = useState(false);
   const [messages, setMessages] = useState<TutorMessage[]>([]);
 
-  const courseId = routeCourseId || lesson?.module.courseId || '';
+  const courseId = routeCourseId || lesson?.module?.courseId || '';
   const isLessonReady = Boolean(lesson?.content) || generationStatus?.state === 'ready';
   const isQuizReady = quizStatus.state === 'ready' && Boolean(quizStatus.quizId);
 
@@ -310,7 +310,7 @@ const Lesson = () => {
           </div>
 
           <article className="rounded-3xl border-4 border-blue-300 bg-white p-6 shadow-[8px_8px_0_#60a5fa] dark:border-blue-800 dark:bg-gray-800 sm:p-9">
-            <p className="font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300">{lesson?.module.title || 'Course lesson'}</p>
+            <p className="font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300">{lesson?.module?.title || 'Course lesson'}</p>
             <h1 className="mt-2 font-['Kalam',cursive] text-4xl font-bold text-blue-950 dark:text-blue-100">{lesson?.title || 'Lesson'}</h1>
 
             {!isLessonReady ? (

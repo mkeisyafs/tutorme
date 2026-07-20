@@ -97,14 +97,26 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 1. Generate Course Outline (Temporary)
   .post(
     "/outline",
-    async ({ body }) => {
-      const draftId = await CourseGeneratorService.generateOutline(
-        body.userId,
-        body.topic,
-        body.familiarity,
-        body.language
-      );
-      return { draftId };
+    async ({ body, set }) => {
+      try {
+        const draftId = await CourseGeneratorService.generateOutline(
+          body.userId,
+          body.topic,
+          body.familiarity,
+          body.language
+        );
+        return { draftId };
+      } catch (generationError) {
+        console.error(
+          "[generation:outline] Failed to generate course outline:",
+          generationError instanceof Error ? generationError.message : generationError
+        );
+        set.status = 502;
+        return {
+          message:
+            "Course outline generation is temporarily unavailable. Check the AI provider configuration and try again.",
+        };
+      }
     },
     {
       body: t.Object({

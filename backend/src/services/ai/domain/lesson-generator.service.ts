@@ -96,6 +96,15 @@ Use the youtubeSearchTool to find a relevant educational video URL if possible.`
         content,
         videoUrl,
       },
+      include: {
+        module: {
+          select: {
+            id: true,
+            title: true,
+            courseId: true,
+          },
+        },
+      },
     });
 
     // 4. Asynchronously trigger Quiz Generation in the background

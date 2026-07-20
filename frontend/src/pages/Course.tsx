@@ -32,6 +32,18 @@ interface EnrollmentListResponse {
   take: number;
 }
 
+interface LessonProgress {
+  lessonId: string;
+  status: 'LOCKED' | 'IN_PROGRESS' | 'COMPLETED';
+}
+
+interface LessonProgressListResponse {
+  data: LessonProgress[];
+  total: number;
+  skip: number;
+  take: number;
+}
+
 interface CourseLesson {
   id: string;
   title: string;
@@ -74,14 +86,34 @@ interface CourseCard {
 const FILTER_OPTIONS: CourseFilter[] = ['All', 'In Progress', 'Completed', 'Not Started'];
 const COURSE_COLORS: CourseColor[] = ['blue', 'yellow', 'green', 'pink', 'purple'];
 const CARD_ROTATIONS = ['rotate-1', '-rotate-2', 'rotate-2', '-rotate-1', 'rotate-1'];
+const LESSON_PROGRESS_PAGE_SIZE = 100;
 
-const getCourseOutlineLesson = (course: CourseDetail): CourseLesson | null => {
-  for (const module of [...course.modules].sort((first, second) => first.orderIndex - second.orderIndex)) {
-    const firstLesson = [...module.lessons].sort((first, second) => first.orderIndex - second.orderIndex)[0];
-    if (firstLesson) return firstLesson;
-  }
+const getOrderedCourseLessons = (course: CourseDetail): CourseLesson[] => (
+  [...course.modules]
+    .sort((first, second) => first.orderIndex - second.orderIndex)
+    .flatMap((module) => [...module.lessons].sort((first, second) => first.orderIndex - second.orderIndex))
+);
 
-  return null;
+const loadAllLessonProgress = async (userId: string): Promise<LessonProgress[]> => {
+  const progress: LessonProgress[] = [];
+  let skip = 0;
+  let total = 0;
+
+  do {
+    const response = await apiRequest<LessonProgressListResponse>(
+      `/lesson-progress?userId=${encodeURIComponent(userId)}&skip=${skip}&take=${LESSON_PROGRESS_PAGE_SIZE}`
+    );
+    if (!Array.isArray(response.data)) {
+      throw new Error('The server returned invalid lesson progress.');
+    }
+
+    progress.push(...response.data);
+    total = Math.max(0, Number(response.total) || 0);
+    skip += response.data.length;
+    if (response.data.length === 0) break;
+  } while (skip < total);
+
+  return progress;
 };
 
 const normaliseColor = (color: string): CourseColor => (
@@ -135,6 +167,7 @@ const Course = () => {
   const [pinLimitReached, setPinLimitReached] = useState(false);
   const [previewCourse, setPreviewCourse] = useState<CourseCard | null>(null);
   const [previewDetail, setPreviewDetail] = useState<CourseDetail | null>(null);
+  const [completedPreviewLessonIds, setCompletedPreviewLessonIds] = useState<Set<string>>(() => new Set());
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState('');
   const [previewRequestVersion, setPreviewRequestVersion] = useState(0);
@@ -180,6 +213,7 @@ const Course = () => {
   useEffect(() => {
     if (!previewCourseId) {
       setPreviewDetail(null);
+      setCompletedPreviewLessonIds(new Set());
       setPreviewError('');
       setIsPreviewLoading(false);
       return;
@@ -190,13 +224,21 @@ const Course = () => {
     setPreviewError('');
     setIsPreviewLoading(true);
 
-    void apiRequest<CourseDetail>(`/courses/${encodeURIComponent(previewCourseId)}`)
-      .then((course) => {
+    void Promise.all([
+      apiRequest<CourseDetail>(`/courses/${encodeURIComponent(previewCourseId)}`),
+      user?.id ? loadAllLessonProgress(user.id).catch(() => []) : Promise.resolve([]),
+    ])
+      .then(([course, lessonProgress]) => {
         if (!isCurrent) return;
         if (!Array.isArray(course.modules)) {
           throw new Error('The server returned an invalid course outline.');
         }
         setPreviewDetail(course);
+        setCompletedPreviewLessonIds(new Set(
+          lessonProgress
+            .filter((progress) => progress.status === 'COMPLETED')
+            .map((progress) => progress.lessonId)
+        ));
       })
       .catch((error: unknown) => {
         if (!isCurrent) return;
@@ -209,7 +251,7 @@ const Course = () => {
     return () => {
       isCurrent = false;
     };
-  }, [previewCourseId, previewRequestVersion]);
+  }, [previewCourseId, previewRequestVersion, user?.id]);
 
   const togglePin = (courseId: string, event?: MouseEvent) => {
     if (event) event.stopPropagation();
@@ -242,19 +284,24 @@ const Course = () => {
     setNotice(`Sharing “${course.title}” will be available soon.`);
   };
 
-  const firstPreviewLesson = useMemo(
-    () => previewDetail ? getCourseOutlineLesson(previewDetail) : null,
+  const orderedPreviewLessons = useMemo(
+    () => previewDetail ? getOrderedCourseLessons(previewDetail) : [],
     [previewDetail]
   );
 
-  const openFirstLesson = () => {
-    if (!previewDetail || !firstPreviewLesson) {
+  const resumePreviewLesson = useMemo(
+    () => orderedPreviewLessons.find((lesson) => !completedPreviewLessonIds.has(lesson.id)) ?? orderedPreviewLessons[0] ?? null,
+    [completedPreviewLessonIds, orderedPreviewLessons]
+  );
+
+  const openCurrentLesson = () => {
+    if (!previewDetail || !resumePreviewLesson) {
       setPreviewError('This course does not have a lesson available yet.');
       return;
     }
 
     closePreview();
-    navigate(`/courses/${encodeURIComponent(previewDetail.id)}/lessons/${encodeURIComponent(firstPreviewLesson.id)}`);
+    navigate(`/courses/${encodeURIComponent(previewDetail.id)}/lessons/${encodeURIComponent(resumePreviewLesson.id)}`);
   };
 
   const filteredCourses = useMemo(() => {
@@ -284,7 +331,7 @@ const Course = () => {
   const orderedPreviewModules = previewDetail
     ? [...previewDetail.modules].sort((first, second) => first.orderIndex - second.orderIndex)
     : [];
-  const previewLessonCount = orderedPreviewModules.reduce((total, module) => total + module.lessons.length, 0);
+  const previewLessonCount = orderedPreviewLessons.length;
 
   return (
     <DashboardLayout>
@@ -503,8 +550,8 @@ const Course = () => {
               </button>
               <button
                 type="button"
-                disabled={isPreviewLoading || Boolean(previewError) || !firstPreviewLesson}
-                onClick={openFirstLesson}
+                disabled={isPreviewLoading || Boolean(previewError) || !resumePreviewLesson}
+                onClick={openCurrentLesson}
                 className="flex-[2] rounded-xl border-2 border-blue-700 bg-blue-500 py-3 text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_5px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_3px_0_#1d4ed8] active:translate-y-1 active:shadow-none flex justify-center items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Play className="w-5 h-5 fill-current" /> {previewCourse.isCompleted || previewCourse.progress === 100 ? 'Review Course' : previewCourse.progress === 0 ? 'Start Learning' : 'Continue Course'}

@@ -40,6 +40,7 @@ apiClient.interceptors.request.use((config) => {
 });
 
 function errorMessage(payload: unknown, fallback: string): string {
+  if (typeof payload === "string" && payload.trim()) return payload;
   if (payload && typeof payload === "object") {
     const record = payload as Record<string, unknown>;
     if (typeof record.message === "string") return record.message;
