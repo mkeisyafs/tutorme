@@ -17,6 +17,15 @@ export const UpdateUserBody = t.Object({
   pomodoroEnabled: t.Optional(t.Boolean()),
 });
 
+export const UpdateProfileBody = t.Object({
+  fullName: t.String({ minLength: 1 }),
+});
+
+export const UpdateAccountSecurityBody = t.Object({
+  email: t.String({ format: "email" }),
+  password: t.Optional(t.String({ minLength: 8 })),
+});
+
 export const UserParams = t.Object({
   id: t.String(),
 });
@@ -31,5 +40,7 @@ export const UserListQuery = t.Object({
 
 export type CreateUserBody = typeof CreateUserBody.static;
 export type UpdateUserBody = typeof UpdateUserBody.static;
+export type UpdateProfileBody = typeof UpdateProfileBody.static;
+export type UpdateAccountSecurityBody = typeof UpdateAccountSecurityBody.static;
 export type UserParams = typeof UserParams.static;
 export type UserListQuery = typeof UserListQuery.static;

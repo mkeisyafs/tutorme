@@ -40,6 +40,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return saveSession(response, setSession);
   }, []);
 
+  const updateUser = useCallback((user: AuthUser) => {
+    setSession((currentSession) => {
+      if (!currentSession) return null;
+
+      const updatedSession = { ...currentSession, user };
+      writeStoredSession(updatedSession);
+      return updatedSession;
+    });
+  }, []);
+
   const logout = useCallback(() => {
     clearStoredSession();
     setSession(null);
@@ -52,8 +62,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     isReady: true,
     login,
     register,
+    updateUser,
     logout,
-  }), [login, logout, register, session]);
+  }), [login, logout, register, session, updateUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

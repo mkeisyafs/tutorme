@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, status } from "elysia";
 
 // --- Route Imports ---
 import userRoute from "./models/user/user.route";
@@ -16,6 +16,7 @@ import GenerationController from "./models/generation/generation.route";
 import { swagger } from "@elysiajs/swagger";
 
 const app = new Elysia()
+  .decorate("error", status)
   // Health check at root level (e.g. for external monitoring/pinging)
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
 

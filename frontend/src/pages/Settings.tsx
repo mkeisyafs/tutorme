@@ -2,18 +2,29 @@ import { useState, useEffect, type FormEvent } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { Settings as SettingsIcon, Bell, Shield, Moon, Sun, Trash2, Clock, KeyRound, Mail, Check } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../auth/useAuth';
+import { getPasswordValidationMessage } from '../auth/passwordValidation';
+import { apiRequest, getApiErrorMessage } from '../lib/api';
+
+interface AccountSecurityUser {
+  id: string;
+  email: string;
+  fullName: string;
+}
 
 const Settings = () => {
   const { isDark, toggleTheme } = useTheme();
+  const { user, updateUser } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [pomodoroEnabled, setPomodoroEnabled] = useState(true);
 
   // Security States
-  const [email, setEmail] = useState(() => localStorage.getItem('profileEmail') ?? 'andi@example.com');
+  const [email, setEmail] = useState(() => user?.email ?? '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSecuritySaved, setIsSecuritySaved] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [isSecuritySaving, setIsSecuritySaving] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('tutorme-pomodoro-enabled');
@@ -29,18 +40,47 @@ const Settings = () => {
     window.dispatchEvent(new Event('pomodoro-settings-changed'));
   };
 
-  const saveSecurity = (e: FormEvent) => {
+  const saveSecurity = async (e: FormEvent) => {
     e.preventDefault();
-    if (password && password !== confirmPassword) {
+    const nextEmail = email.trim();
+    if (!nextEmail) {
+      setPasswordError('Email address is required.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
       setPasswordError("Passwords don't match!");
       return;
     }
+
+    if (password) {
+      const passwordValidationError = getPasswordValidationMessage(password);
+      if (passwordValidationError) {
+        setPasswordError(passwordValidationError);
+        return;
+      }
+    }
+
     setPasswordError('');
-    localStorage.setItem('profileEmail', email.trim());
-    setIsSecuritySaved(true);
-    setTimeout(() => setIsSecuritySaved(false), 3000);
-    setPassword('');
-    setConfirmPassword('');
+    setIsSecuritySaving(true);
+    try {
+      const updatedUser = await apiRequest<AccountSecurityUser>('/users/me/security', {
+        method: 'PATCH',
+        body: {
+          email: nextEmail,
+          ...(password ? { password } : {}),
+        },
+      });
+      updateUser(updatedUser);
+      setEmail(updatedUser.email);
+      setPassword('');
+      setConfirmPassword('');
+      setIsSecuritySaved(true);
+    } catch (requestError) {
+      setPasswordError(getApiErrorMessage(requestError, 'We could not update your account security. Please try again.'));
+    } finally {
+      setIsSecuritySaving(false);
+    }
   };
 
   return (
@@ -67,7 +107,7 @@ const Settings = () => {
                   <input 
                     type="email" 
                     value={email} 
-                    onChange={(e) => { setEmail(e.target.value); setIsSecuritySaved(false); }} 
+                    onChange={(e) => { setEmail(e.target.value); setPasswordError(''); setIsSecuritySaved(false); }}
                     required 
                     className="w-full px-4 py-3 rounded-xl border-4 border-green-300 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 font-bold focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-200 dark:focus:ring-green-900/50 transition-all" 
                   />
@@ -97,8 +137,8 @@ const Settings = () => {
               {passwordError && <p className="text-red-600 dark:text-red-400 font-bold text-sm bg-red-100 dark:bg-red-900/30 p-3 rounded-xl border-2 border-red-300">{passwordError}</p>}
               
               <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
-                <button type="submit" className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl font-['Kalam',cursive] text-xl border-4 border-green-700 shadow-[4px_4px_0_#15803d] hover:translate-y-0.5 hover:shadow-[2px_2px_0_#15803d] active:translate-y-1 active:shadow-none transition-all">
-                  Update Security
+                <button disabled={isSecuritySaving} type="submit" className="w-full sm:w-auto bg-green-500 hover:bg-green-600 disabled:cursor-wait disabled:opacity-70 text-white font-bold py-3 px-8 rounded-xl font-['Kalam',cursive] text-xl border-4 border-green-700 shadow-[4px_4px_0_#15803d] hover:translate-y-0.5 hover:shadow-[2px_2px_0_#15803d] active:translate-y-1 active:shadow-none transition-all">
+                  {isSecuritySaving ? 'Updating…' : 'Update Security'}
                 </button>
                 {isSecuritySaved && (
                   <p className="text-sm font-bold text-green-800 dark:text-green-200 bg-green-200 dark:bg-green-800/50 p-3 rounded-xl border-2 border-green-400 flex items-center gap-2">

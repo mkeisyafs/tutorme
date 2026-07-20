@@ -13,6 +13,30 @@ export class UserController {
     return user;
   }
 
+  static async getProfile({ user, error }: any) {
+    const profile = await UserService.getProfile(user.sub);
+    if (!profile) {
+      return error(404, { message: "User not found" });
+    }
+    return profile;
+  }
+
+  static async updateProfile({ body, user, error }: any) {
+    const profile = await UserService.updateProfile(user.sub, body);
+    if (!profile) {
+      return error(404, { message: "User not found" });
+    }
+    return profile;
+  }
+
+  static async updateAccountSecurity({ body, user, error }: any) {
+    if (body.password && (!/[a-zA-Z]/.test(body.password) || !/\d/.test(body.password))) {
+      return error(400, { message: "Password must include both letters and numbers" });
+    }
+
+    return UserService.updateAccountSecurity(user.sub, body);
+  }
+
   static async create({ body }: any) {
     return UserService.create(body);
   }

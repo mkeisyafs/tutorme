@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, status } from "elysia";
 import { jwt } from "@elysiajs/jwt";
 
 // Basic auth middleware that parses the JWT and provides a 'user' object if valid.
@@ -10,7 +10,8 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" })
       secret: process.env.JWT_SECRET || "super_secret_fallback_key",
     })
   )
-  .derive(async ({ jwt, headers }) => {
+  .decorate("error", status)
+  .derive({ as: "global" }, async ({ jwt, headers }) => {
     const authorization = headers.authorization;
     
     if (!authorization || !authorization.startsWith("Bearer ")) {
@@ -33,7 +34,8 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" })
 // Chain this before any protected routes: `.use(requireAuth)`
 export const requireAuth = new Elysia({ name: "require-auth" })
   .use(authMiddleware)
-  .onBeforeHandle(({ user, error }) => {
+  .decorate("error", status)
+  .onBeforeHandle(({ user, error }: any) => {
     if (!user) {
       return error(401, { message: "Unauthorized: Invalid or missing token" });
     }

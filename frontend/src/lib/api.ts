@@ -57,7 +57,7 @@ function fallbackMessageForStatus(status: number): string {
   if (status === 401) return "Email or password is incorrect.";
   if (status === 403) return "You do not have permission to perform this action.";
   if (status === 404) return "The requested service could not be found.";
-  if (status >= 500) return "Invalid Credentials";
+  if (status >= 500) return "The server could not process your request. Please try again later.";
   return "Something went wrong. Please try again.";
 }
 

@@ -1,6 +1,6 @@
 import { status } from "elysia";
 import prisma from "../../lib/prisma";
-import type { CreateUserBody, UpdateUserBody, UserListQuery } from "./user.schema";
+import type { CreateUserBody, UpdateAccountSecurityBody, UpdateProfileBody, UpdateUserBody, UserListQuery } from "./user.schema";
 
 abstract class UserService {
   static async list(query: UserListQuery) {
@@ -61,6 +61,71 @@ abstract class UserService {
 
     if (!user) return status(404, { message: "User not found" });
     return user;
+  }
+
+  static async getProfile(id: string) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        streakCount: true,
+        createdAt: true,
+        _count: {
+          select: {
+            enrollments: true,
+            lessonProgress: { where: { status: "COMPLETED" } },
+          },
+        },
+      },
+    });
+
+    if (!user) return null;
+
+    const { _count, ...profile } = user;
+    return {
+      ...profile,
+      coursesJoined: _count.enrollments,
+      lessonsCompleted: _count.lessonProgress,
+    };
+  }
+
+  static async updateProfile(id: string, data: UpdateProfileBody) {
+    const existingUser = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+    if (!existingUser) return null;
+
+    await prisma.user.update({
+      where: { id },
+      data: { fullName: data.fullName },
+    });
+
+    return this.getProfile(id);
+  }
+
+  static async updateAccountSecurity(id: string, data: UpdateAccountSecurityBody) {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) return status(404, { message: "User not found" });
+
+    if (data.email !== user.email) {
+      const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+      if (existingUser) return status(409, { message: "Email already exists" });
+    }
+
+    const passwordHash = data.password ? await Bun.password.hash(data.password) : undefined;
+
+    return prisma.user.update({
+      where: { id },
+      data: {
+        email: data.email,
+        ...(passwordHash ? { passwordHash } : {}),
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+      },
+    });
   }
 
   static async create(data: CreateUserBody) {
