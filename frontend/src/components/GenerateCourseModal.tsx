@@ -72,28 +72,31 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/20 dark:bg-gray-900/40 backdrop-blur-md transition-opacity" onClick={!isGenerating ? onClose : undefined}>
-      <div className={`bg-pink-50/90 dark:bg-gray-800/90 backdrop-blur-xl p-8 md:p-10 rounded-2xl shadow-[8px_8px_0px_0px_rgba(236,72,153,1)] dark:shadow-[8px_8px_0px_0px_rgba(157,23,77,0.8)] border-4 border-pink-400 dark:border-pink-700 max-w-2xl w-full max-h-[90vh] relative transform ${isGenerating ? 'scale-105' : 'rotate-1 hover:rotate-0'} transition-all duration-300 overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
+      <div className={`relative max-w-2xl w-full max-h-[90vh] flex flex-col transform ${isGenerating ? 'scale-105' : 'rotate-1 hover:rotate-0'} transition-all duration-300`} onClick={(e) => e.stopPropagation()}>
         
         {/* Tape detail */}
-        <div className="absolute top-0 left-1/2 w-24 h-8 bg-pink-400/40 dark:bg-pink-500/40 -translate-x-1/2 -translate-y-4 rounded-sm transform -rotate-2 backdrop-blur-md border border-pink-200/50 dark:border-pink-700/50 pointer-events-none z-10"></div>
-        
-        {/* Close Button */}
-        {!isGenerating && (
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 text-pink-600 dark:text-gray-400 hover:text-pink-900 dark:hover:text-gray-100 font-bold font-['Kalam',cursive] text-2xl transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-pink-200/50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-gray-500 z-20"
-            aria-label="Close"
-          >
-            X
-          </button>
-        )}
+        <div className="absolute top-0 left-1/2 w-24 h-8 bg-pink-400/40 dark:bg-pink-500/40 -translate-x-1/2 -translate-y-4 rounded-sm transform -rotate-2 backdrop-blur-md border border-pink-200/50 dark:border-pink-700/50 pointer-events-none z-20"></div>
 
-        {!isGenerating ? (
-          <>
-            <h2 className="text-4xl font-bold mb-8 font-['Kalam',cursive] text-pink-900 dark:text-pink-300 text-center flex items-center justify-center gap-3">
-              <Sparkles className="w-8 h-8 fill-pink-500 text-pink-500" />
-              Magic Course
-            </h2>
+        <div className="bg-pink-50/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-[8px_8px_0px_0px_rgba(236,72,153,1)] dark:shadow-[8px_8px_0px_0px_rgba(157,23,77,0.8)] border-4 border-pink-400 dark:border-pink-700 w-full flex flex-col relative overflow-hidden">
+          
+          {/* Close Button */}
+          {!isGenerating && (
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 text-pink-600 dark:text-gray-400 hover:text-pink-900 dark:hover:text-gray-100 font-bold font-['Kalam',cursive] text-2xl transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-pink-200/50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-gray-500 z-30"
+              aria-label="Close"
+            >
+              X
+            </button>
+          )}
+
+          <div className="p-8 md:p-10 overflow-y-auto max-h-[90vh] relative z-10">
+            {!isGenerating ? (
+              <>
+                <h2 className="text-4xl font-bold mb-8 font-['Kalam',cursive] text-pink-900 dark:text-pink-300 text-center flex items-center justify-center gap-3 mt-2">
+                  <Sparkles className="w-8 h-8 fill-pink-500 text-pink-500" />
+                  Magic Course
+                </h2>
             
             <form className="space-y-6 font-['Nunito',sans-serif]" onSubmit={(e) => { e.preventDefault(); localStorage.setItem('tutorme-course-quiz-settings', JSON.stringify({ enableEssayQuestions, requireImageSubmission: enableEssayQuestions && requireImageSubmission, quizLength })); setIsGenerating(true); }}>
               <div>
@@ -107,13 +110,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
                 />
                 {modalReferenceFile && <p className="mt-2 flex items-center gap-2 text-sm font-bold text-pink-700 dark:text-pink-300">Attached reference: {modalReferenceFile.name}</p>}
               </div>
-              <section className="rounded-2xl border-2 border-dashed border-pink-300 bg-pink-50/60 p-4 dark:border-pink-700 dark:bg-pink-900/20">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div><h3 className="flex items-center gap-2 font-bold text-pink-900 dark:text-pink-200"><Paperclip className="h-5 w-5" /> Include file for more information</h3><p className="mt-1 text-sm font-semibold text-pink-800 dark:text-pink-300">Add a PDF, DOCX, or TXT file for extra context.</p></div>
-                  <label className="cursor-pointer rounded-xl border-2 border-pink-400 bg-white px-4 py-2.5 font-bold text-pink-700 transition-colors hover:bg-pink-100 dark:bg-gray-800 dark:text-pink-300 dark:hover:bg-pink-900/40"><span className="flex items-center gap-2"><Paperclip className="h-4 w-4" /> Choose file</span><input type="file" className="sr-only" accept=".pdf,.doc,.docx,.txt,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { setModalReferenceFile(event.target.files?.[0] ?? null); event.currentTarget.value = ''; }} /></label>
-                </div>
-                {modalReferenceFile && <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-pink-200 bg-white/80 px-3 py-2.5 dark:border-pink-800 dark:bg-gray-900/70"><span className="flex min-w-0 items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200"><FileText className="h-5 w-5 shrink-0 text-pink-500" /><span className="truncate">{modalReferenceFile.name}</span></span><button type="button" onClick={() => setModalReferenceFile(null)} className="text-sm font-bold text-pink-600 hover:text-pink-800 dark:text-pink-300">Remove</button></div>}
-              </section>
+
               <div>
                 <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">How familiar are you with this skill?</label>
                 <div className="relative">
@@ -184,6 +181,8 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );

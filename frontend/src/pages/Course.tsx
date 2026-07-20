@@ -2,8 +2,25 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import GenerateCourseModal from '../components/GenerateCourseModal';
-import { BookOpen, Search, Filter, Sparkles, Pin, CircleAlert } from 'lucide-react';
-import { myCourses } from '../constant/courses';
+import { BookOpen, Search, Filter, Sparkles, Pin, CircleAlert, Users, X, Share2, Play, Check, Code, Palette, Terminal, Database, Languages } from 'lucide-react';
+import { myCourses, type MyCourse } from '../constant/courses';
+
+const getCourseOutline = (course: MyCourse) => [
+  { title: 'Chapter 1: Start here', lessons: ['Welcome to the course', 'Set your learning goal'] },
+  { title: 'Chapter 2: Core skills', lessons: ['Learn the key concepts', 'Practice with an activity'] },
+  { title: 'Chapter 3: Apply what you learned', lessons: ['Build a small project', 'Review and next steps'] },
+];
+
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'web development': return <Code className="w-3.5 h-3.5" />;
+    case 'design': return <Palette className="w-3.5 h-3.5" />;
+    case 'programming': return <Terminal className="w-3.5 h-3.5" />;
+    case 'data science': return <Database className="w-3.5 h-3.5" />;
+    case 'language': return <Languages className="w-3.5 h-3.5" />;
+    default: return <BookOpen className="w-3.5 h-3.5" />;
+  }
+};
 
 const Course = () => {
   const navigate = useNavigate();
@@ -19,8 +36,11 @@ const Course = () => {
     }
   });
   const [pinLimitReached, setPinLimitReached] = useState(false);
+  const [previewCourse, setPreviewCourse] = useState<MyCourse | null>(null);
+  const [notice, setNotice] = useState('');
 
-  const togglePin = (courseId: number) => {
+  const togglePin = (courseId: number, event?: React.MouseEvent) => {
+    if (event) event.stopPropagation();
     const isPinned = pinnedCourseIds.includes(courseId);
     if (!isPinned && pinnedCourseIds.length === 3) {
       setPinLimitReached(true);
@@ -36,6 +56,12 @@ const Course = () => {
     setPinLimitReached(false);
   };
 
+  const handleShareToLibrary = (course: MyCourse) => {
+    setPreviewCourse(null);
+    setNotice(`"${course.title}" was successfully shared to the Course Library!`);
+    setTimeout(() => setNotice(''), 4000);
+  };
+
   const filteredCourses = myCourses.filter(course => {
     if (activeFilter === 'All') return true;
     if (activeFilter === 'In Progress') return course.progress > 0 && course.progress < 100;
@@ -44,7 +70,6 @@ const Course = () => {
     return true;
   }).sort((firstCourse, secondCourse) => Number(pinnedCourseIds.includes(secondCourse.id)) - Number(pinnedCourseIds.includes(firstCourse.id)));
 
-  // Helper function to map colors to tailwind classes
   const getColorClasses = (color: string) => {
     switch(color) {
       case 'blue': return { bg: 'bg-blue-100 dark:bg-blue-950', border: 'border-blue-300 dark:border-blue-700/50', shadow: 'shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[4px_4px_0px_0px_rgba(30,58,138,0.8)]', tape: 'bg-yellow-400/80 dark:bg-yellow-500/40', text: 'text-blue-900 dark:text-blue-300', barBg: 'bg-blue-200 dark:bg-blue-800/50', barFill: 'bg-blue-500 dark:bg-blue-400' };
@@ -58,7 +83,7 @@ const Course = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto md:mx-0 pb-16">
+      <div className="max-w-6xl mx-auto md:mx-0 pb-16 relative">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
@@ -113,6 +138,13 @@ const Course = () => {
           </div>
         </div>
 
+        {notice && (
+          <div className="mb-7 flex items-center justify-between gap-4 rounded-xl border-2 border-green-300 bg-green-100 dark:border-green-700 dark:bg-green-900/35 p-4 text-green-900 dark:text-green-200 font-bold shadow-[2px_2px_0px_0px_rgba(134,239,172,1)] dark:shadow-[2px_2px_0px_0px_rgba(21,128,61,0.8)]">
+            <span className="flex gap-2 items-center"><Check className="w-5 h-5" /> {notice}</span>
+            <button aria-label="Dismiss message" onClick={() => setNotice('')} className="hover:bg-green-200 dark:hover:bg-green-800 p-1 rounded-md transition-colors"><X className="w-5 h-5" /></button>
+          </div>
+        )}
+
         {pinLimitReached && (
           <div className="mb-6 flex items-center gap-2 rounded-xl border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/30 px-4 py-3 font-bold text-orange-800 dark:text-orange-200">
             <CircleAlert className="w-5 h-5 shrink-0" /> You can pin up to 3 courses. Unpin one to add another.
@@ -125,12 +157,12 @@ const Course = () => {
             const styles = getColorClasses(course.color);
             const isPinned = pinnedCourseIds.includes(course.id);
             return (
-              <div key={course.id} className={`${styles.bg} p-6 rounded-2xl border-2 ${styles.border} ${styles.shadow} transform ${course.rotation} hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2`}>
+              <div key={course.id} onClick={() => setPreviewCourse(course)} className={`${styles.bg} p-6 rounded-2xl border-2 ${styles.border} ${styles.shadow} transform ${course.rotation} hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2 focus:outline-none focus:ring-4 focus:ring-blue-300`}>
                 {/* Sticky Tape */}
                 <div className={`absolute top-0 left-1/2 w-16 h-5 ${styles.tape} -translate-x-1/2 -translate-y-2.5 transform ${course.id % 2 === 0 ? 'rotate-2' : '-rotate-3'} backdrop-blur-sm shadow-sm`}></div>
                 <button
                   type="button"
-                  onClick={() => togglePin(course.id)}
+                  onClick={(e) => togglePin(course.id, e)}
                   aria-label={isPinned ? `Unpin ${course.title}` : `Pin ${course.title}`}
                   aria-pressed={isPinned}
                   className={`absolute right-4 top-4 z-10 rounded-xl border-2 p-2 transition-all ${isPinned ? 'border-yellow-500 bg-yellow-300 text-yellow-900 shadow-[2px_2px_0px_0px_rgba(202,138,4,0.55)]' : 'border-white/60 dark:border-gray-600 bg-white/60 dark:bg-gray-800/70 text-gray-500 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'}`}
@@ -138,11 +170,12 @@ const Course = () => {
                   <Pin className="w-5 h-5" fill={isPinned ? 'currentColor' : 'none'} />
                 </button>
                 
-                <span className={`text-xs font-bold uppercase tracking-wider mb-3 inline-block px-2 py-1 bg-white/50 dark:bg-gray-900/30 rounded-md ${styles.text} w-max`}>
+                <span className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 px-2.5 py-1 bg-white/50 dark:bg-gray-900/30 rounded-md ${styles.text} w-max`}>
+                  {getCategoryIcon(course.category)}
                   {course.category}
                 </span>
                 
-                <h3 className={`text-2xl font-bold font-['Kalam',cursive] ${styles.text} mb-4 flex-grow`}>
+                <h3 className={`text-2xl font-bold font-['Kalam',cursive] ${styles.text} mb-4 flex-grow pr-8`}>
                   {course.title}
                 </h3>
                 
@@ -156,9 +189,10 @@ const Course = () => {
                   </div>
                   
                   <button 
-                    onClick={() => navigate('/lesson')}
-                    className={`w-full py-2 rounded-xl font-bold font-['Kalam',cursive] text-lg border-2 border-transparent transition-all hover:bg-white/40 dark:hover:bg-gray-900/20 ${styles.text} hover:border-white/60 dark:hover:border-gray-900/40`}
+                    onClick={(e) => { e.stopPropagation(); setPreviewCourse(course); }}
+                    className={`w-full py-2 rounded-xl font-bold font-['Kalam',cursive] text-lg border-2 border-transparent transition-all hover:bg-white/40 dark:hover:bg-gray-900/20 ${styles.text} hover:border-white/60 dark:hover:border-gray-900/40 flex items-center justify-center gap-2`}
                   >
+                    <BookOpen className="w-4 h-4" />
                     {course.progress === 100 ? 'Review Course' : course.progress === 0 ? 'Start Learning' : 'Continue'}
                   </button>
                 </div>
@@ -169,6 +203,66 @@ const Course = () => {
 
       </div>
       
+      {/* Course Preview Modal */}
+      {previewCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-4 backdrop-blur-sm" onMouseDown={() => setPreviewCourse(null)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="course-preview-title" onMouseDown={(event) => event.stopPropagation()} className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border-4 border-blue-400 bg-blue-50 p-7 shadow-[8px_8px_0_rgba(96,165,250,1)] dark:border-blue-700 dark:bg-gray-800 md:p-9 flex flex-col">
+            <button type="button" aria-label="Close course preview" onClick={() => setPreviewCourse(null)} className="absolute right-5 top-5 rounded-lg p-1 text-blue-700 transition-colors hover:bg-blue-200 dark:text-blue-300 dark:hover:bg-gray-700"><X /></button>
+            <div className="pr-10">
+              <span className="rounded-md bg-blue-200 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-blue-900 dark:bg-blue-900 dark:text-blue-100 border-2 border-blue-300 dark:border-blue-800">{previewCourse.category}</span>
+              <h2 id="course-preview-title" className="mt-4 font-['Kalam',cursive] text-4xl font-bold leading-tight text-blue-950 dark:text-blue-100">{previewCourse.title}</h2>
+              <p className="mt-3 font-semibold leading-relaxed text-blue-800 dark:text-blue-200">{previewCourse.description}</p>
+              <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-blue-800 dark:text-blue-200">
+                <span className="flex items-center gap-1.5 bg-white/50 dark:bg-gray-900/50 px-3 py-1 rounded-full"><BookOpen className="h-4 w-4" /> {previewCourse.lessons} lessons total</span>
+                <span className="flex items-center gap-1.5 bg-white/50 dark:bg-gray-900/50 px-3 py-1 rounded-full"><Users className="h-4 w-4" /> By {previewCourse.creator}</span>
+              </div>
+            </div>
+            
+            <div className="mt-8 border-t-2 border-blue-200 pt-6 dark:border-blue-800 flex-grow">
+              <div className="flex items-end justify-between gap-3 mb-5">
+                <div>
+                  <h3 className="font-['Kalam',cursive] text-2xl font-bold text-blue-950 dark:text-blue-100">Course Outline</h3>
+                  <p className="font-semibold text-blue-700 dark:text-blue-300">A look at the chapters and lessons.</p>
+                </div>
+                <span className="rounded-full bg-white/70 px-3 py-1 text-sm font-bold text-blue-800 dark:bg-gray-900 dark:text-blue-200">{getCourseOutline(previewCourse).length} chapters</span>
+              </div>
+              <div className="space-y-4">
+                {getCourseOutline(previewCourse).map((chapter, chapterIndex) => (
+                  <article key={chapter.title} className="rounded-2xl border-2 border-blue-200 bg-white/75 p-4 dark:border-blue-800 dark:bg-gray-900/50 shadow-sm">
+                    <h4 className="font-['Kalam',cursive] text-xl font-bold text-blue-950 dark:text-blue-100">{chapter.title}</h4>
+                    <ol className="mt-3 space-y-2">
+                      {chapter.lessons.map((lesson, lessonIndex) => (
+                        <li key={lesson} className="flex items-center gap-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-extrabold text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">{chapterIndex + lessonIndex + 1}</span>
+                          {lesson}
+                        </li>
+                      ))}
+                    </ol>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 pt-6 border-t-2 border-blue-200 dark:border-blue-800">
+              <button 
+                type="button" 
+                onClick={() => handleShareToLibrary(previewCourse)} 
+                className="flex-1 rounded-xl border-2 border-purple-400 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/60 py-3 text-lg font-bold font-['Kalam',cursive] transition-all flex justify-center items-center gap-2 active:translate-y-0.5"
+              >
+                <Share2 className="w-5 h-5" /> Share to Library
+              </button>
+              <button 
+                type="button" 
+                onClick={() => navigate('/lesson')} 
+                className="flex-[2] rounded-xl border-2 border-blue-700 bg-blue-500 py-3 text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_5px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_3px_0_#1d4ed8] active:translate-y-1 active:shadow-none flex justify-center items-center gap-2"
+              >
+                <Play className="w-5 h-5 fill-current" /> {previewCourse.progress === 100 ? 'Review Course' : previewCourse.progress === 0 ? 'Start Learning' : 'Continue Course'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       <GenerateCourseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </DashboardLayout>
   );

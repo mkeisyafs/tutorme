@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play, CheckCircle2, Lock, Plus, Minus, Sidebar, ChevronLeft, ChevronRight, Sparkles, Send, X } from 'lucide-react';
+import { ArrowLeft, Play, CheckCircle2, Lock, Plus, Minus, Sidebar, ChevronLeft, ChevronRight, Sparkles, Send, X, Target, ShieldAlert, Clock, AlertCircle, PlayCircle } from 'lucide-react';
 import PomodoroTimer from '../components/PomodoroTimer';
 
 const Lesson = () => {
@@ -8,6 +8,7 @@ const Lesson = () => {
   const [sidebarExpandedModule, setSidebarExpandedModule] = useState<number | null>(1);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isFinalExamModalOpen, setIsFinalExamModalOpen] = useState(false);
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(288);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [rightSidebarWidth, setRightSidebarWidth] = useState(320);
@@ -170,6 +171,19 @@ const Lesson = () => {
                   )}
                 </div>
               ))}
+              
+              <div 
+                className="mt-2 flex items-center justify-between p-3 rounded-xl border-2 border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors group shadow-sm hover:border-red-300 dark:hover:border-red-700"
+                onClick={() => setIsFinalExamModalOpen(true)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-red-200 dark:bg-red-800/80 p-1.5 rounded-lg border border-red-300 dark:border-red-700 transform -rotate-3 group-hover:rotate-0 transition-transform">
+                    <Target className="w-4 h-4 text-red-700 dark:text-red-300" />
+                  </div>
+                  <span className="font-bold text-[15px] group-hover:text-red-800 dark:group-hover:text-red-300 transition-colors">Course Final Exam</span>
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
           </div>
         </div>
@@ -321,6 +335,62 @@ const Lesson = () => {
           </div>
           </div>
         </aside>
+      )}
+
+      {/* Final Exam Modal */}
+      {isFinalExamModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm transition-all duration-300">
+          <div className="max-w-2xl w-full bg-white dark:bg-gray-800 rounded-3xl p-10 border-4 border-red-300 dark:border-red-700 shadow-[12px_12px_0px_0px_rgba(252,165,165,1)] dark:shadow-[12px_12px_0px_0px_rgba(185,28,28,0.5)] transform -rotate-1 relative animate-in fade-in zoom-in duration-300">
+            <div className="absolute -top-4 left-1/2 w-24 h-8 bg-yellow-400/80 dark:bg-yellow-500/40 transform -translate-x-1/2 -rotate-3 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600 z-10"></div>
+            <div className="absolute -top-6 -right-6 bg-red-100 dark:bg-red-900/50 p-4 rounded-full border-4 border-red-300 dark:border-red-700 shadow-[4px_4px_0px_0px_rgba(252,165,165,1)] dark:shadow-[4px_4px_0px_0px_rgba(185,28,28,0.8)] animate-bounce">
+              <ShieldAlert className="w-12 h-12 text-red-600 dark:text-red-400" />
+            </div>
+            
+            <h1 className="text-6xl font-['Kalam',cursive] font-bold text-red-600 dark:text-red-400 mb-6 mt-2">Module Final Exam</h1>
+            <p className="text-xl text-gray-700 dark:text-gray-300 font-bold mb-8">
+              You are about to begin the final exam for "Back-End Developer: Foundations".
+            </p>
+            
+            <div className="space-y-4 mb-10 bg-red-50 dark:bg-red-950/30 p-6 rounded-2xl border-4 border-red-100 dark:border-red-900/50">
+              <div className="flex items-center gap-4 text-xl font-bold text-gray-700 dark:text-gray-300">
+                <div className="p-2 bg-white dark:bg-gray-800 rounded-xl border-2 border-red-200 dark:border-red-800 shadow-sm">
+                  <Clock className="w-6 h-6 text-red-500" />
+                </div>
+                Time Limit: 10 Minutes
+              </div>
+              <div className="flex items-center gap-4 text-xl font-bold text-gray-700 dark:text-gray-300">
+                <div className="p-2 bg-white dark:bg-gray-800 rounded-xl border-2 border-green-200 dark:border-green-800 shadow-sm">
+                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+                </div>
+                Questions: 6 Mixed Format
+              </div>
+              <div className="flex items-center gap-4 text-xl font-bold text-gray-700 dark:text-gray-300">
+                <div className="p-2 bg-white dark:bg-gray-800 rounded-xl border-2 border-yellow-200 dark:border-yellow-800 shadow-sm">
+                  <AlertCircle className="w-6 h-6 text-yellow-500" />
+                </div>
+                Auto-submits when time runs out
+              </div>
+            </div>
+            
+            <div className="flex gap-6">
+              <button 
+                onClick={() => setIsFinalExamModalOpen(false)}
+                className="flex-1 px-6 py-4 rounded-2xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-4 border-gray-300 dark:border-gray-600 shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[4px_4px_0px_0px_rgba(75,85,99,1)] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(156,163,175,1)] dark:hover:shadow-[6px_6px_0px_0px_rgba(75,85,99,1)] active:translate-y-1 active:shadow-none text-xl flex justify-center items-center gap-2"
+              >
+                <ArrowLeft className="w-6 h-6" /> Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setIsFinalExamModalOpen(false);
+                  navigate('/final-exam');
+                }}
+                className="flex-[2] px-6 py-4 rounded-2xl font-bold text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 border-4 border-red-700 shadow-[6px_6px_0px_0px_rgba(153,27,27,1)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(153,27,27,1)] active:translate-y-2 active:shadow-none text-2xl font-['Kalam',cursive] tracking-wider flex justify-center items-center gap-3"
+              >
+                <PlayCircle className="w-8 h-8" /> Start Exam
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

@@ -14,6 +14,12 @@ import {
   Upload,
   Users,
   X,
+  Code,
+  Palette,
+  Database,
+  Languages,
+  Brain,
+  Heart
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { myCourses, type CourseColor } from '../constant/courses';
@@ -94,15 +100,25 @@ const getCourseOutline = (course: LibraryCourse): CourseChapter[] => courseOutli
   { title: 'Chapter 3: Apply what you learned', lessons: ['Build a small project', 'Review and next steps'] },
 ];
 
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'web development': return <Code className="w-3.5 h-3.5" />;
+    case 'design': return <Palette className="w-3.5 h-3.5" />;
+    case 'data science': return <Database className="w-3.5 h-3.5" />;
+    case 'languages': return <Languages className="w-3.5 h-3.5" />;
+    case 'learning': return <Brain className="w-3.5 h-3.5" />;
+    case 'life skills': return <Heart className="w-3.5 h-3.5" />;
+    default: return <BookOpen className="w-3.5 h-3.5" />;
+  }
+};
+
 const Library = () => {
   const navigate = useNavigate();
-  const fileInput = useRef<HTMLInputElement>(null);
   const [courses, setCourses] = useState(starterCourses);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All topics');
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const [selectedFile, setSelectedFile] = useState('');
   const [notice, setNotice] = useState('');
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [courseSearch, setCourseSearch] = useState('');
@@ -118,10 +134,6 @@ const Library = () => {
     const haystack = `${course.title} ${course.description} ${course.category} ${course.creator}`.toLowerCase();
     return matchesCategory && haystack.includes(query.toLowerCase());
   }), [category, courses, query]);
-
-  const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
-    setSelectedFile(event.target.files?.[0]?.name ?? '');
-  };
 
   const publishCourse = (event: FormEvent) => {
     event.preventDefault();
@@ -146,7 +158,6 @@ const Library = () => {
     setSelectedCourseId(null);
     setCourseSearch('');
     setFormError('');
-    setSelectedFile('');
     setNotice('Your course is now in the library for other learners to reuse.');
   };
 
@@ -217,7 +228,10 @@ const Library = () => {
             return <article key={course.id} role="button" tabIndex={0} onClick={() => setPreviewCourse(course)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setPreviewCourse(course); } }} className={`${style.card} ${style.border} border-2 rounded-2xl p-6 relative flex flex-col shadow-[4px_4px_0_rgba(100,116,139,.35)] ${index % 2 ? '-rotate-1' : 'rotate-1'} hover:rotate-0 transition-transform cursor-pointer focus:outline-none focus:ring-4 focus:ring-purple-300`}>
               <div className={`absolute -top-2 left-1/2 h-5 w-16 -translate-x-1/2 ${style.tape} ${index % 2 ? 'rotate-3' : '-rotate-3'}`} />
               <div className="flex items-start justify-between gap-3 mb-4">
-                <span className={`rounded-md bg-white/55 dark:bg-black/20 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide ${style.text}`}>{course.category}</span>
+                <span className={`rounded-md bg-white/55 dark:bg-black/20 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide flex items-center gap-1.5 ${style.text}`}>
+                  {getCategoryIcon(course.category)}
+                  {course.category}
+                </span>
                 {course.isMine && <span className="text-xs font-bold text-purple-700 dark:text-purple-300">Shared by you</span>}
               </div>
               <h2 className={`font-['Kalam',cursive] text-2xl font-bold leading-tight ${style.text}`}>{course.title}</h2>
@@ -255,8 +269,6 @@ const Library = () => {
               {formError && <p className="mt-2 text-sm font-bold text-red-600 dark:text-red-400">{formError}</p>}
             </div>
             {selectedCourse && <div className="rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-purple-100/70 dark:bg-purple-900/30 p-4"><p className="font-['Kalam',cursive] text-xl font-bold text-purple-950 dark:text-purple-100">{selectedCourse.title}</p><p className="mt-1 text-sm font-semibold text-purple-800 dark:text-purple-200">{selectedCourse.category} · {selectedCourse.lessons} lessons · {selectedCourse.progress}% complete</p></div>}
-            <input ref={fileInput} onChange={handleFile} type="file" accept=".pdf,.doc,.docx,.txt,.json" className="hidden" />
-            <button type="button" onClick={() => fileInput.current?.click()} className="w-full rounded-xl border-2 border-dashed border-purple-400 p-4 text-purple-800 dark:text-purple-200 font-bold hover:bg-purple-100 dark:hover:bg-purple-900/30 flex items-center justify-center gap-2"><FileUp className="w-5 h-5" /> {selectedFile || 'Attach an outline (optional)'}</button>
           </div>
           <button type="submit" className="mt-7 w-full rounded-xl border-2 border-purple-700 bg-purple-500 py-3 text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_5px_0_#6b21a8] hover:translate-y-0.5 hover:shadow-[0_3px_0_#6b21a8] transition-all">Publish to library</button>
           <p className="mt-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 flex justify-center gap-1 items-center"><Clock3 className="w-3.5 h-3.5" /> Course details stay on this device in this demo.</p>
