@@ -91,6 +91,54 @@ abstract class UserService {
     };
   }
 
+  static async getDashboard(id: string) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        fullName: true,
+        streakCount: true,
+        enrollments: {
+          take: 5,
+          orderBy: { lastAccessedAt: "desc" },
+          select: {
+            courseId: true,
+            progressPercentage: true,
+            isCompleted: true,
+            lastAccessedAt: true,
+            course: {
+              select: {
+                title: true,
+                description: true,
+                category: true,
+                color: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) return null;
+
+    const courses = user.enrollments.map((enrollment) => ({
+      id: enrollment.courseId,
+      title: enrollment.course.title,
+      description: enrollment.course.description,
+      category: enrollment.course.category,
+      color: enrollment.course.color,
+      progressPercentage: enrollment.progressPercentage,
+      isCompleted: enrollment.isCompleted,
+      lastAccessedAt: enrollment.lastAccessedAt,
+    }));
+
+    return {
+      fullName: user.fullName,
+      streakCount: user.streakCount,
+      continueCourse: courses.find((course) => !course.isCompleted) ?? courses[0] ?? null,
+      recentCourses: courses.slice(0, 2),
+    };
+  }
+
   static async updateProfile(id: string, data: UpdateProfileBody) {
     const existingUser = await prisma.user.findUnique({ where: { id }, select: { id: true } });
     if (!existingUser) return null;

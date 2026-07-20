@@ -12,6 +12,7 @@ import { requireAuth } from "../../middleware/auth";
 
 const profileRoute = new Elysia()
   .use(requireAuth)
+  .get("/me/dashboard", UserController.getDashboard)
   .get("/me", UserController.getProfile)
   .patch("/me", UserController.updateProfile, { body: UpdateProfileBody })
   .patch("/me/security", UserController.updateAccountSecurity, { body: UpdateAccountSecurityBody });

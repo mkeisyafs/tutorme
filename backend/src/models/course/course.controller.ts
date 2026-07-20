@@ -1,6 +1,30 @@
 import CourseService from "./course.service";
 
 export class CourseController {
+  static async getLibrary({ query, user }: any) {
+    return CourseService.listLibrary(user.sub, query);
+  }
+
+  static async getMine({ user }: any) {
+    return CourseService.listMine(user.sub);
+  }
+
+  static async share({ params, user, error }: any) {
+    const course = await CourseService.share(user.sub, params.id);
+    if (!course) {
+      return error(404, { message: "Course not found or you do not own it" });
+    }
+    return course;
+  }
+
+  static async reuse({ params, user, error }: any) {
+    const enrollment = await CourseService.reuse(user.sub, params.id);
+    if (!enrollment) {
+      return error(404, { message: "Shared course not found" });
+    }
+    return enrollment;
+  }
+
   static async getAll({ query }: any) {
     return CourseService.list(query);
   }

@@ -21,6 +21,14 @@ export class UserController {
     return profile;
   }
 
+  static async getDashboard({ user, error }: any) {
+    const dashboard = await UserService.getDashboard(user.sub);
+    if (!dashboard) {
+      return error(404, { message: "User not found" });
+    }
+    return dashboard;
+  }
+
   static async updateProfile({ body, user, error }: any) {
     const profile = await UserService.updateProfile(user.sub, body);
     if (!profile) {

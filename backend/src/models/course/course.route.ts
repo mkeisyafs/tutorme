@@ -6,8 +6,17 @@ import {
   CourseParams,
   CourseListQuery,
 } from "./course.schema";
+import { requireAuth } from "../../middleware/auth";
+
+const libraryRoute = new Elysia()
+  .use(requireAuth)
+  .get("/library", CourseController.getLibrary, { query: CourseListQuery })
+  .get("/mine", CourseController.getMine)
+  .patch("/:id/share", CourseController.share, { params: CourseParams })
+  .post("/:id/reuse", CourseController.reuse, { params: CourseParams });
 
 export const courseRoute = new Elysia({ prefix: "/courses" })
+  .use(libraryRoute)
   .get("/", CourseController.getAll, { query: CourseListQuery })
   .get("/:id", CourseController.getById, { params: CourseParams })
   .post("/", CourseController.create, { body: CreateCourseBody })
