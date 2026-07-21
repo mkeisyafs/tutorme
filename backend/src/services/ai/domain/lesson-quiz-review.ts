@@ -219,6 +219,6 @@ function explanationsFor(question: ReviewQuestion, options: readonly string[]): 
 
 function fallbackExplanation(isCorrect: boolean): string {
   return isCorrect
-    ? "This is the server-authoritative correct option."
-    : "This option is not the server-authoritative correct answer.";
+    ? "This is the correct answer."
+    : "This is not the correct answer.";
 }

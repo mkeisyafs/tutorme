@@ -168,9 +168,8 @@ const CourseAnalysis = () => {
           <section className="w-full max-w-4xl mx-auto rounded-3xl border-4 border-green-300 bg-white p-8 shadow-[10px_10px_0_#4ade80] dark:border-green-800 dark:bg-gray-800 sm:p-11">
         <div className="text-center">
           <Award className="mx-auto h-14 w-14 text-green-500" />
-          <p className="mt-4 font-bold uppercase tracking-wider text-green-700 dark:text-green-300">{summary?.quiz.type === 'FINAL_EXAM' ? 'Final exam result' : 'Lesson quiz result'}</p>
+          <p className="mt-4 font-bold uppercase tracking-wider text-green-700 dark:text-green-300">{summary?.quiz.type === 'FINAL_EXAM' ? 'Final exam' : 'Quiz result'}</p>
           <h1 className="mt-2 font-['Kalam',cursive] text-4xl font-bold text-gray-900 dark:text-white">{summary?.quiz.title || 'Assessment result'}</h1>
-          <p className="mt-3 font-semibold text-gray-600 dark:text-gray-300">Your result was calculated and stored by the server.</p>
         </div>
 
         <div className="mt-9 grid gap-4 sm:grid-cols-3">
@@ -184,17 +183,22 @@ const CourseAnalysis = () => {
             <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0" />
             <div>
               <h2 className="font-['Kalam',cursive] text-2xl font-bold">{passed ? 'Great work!' : 'Keep practicing'}</h2>
-              <p className="mt-1 font-semibold">{passed ? 'You reached the passing score for this assessment.' : 'Review the lesson material and try the next practice opportunity when it is available.'}</p>
+              <p className="mt-1 font-semibold">{passed ? 'You passed this assessment.' : 'Review the lesson material and try again next time.'}</p>
             </div>
           </div>
         </div>
 
-        {summary?.aiFeedback && <section className="mt-7 rounded-2xl border-2 border-pink-300 bg-pink-50 p-5 dark:border-pink-800 dark:bg-pink-950/30"><h2 className="font-['Kalam',cursive] text-2xl font-bold text-pink-950 dark:text-pink-100">Tutor feedback</h2><p className="mt-2 whitespace-pre-wrap font-semibold leading-relaxed text-pink-900 dark:text-pink-200">{summary.aiFeedback}</p></section>}
+        {summary?.aiFeedback && (
+          <div className="mt-6 rounded-2xl border-2 border-blue-200 bg-blue-50/60 p-5 dark:border-blue-800 dark:bg-blue-950/20">
+            <p className="text-xs font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400">AI Feedback</p>
+            <p className="mt-2 whitespace-pre-wrap font-medium leading-relaxed text-gray-700 dark:text-gray-200">{summary.aiFeedback}</p>
+          </div>
+        )}
 
         {isChapterQuiz && <AssessmentReview review={summary?.review} userAnswers={summary?.userAnswers} />}
 
-        <p className="mt-7 text-center text-sm font-bold text-gray-500 dark:text-gray-400">{submittedAt ? 'Submitted ' + submittedAt : ''}</p>
-        {error && <p role="alert" className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-center font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">The saved result is shown, but refreshing it failed: {error}</p>}
+        {submittedAt && <p className="mt-7 text-center text-sm text-gray-400 dark:text-gray-500">{submittedAt}</p>}
+        {error && <p role="alert" className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-center font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">{error}</p>}
         {returnError && <p role="alert" aria-live="polite" className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{returnError}</p>}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <button onClick={() => void handleBackToCourse()} disabled={isReturning || isNavigatingNext || !summary} className="inline-flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-wait disabled:opacity-70">{isReturning ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />} {isReturning ? 'Returning…' : 'Back to course'}</button>
