@@ -211,11 +211,22 @@ function normalizeModelResponse(value: unknown): unknown {
       if (!result.courseLevel || !["Beginner", "Intermediate", "Advanced"].includes(result.courseLevel as string)) {
         result.courseLevel = "Beginner";
       }
+      if (!result.courseDescription) {
+        result.courseDescription = (result.courseTitle as string) || "A comprehensive course on this topic.";
+      }
       if (Array.isArray(result.modules)) {
         for (const mod of result.modules) {
           if (typeof mod === "object" && mod !== null) {
             if (!mod.description) {
               mod.description = (mod.title as string) || "No description provided.";
+            }
+            if (Array.isArray(mod.lessons)) {
+              mod.lessons = mod.lessons.map((lesson: any) => {
+                if (typeof lesson === "string") {
+                  return { title: lesson, description: lesson };
+                }
+                return lesson;
+              });
             }
           }
         }
