@@ -18,6 +18,7 @@ import {
   Languages,
   Brain,
   Heart,
+  CircleAlert,
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
@@ -191,7 +192,71 @@ const Library = () => {
 
       {showUpload && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" onMouseDown={() => setShowUpload(false)}><section role="dialog" aria-modal="true" aria-labelledby="share-course-title" onMouseDown={(event) => event.stopPropagation()} className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-4 border-purple-400 dark:border-purple-700 bg-purple-50 dark:bg-gray-800 p-7 md:p-9 shadow-[8px_8px_0_#a855f7]"><button type="button" aria-label="Close sharing dialog" onClick={() => setShowUpload(false)} className="absolute right-5 top-5 rounded-lg p-1 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-gray-700"><X /></button><h2 id="share-course-title" className="font-['Kalam',cursive] text-3xl font-bold text-purple-950 dark:text-purple-100">Share your course</h2><p className="mt-1 text-purple-800 dark:text-purple-200 font-semibold">Choose a course you created to publish it to the community.</p><div className="mt-7"><label className="block font-bold text-gray-700 dark:text-gray-200">Select a course from My Courses</label><div className="relative mt-1.5"><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500" /><input value={courseSearch} onChange={(event) => { setCourseSearch(event.target.value); setSelectedCourseId(null); setFormError(''); }} placeholder="Search your courses..." className="w-full rounded-xl border-2 border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-900 py-3 pl-12 pr-4 font-semibold focus:outline-none focus:border-purple-500" /></div><div className="mt-2 max-h-52 overflow-y-auto rounded-xl border-2 border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-900">{selectableCourses.length ? selectableCourses.map((course) => <button key={course.id} type="button" onClick={() => { setSelectedCourseId(course.id); setFormError(''); }} className={`flex w-full items-center justify-between gap-3 border-b border-purple-100 dark:border-gray-700 px-4 py-3 text-left font-bold text-gray-800 dark:text-gray-100 last:border-b-0 hover:bg-purple-50 dark:hover:bg-gray-800 ${selectedCourseId === course.id ? 'bg-purple-100 dark:bg-purple-900/30' : ''}`}><span>{course.title}</span><span className="text-xs text-purple-700 dark:text-purple-300">{course.isPublic ? 'Already shared' : course.category}</span></button>) : <p className="px-4 py-3 font-semibold text-gray-500">No matching courses.</p>}</div>{selectedCourse && <div className="mt-4 rounded-xl border-2 border-purple-200 dark:border-purple-700 bg-purple-100/70 dark:bg-purple-900/30 p-4"><p className="font-['Kalam',cursive] text-xl font-bold text-purple-950 dark:text-purple-100">{selectedCourse.title}</p><p className="mt-1 text-sm font-semibold text-purple-800 dark:text-purple-200">{selectedCourse.category} · {selectedCourse.lessons} lessons</p></div>}{formError && <p role="alert" className="mt-3 text-sm font-bold text-red-600 dark:text-red-400">{formError}</p>}</div><button type="button" disabled={isPublishing} onClick={() => void publishCourse()} className="mt-7 w-full rounded-xl border-2 border-purple-700 bg-purple-500 py-3 text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_5px_0_#6b21a8] hover:translate-y-0.5 hover:shadow-[0_3px_0_#6b21a8] transition-all disabled:cursor-wait disabled:opacity-70">{isPublishing ? 'Publishing…' : 'Publish to library'}</button></section></div>}
 
-      {previewCourse && <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-4 backdrop-blur-sm" onMouseDown={() => setPreviewCourse(null)}><section role="dialog" aria-modal="true" aria-labelledby="course-preview-title" onMouseDown={(event) => event.stopPropagation()} className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border-4 border-purple-400 bg-purple-50 p-7 shadow-[8px_8px_0_#a855f7] dark:border-purple-700 dark:bg-gray-800 md:p-9"><button type="button" aria-label="Close course preview" onClick={() => setPreviewCourse(null)} className="absolute right-5 top-5 rounded-lg p-1 text-purple-700 transition-colors hover:bg-purple-200 dark:text-purple-300 dark:hover:bg-gray-700"><X /></button><div className="pr-10"><span className="rounded-md bg-purple-200 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-purple-900 dark:bg-purple-900 dark:text-purple-100">{previewCourse.category}</span><h2 id="course-preview-title" className="mt-4 font-['Kalam',cursive] text-4xl font-bold leading-tight text-purple-950 dark:text-purple-100">{previewCourse.title}</h2><p className="mt-3 font-semibold leading-relaxed text-purple-800 dark:text-purple-200">{previewCourse.description}</p></div><div className="mt-8 border-t-2 border-purple-200 pt-6 dark:border-purple-800"><h3 className="font-['Kalam',cursive] text-2xl font-bold text-purple-950 dark:text-purple-100">Course preview</h3>{isPreviewLoading && <p className="mt-4 flex items-center gap-2 font-bold text-purple-700 dark:text-purple-300"><LoaderCircle className="w-5 h-5 animate-spin" /> Loading chapters…</p>}{previewError && <p role="alert" className="mt-4 rounded-xl border-2 border-red-300 bg-red-100 p-3 font-bold text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-200">{previewError}</p>}{!isPreviewLoading && !previewError && <div className="mt-5 space-y-4">{previewModules.length ? previewModules.map((module, moduleIndex) => <article key={module.id} className="rounded-2xl border-2 border-purple-200 bg-white/75 p-4 dark:border-purple-800 dark:bg-gray-900/50"><h4 className="font-['Kalam',cursive] text-xl font-bold text-purple-950 dark:text-purple-100">{module.title}</h4><ol className="mt-3 space-y-2">{module.lessons.map((lesson, lessonIndex) => <li key={lesson.id} className="flex items-center gap-3 text-sm font-semibold text-gray-700 dark:text-gray-200"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-100 text-xs font-extrabold text-purple-700 dark:bg-purple-900/60 dark:text-purple-200">{moduleIndex + lessonIndex + 1}</span>{lesson.title}</li>)}</ol></article>) : <p className="font-semibold text-purple-700 dark:text-purple-300">This course does not have any published lessons yet.</p>}</div>}</div><button type="button" onClick={() => { setPreviewCourse(null); void reuseCourse(previewCourse); }} className="mt-8 w-full rounded-xl border-2 border-purple-700 bg-purple-500 py-3 text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_5px_0_#6b21a8] transition-all hover:translate-y-0.5 hover:shadow-[0_3px_0_#6b21a8]">{previewCourse.isMine || previewCourse.isEnrolled ? 'Open course' : 'Reuse this course'}</button></section></div>}
+      {previewCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-2 sm:p-4 pt-16 sm:pt-4 backdrop-blur-sm" onMouseDown={() => setPreviewCourse(null)}>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="course-preview-title"
+            onMouseDown={(event) => event.stopPropagation()}
+            className="relative max-h-[80vh] sm:max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border-4 border-purple-400 bg-purple-50 p-4 sm:p-7 shadow-[8px_8px_0_#a855f7] dark:border-purple-700 dark:bg-gray-800 md:p-9 flex flex-col"
+          >
+            <button type="button" aria-label="Close course preview" onClick={() => setPreviewCourse(null)} className="absolute right-3 top-3 sm:right-5 sm:top-5 z-10 rounded-lg p-1 text-purple-700 transition-colors hover:bg-purple-200 dark:text-purple-300 dark:hover:bg-gray-700"><X /></button>
+            
+            <div className="pr-8 sm:pr-10 shrink-0">
+              <span className="rounded-md bg-purple-200 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-purple-900 dark:bg-purple-900 dark:text-purple-100">{previewCourse.category}</span>
+              <h2 id="course-preview-title" className="mt-1.5 sm:mt-4 font-['Kalam',cursive] text-lg sm:text-3xl md:text-4xl font-bold leading-snug sm:leading-tight text-purple-950 dark:text-purple-100">{previewCourse.title}</h2>
+              <p className="mt-1.5 sm:mt-3 text-xs sm:text-base font-semibold leading-normal sm:leading-relaxed text-purple-800 dark:text-purple-200 line-clamp-3 sm:line-clamp-none">{previewCourse.description}</p>
+            </div>
+
+            <div className="mt-3 sm:mt-6 border-t-2 border-purple-200 pt-3 sm:pt-4 dark:border-purple-800 flex-1 flex flex-col min-h-0">
+              <h3 className="font-['Kalam',cursive] text-lg sm:text-2xl font-bold text-purple-950 dark:text-purple-100 mb-2 shrink-0">Course preview</h3>
+              
+              {isPreviewLoading ? (
+                <div className="flex min-h-36 sm:min-h-44 flex-col items-center justify-center text-center font-bold text-purple-700 dark:text-purple-300">
+                  <LoaderCircle className="h-8 w-8 sm:h-9 sm:w-9 animate-spin text-purple-500" />
+                  <p className="mt-3 text-sm sm:text-base">Loading chapters…</p>
+                </div>
+              ) : previewError ? (
+                <div role="alert" className="rounded-2xl border-2 border-red-300 bg-red-50 p-4 sm:p-5 text-center font-bold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+                  <CircleAlert className="mx-auto h-7 w-7" />
+                  <p className="mt-2 text-sm sm:text-base">{previewError}</p>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto min-h-0 pr-1 sm:pr-2 space-y-3 sm:space-y-4 pb-2 custom-scrollbar">
+                  {previewModules.length ? (
+                    previewModules.map((module, moduleIndex) => (
+                      <article key={module.id} className="rounded-2xl border-2 border-purple-200 bg-white/75 p-3.5 sm:p-4 dark:border-purple-800 dark:bg-gray-900/50 shadow-sm">
+                        <h4 className="font-['Kalam',cursive] text-lg sm:text-xl font-bold text-purple-950 dark:text-purple-100">{module.title}</h4>
+                        <ol className="mt-2.5 sm:mt-3 space-y-2">
+                          {module.lessons.map((lesson, lessonIndex) => (
+                            <li key={lesson.id} className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">
+                              <span className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[0.7rem] sm:text-xs font-extrabold text-purple-700 dark:bg-purple-900/60 dark:text-purple-200">{moduleIndex + lessonIndex + 1}</span>
+                              <span className="flex-1">{lesson.title}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </article>
+                    ))
+                  ) : (
+                    <p className="rounded-xl border-2 border-dashed border-purple-300 bg-white/70 p-4 sm:p-5 text-center font-bold text-purple-700 dark:border-purple-800 dark:bg-gray-900/50 dark:text-purple-200">This course does not have any published lessons yet.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-2.5 sm:mt-4 pt-2.5 sm:pt-4 border-t-2 border-purple-200 dark:border-purple-800 shrink-0 bg-purple-50 dark:bg-gray-800">
+              <button
+                type="button"
+                onClick={() => { setPreviewCourse(null); void reuseCourse(previewCourse); }}
+                className="w-full rounded-xl border-2 border-purple-700 bg-purple-500 py-2.5 sm:py-3 text-lg sm:text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_4px_0_#6b21a8] sm:shadow-[0_5px_0_#6b21a8] transition-all hover:translate-y-0.5 hover:shadow-[0_3px_0_#6b21a8] active:translate-y-1 active:shadow-none flex justify-center items-center gap-2"
+              >
+                {previewCourse.isMine || previewCourse.isEnrolled ? 'Open course' : 'Reuse this course'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

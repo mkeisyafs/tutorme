@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import GenerateCourseModal from '../components/GenerateCourseModal';
+import { useCourseGeneration } from '../context/CourseGenerationContext';
 import { Play, Flame, Clock, Sparkles, LoaderCircle, BookOpen } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
@@ -26,7 +26,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [topic, setTopic] = useState('');
-  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const { openModal } = useCourseGeneration();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -59,7 +59,7 @@ const Home = () => {
 
   const handleGenerate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsGenerateModalOpen(true);
+    openModal(topic);
   };
 
   const displayName = dashboard?.fullName ?? user?.fullName ?? 'Learner';
@@ -95,10 +95,10 @@ const Home = () => {
           <h2 className="text-3xl font-['Kalam',cursive] font-bold text-blue-900 dark:text-blue-300 mb-6 flex items-center gap-3"><Play className="w-8 h-8 fill-blue-500 text-blue-500" /> Pick up where you left off</h2>
           <div className="bg-blue-100 dark:bg-blue-900/40 p-8 rounded-3xl border-4 border-blue-400 dark:border-blue-700/50 shadow-[8px_8px_0px_0px_rgba(96,165,250,1)] dark:shadow-[8px_8px_0px_0px_rgba(30,58,138,1)] transform -rotate-1 relative">
             <div className="absolute -top-4 -right-4 w-12 h-6 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm" />
-            {isLoading ? <div className="flex items-center gap-3 py-5 font-bold text-blue-700 dark:text-blue-300"><LoaderCircle className="w-7 h-7 animate-spin" /> Loading your course…</div> : continueCourse ? <div className="flex flex-col md:flex-row justify-between gap-8 items-start md:items-center"><div className="flex-grow"><span className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block">{continueCourse.category}</span><h3 className="text-3xl font-bold font-['Kalam',cursive] text-blue-950 dark:text-blue-200 mb-2">{continueCourse.title}</h3><p className="text-blue-800 dark:text-blue-300/80 font-medium mb-6">{continueCourse.description}</p><div className="w-full bg-blue-200 dark:bg-blue-800/50 rounded-full h-4 mb-2 border border-blue-300 dark:border-blue-700"><div className="bg-blue-500 dark:bg-blue-400 h-full rounded-full transition-all" style={{ width: `${clampProgress(continueCourse.progressPercentage)}%` }} /></div><div className="text-blue-700 dark:text-blue-400 font-bold text-sm">{clampProgress(continueCourse.progressPercentage)}% Completed</div></div><button onClick={() => navigate(`/courses/${continueCourse.id}`)} className="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-xl shadow-[0_8px_0px_0px_rgba(29,78,216,1)] dark:shadow-[0_8px_0px_0px_rgba(30,58,138,1)] transform transition hover:translate-y-1 hover:shadow-[0_4px_0px_0px_rgba(29,78,216,1)] dark:hover:shadow-[0_4px_0px_0px_rgba(30,58,138,1)] flex-shrink-0 w-full md:w-auto text-xl font-['Kalam',cursive] border-2 border-blue-700 dark:border-blue-800">Continue Learning</button></div> : <div className="py-5"><h3 className="text-3xl font-bold font-['Kalam',cursive] text-blue-950 dark:text-blue-200 mb-2">No course in progress yet</h3><p className="text-blue-800 dark:text-blue-300/80 font-medium mb-6">Generate a new course or reuse one from the library to start learning.</p><button onClick={() => setIsGenerateModalOpen(true)} className="bg-blue-500 text-white font-bold py-3 px-6 rounded-xl font-['Kalam',cursive] text-xl border-2 border-blue-700">Create your first course</button></div>}
+            {isLoading ? <div className="flex items-center gap-3 py-5 font-bold text-blue-700 dark:text-blue-300"><LoaderCircle className="w-7 h-7 animate-spin" /> Loading your course…</div> : continueCourse ? <div className="flex flex-col md:flex-row justify-between gap-8 items-start md:items-center"><div className="flex-grow"><span className="bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-sm font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block">{continueCourse.category}</span><h3 className="text-3xl font-bold font-['Kalam',cursive] text-blue-950 dark:text-blue-200 mb-2">{continueCourse.title}</h3><p className="text-blue-800 dark:text-blue-300/80 font-medium mb-6">{continueCourse.description}</p><div className="w-full bg-blue-200 dark:bg-blue-800/50 rounded-full h-4 mb-2 border border-blue-300 dark:border-blue-700"><div className="bg-blue-500 dark:bg-blue-400 h-full rounded-full transition-all" style={{ width: `${clampProgress(continueCourse.progressPercentage)}%` }} /></div><div className="text-blue-700 dark:text-blue-400 font-bold text-sm">{clampProgress(continueCourse.progressPercentage)}% Completed</div></div><button onClick={() => navigate(`/courses/${continueCourse.id}`)} className="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-xl shadow-[0_8px_0px_0px_rgba(29,78,216,1)] dark:shadow-[0_8px_0px_0px_rgba(30,58,138,1)] transform transition hover:translate-y-1 hover:shadow-[0_4px_0px_0px_rgba(29,78,216,1)] dark:hover:shadow-[0_4px_0px_0px_rgba(30,58,138,1)] flex-shrink-0 w-full md:w-auto text-xl font-['Kalam',cursive] border-2 border-blue-700 dark:border-blue-800">Continue Learning</button></div> : <div className="py-5"><h3 className="text-3xl font-bold font-['Kalam',cursive] text-blue-950 dark:text-blue-200 mb-2">No course in progress yet</h3><p className="text-blue-800 dark:text-blue-300/80 font-medium mb-6">Generate a new course or reuse one from the library to start learning.</p><button onClick={() => openModal()} className="bg-blue-500 text-white font-bold py-3 px-6 rounded-xl font-['Kalam',cursive] text-xl border-2 border-blue-700">Create your first course</button></div>}
           </div>
         </section>
-
+ 
         <section>
           <h2 className="text-3xl font-['Kalam',cursive] font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-3"><Clock className="w-7 h-7 text-gray-600 dark:text-gray-400" /> Recent Courses</h2>
           {isLoading ? <div className="py-10 flex items-center gap-3 font-bold text-gray-600 dark:text-gray-300"><LoaderCircle className="w-6 h-6 animate-spin" /> Loading recent courses…</div> : dashboard?.recentCourses.length ? <div className="grid md:grid-cols-2 gap-6">{dashboard.recentCourses.map((course, index) => {
@@ -108,9 +108,8 @@ const Home = () => {
           })}</div> : <div className="text-center p-4 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 py-14"><BookOpen className="mx-auto mb-3 w-10 h-10 text-gray-400" /><h3 className="font-['Kalam',cursive] text-2xl font-bold text-gray-700 dark:text-gray-200">Your recent courses will appear here</h3><p className="mt-2 font-semibold text-gray-500 dark:text-gray-400">Start or reuse a course to see it on your dashboard.</p></div>}
         </section>
       </div>
-      <GenerateCourseModal isOpen={isGenerateModalOpen} onClose={() => setIsGenerateModalOpen(false)} initialTopic={topic} />
     </DashboardLayout>
   );
 };
-
+ 
 export default Home;

@@ -1,7 +1,7 @@
 import { type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import GenerateCourseModal from '../components/GenerateCourseModal';
+import { useCourseGeneration } from '../context/CourseGenerationContext';
 import { BookOpen, Search, Filter, Sparkles, Pin, CircleAlert, Users, X, Share2, Play, Check, Code, Palette, Terminal, Database, Languages, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
@@ -78,7 +78,7 @@ const getCategoryIcon = (category: string) => {
 const Course = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { openModal } = useCourseGeneration();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<CourseFilter>('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -328,7 +328,7 @@ const Course = () => {
             </div>
             <button
               className="w-full sm:w-auto bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-2 px-5 sm:px-6 rounded-xl shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_2px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_2px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-0.5 font-['Kalam',cursive] text-base sm:text-lg tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 shrink-0"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => openModal()}
             >
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" /> Make Course
             </button>
@@ -365,7 +365,7 @@ const Course = () => {
             <BookOpen className="mx-auto h-10 w-10 text-blue-500" />
             <h2 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-blue-950 dark:text-blue-100">Your course shelf is empty</h2>
             <p className="mt-2 font-bold text-blue-800 dark:text-blue-300">Create your first learning path to see it here.</p>
-            <button type="button" onClick={() => setIsModalOpen(true)} className="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-pink-700 bg-pink-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(190,24,93,1)] transition-all active:translate-y-0.5 active:shadow-none">
+            <button type="button" onClick={() => openModal()} className="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-pink-700 bg-pink-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(190,24,93,1)] transition-all active:translate-y-0.5 active:shadow-none">
               <Sparkles className="h-5 w-5" /> Make Course
             </button>
           </div>
@@ -504,8 +504,6 @@ const Course = () => {
           </section>
         </div>
       )}
-
-      <GenerateCourseModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </DashboardLayout>
   );
 };
