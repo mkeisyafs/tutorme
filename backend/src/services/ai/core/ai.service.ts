@@ -112,8 +112,12 @@ const KEY_ALIASES: Record<string, string> = {
   // Top-level course fields — long snake_case form
   course_title: "courseTitle",
   course_description: "courseDescription",
+  courseSummary: "courseDescription",
+  course_summary: "courseDescription",
   course_category: "courseCategory",
   course_level: "courseLevel",
+  courseDifficulty: "courseLevel",
+  course_difficulty: "courseLevel",
   difficulty_level: "courseLevel",
   // Short-form (what claude-sonnet returns)
   description: "courseDescription",
@@ -141,6 +145,8 @@ const KEY_ALIASES: Record<string, string> = {
   // Lesson fields — long form
   lesson_title: "title",
   lessonTitle: "title",
+  lesson_description: "description",
+  lessonDescription: "description",
   lesson_number: "_ignored",
   lessonNumber: "_ignored",
   lesson_summary: "_ignored",
