@@ -1,4 +1,5 @@
 import { Elysia, status } from "elysia";
+import { Logestic } from "logestic";
 
 // --- Route Imports ---
 import userRoute from "./models/user/user.route";
@@ -16,6 +17,7 @@ import GenerationController from "./models/generation/generation.route";
 import { swagger } from "@elysiajs/swagger";
 
 const app = new Elysia()
+  .use(Logestic.preset("common"))
   .decorate("error", status)
   // Health check at root level (e.g. for external monitoring/pinging)
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
