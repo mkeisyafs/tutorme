@@ -1,6 +1,49 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { apiRequest } from '../lib/api';
+import router from '../constant/router';
 import type { OutlineCreationResponse } from '../types/course-generation';
+
+export const saveDraftToLocalStorage = (id: string, title: string, topic: string) => {
+  try {
+    const savedDraftsRaw = localStorage.getItem('tutorme_drafts') ?? '[]';
+    let savedDrafts = JSON.parse(savedDraftsRaw);
+    if (!Array.isArray(savedDrafts)) {
+      savedDrafts = [];
+    }
+    
+    // Check if draft already exists
+    const existingIndex = savedDrafts.findIndex((d: any) => d.id === id);
+    if (existingIndex > -1) {
+      // Update existing draft's title
+      savedDrafts[existingIndex].title = title || savedDrafts[existingIndex].title;
+      savedDrafts[existingIndex].topic = topic || savedDrafts[existingIndex].topic;
+    } else {
+      savedDrafts.unshift({
+        id,
+        title: title || topic,
+        topic,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    localStorage.setItem('tutorme_drafts', JSON.stringify(savedDrafts));
+  } catch (e) {
+    console.error('Failed to save draft to localStorage', e);
+  }
+};
+
+export const removeDraftFromLocalStorage = (id: string) => {
+  try {
+    const savedDraftsRaw = localStorage.getItem('tutorme_drafts') ?? '[]';
+    const savedDrafts = JSON.parse(savedDraftsRaw);
+    if (!Array.isArray(savedDrafts)) return;
+
+    const updated = savedDrafts.filter((d: any) => d.id !== id);
+    localStorage.setItem('tutorme_drafts', JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to remove draft from localStorage', e);
+  }
+};
 
 interface PublishResponse {
   courseId: string;
@@ -24,6 +67,7 @@ interface CourseGenerationContextType {
   minimize: () => void;
   maximize: () => void;
   reset: () => void;
+  cancelGeneration: () => void;
   startGeneration: (
     userId: string,
     topic: string,
@@ -44,6 +88,7 @@ interface CourseGenerationContextType {
   minimizePublish: () => void;
   maximizePublish: () => void;
   resetPublish: () => void;
+  cancelPublish: () => void;
 }
 
 const CourseGenerationContext = createContext<CourseGenerationContextType | undefined>(undefined);
@@ -71,6 +116,10 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
 
   const totalSteps = referenceFile ? 6 : 5;
   const timerRef = useRef<number | null>(null);
+  const generationAbortRef = useRef<AbortController | null>(null);
+  const publishAbortRef = useRef<AbortController | null>(null);
+  const publishedCourseDetailsRef = useRef<{ courseId: string; firstLessonId: string } | null>(null);
+  const publishedDraftIdRef = useRef<string | null>(null);
 
   // Manage progress timer for generation
   useEffect(() => {
@@ -129,6 +178,23 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
     setInitialTopic('');
     setReferenceFile(null);
     if (timerRef.current) window.clearTimeout(timerRef.current);
+    if (generationAbortRef.current) {
+      generationAbortRef.current.abort();
+      generationAbortRef.current = null;
+    }
+  };
+
+  const cancelGeneration = () => {
+    if (generationAbortRef.current) {
+      generationAbortRef.current.abort();
+      generationAbortRef.current = null;
+    }
+    setIsGenerating(false);
+    setLoadingStep(0);
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
   const startGeneration = async (
@@ -138,12 +204,23 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
     language: string,
     refFile: File | null
   ) => {
+    if (isGenerating || isPublishing) {
+      setErrorMessage('Another generation or publishing process is already active. Please wait or cancel it first.');
+      return;
+    }
+
     setTopic(topicName);
     setReferenceFile(refFile);
     setErrorMessage('');
     setLoadingStep(0);
     setIsGenerating(true);
     setDraftId(null);
+
+    if (generationAbortRef.current) {
+      generationAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    generationAbortRef.current = controller;
 
     try {
       const data = await apiRequest<OutlineCreationResponse>('/generation/outline', {
@@ -153,7 +230,8 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
           topic: topicName,
           familiarity,
           language: language.trim() || 'English'
-        }
+        },
+        signal: controller.signal
       });
 
       if (!data.draftId) {
@@ -162,7 +240,11 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
 
       setLoadingStep(totalSteps);
       setDraftId(data.draftId);
+      saveDraftToLocalStorage(data.draftId, topicName, topicName);
     } catch (error) {
+      if (controller.signal.aborted) {
+        return;
+      }
       setIsGenerating(false);
       setIsMinimized(false);
       setErrorMessage(
@@ -170,11 +252,20 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
           ? error.message
           : 'Failed to generate your course draft. Please try again.'
       );
+    } finally {
+      if (generationAbortRef.current === controller) {
+        generationAbortRef.current = null;
+      }
     }
   };
 
   // Publishing / Preparing actions
   const startPublish = async (draftIdVal: string, courseTitleVal: string) => {
+    if (isGenerating || isPublishing) {
+      setPublishError('Another generation or publishing process is already active. Please wait or cancel it first.');
+      return;
+    }
+
     setIsPublishing(true);
     setPublishStep(0);
     setPublishCourseTitle(courseTitleVal);
@@ -182,29 +273,51 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
     setIsPublishMinimized(false);
     setPublishCourseId(null);
     setPublishFirstLessonId(null);
+    publishedCourseDetailsRef.current = null;
+    publishedDraftIdRef.current = draftIdVal;
+
+    if (publishAbortRef.current) {
+      publishAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    publishAbortRef.current = controller;
 
     try {
       const result = await apiRequest<PublishResponse>(`/generation/outline/${encodeURIComponent(draftIdVal)}/publish`, {
         method: 'POST',
+        signal: controller.signal
       });
 
       if (!result.courseId || !result.firstLessonId) {
         throw new Error('The server did not return a valid course ID or lesson ID.');
       }
 
+      publishedCourseDetailsRef.current = { courseId: result.courseId, firstLessonId: result.firstLessonId };
       setPublishStep(1); // Moving to lesson generation
       
       await apiRequest(`/generation/lesson/${encodeURIComponent(result.firstLessonId)}/generate`, {
         method: 'POST',
+        signal: controller.signal
       });
 
       setPublishStep(2); // Finalizing
       
-      await new Promise(r => setTimeout(r, 800));
+      if (controller.signal.aborted) return;
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(resolve, 800);
+        controller.signal.addEventListener('abort', () => {
+          clearTimeout(timeout);
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      });
 
       setPublishCourseId(result.courseId);
       setPublishFirstLessonId(result.firstLessonId);
+      removeDraftFromLocalStorage(draftIdVal);
     } catch (error) {
+      if (controller.signal.aborted) {
+        return;
+      }
       setIsPublishing(false);
       setIsPublishMinimized(false);
       setPublishError(
@@ -212,6 +325,37 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
           ? error.message
           : 'We could not publish this course. Please try again.'
       );
+    } finally {
+      if (publishAbortRef.current === controller) {
+        publishAbortRef.current = null;
+      }
+    }
+  };
+
+  const cancelPublish = () => {
+    if (publishAbortRef.current) {
+      publishAbortRef.current.abort();
+      publishAbortRef.current = null;
+    }
+
+    const currentCourseDetails = publishedCourseDetailsRef.current;
+    const currentDraftId = publishedDraftIdRef.current;
+
+    setIsPublishing(false);
+    setPublishStep(0);
+    setPublishCourseTitle('');
+    setIsPublishMinimized(false);
+    setPublishError('');
+    setPublishCourseId(null);
+    setPublishFirstLessonId(null);
+    publishedCourseDetailsRef.current = null;
+    publishedDraftIdRef.current = null;
+
+    if (currentCourseDetails) {
+      if (currentDraftId) {
+        removeDraftFromLocalStorage(currentDraftId);
+      }
+      router.navigate(`/courses/${encodeURIComponent(currentCourseDetails.courseId)}/lessons/${encodeURIComponent(currentCourseDetails.firstLessonId)}`);
     }
   };
 
@@ -231,6 +375,10 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
     setPublishError('');
     setPublishCourseId(null);
     setPublishFirstLessonId(null);
+    if (publishAbortRef.current) {
+      publishAbortRef.current.abort();
+      publishAbortRef.current = null;
+    }
   };
 
   return (
@@ -252,6 +400,7 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
         maximize,
         reset,
         startGeneration,
+        cancelGeneration,
 
         // Publishing
         isPublishing,
@@ -265,6 +414,7 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
         minimizePublish,
         maximizePublish,
         resetPublish,
+        cancelPublish,
       }}
     >
       {children}

@@ -4,7 +4,6 @@ import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun, User, Menu, X 
 import { useTheme } from '../hooks/useTheme';
 import { listed } from '../constant/listed';
 import { useAuth } from '../auth/useAuth';
-import GenerateCourseModal from './GenerateCourseModal';
 
 interface DashboardLayoutProps { children: ReactNode; }
 
@@ -80,7 +79,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       <main className="flex-grow relative flex flex-col min-h-screen md:h-screen md:overflow-y-auto transition-colors duration-300" style={{ backgroundImage: isDark ? 'linear-gradient(#374151 1px, transparent 1px), linear-gradient(90deg, #374151 1px, transparent 1px)' : 'linear-gradient(#f0f0f0 1px, transparent 1px), linear-gradient(90deg, #f0f0f0 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
         <div className="flex flex-row flex-grow"><div className="w-8 md:w-12 border-r-[2px] border-red-300 dark:border-red-900/50 flex-shrink-0 hidden md:block pointer-events-none" /><div className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12 py-8 md:py-12">{children}</div></div>
       </main>
-      <GenerateCourseModal />
     </div>
   );
 };

@@ -24,6 +24,7 @@ const GenerateCourseModal: React.FC = () => {
     maximize,
     reset,
     startGeneration,
+    cancelGeneration,
 
     // Publishing
     isPublishing,
@@ -34,7 +35,8 @@ const GenerateCourseModal: React.FC = () => {
     publishFirstLessonId,
     minimizePublish,
     maximizePublish,
-    resetPublish
+    resetPublish,
+    cancelPublish
   } = useCourseGeneration();
 
   const [familiarity, setFamiliarity] = useState('Beginner');
@@ -46,16 +48,22 @@ const GenerateCourseModal: React.FC = () => {
   const [isQuizLengthOpen, setIsQuizLengthOpen] = useState(false);
   const [courseTopic, setCourseTopic] = useState('');
   const [modalReferenceFile, setModalReferenceFile] = useState<File | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Sync with context initial topic and reference file when opened
   useEffect(() => {
-    if (isOpen && !isGenerating) {
-      setCourseTopic(initialTopic);
-      setModalReferenceFile(contextReferenceFile);
-      setOpenDropdown(null);
-      setIsQuizLengthOpen(false);
+    if (isOpen) {
+      if (!hasInitialized) {
+        setCourseTopic(initialTopic);
+        setModalReferenceFile(contextReferenceFile);
+        setOpenDropdown(null);
+        setIsQuizLengthOpen(false);
+        setHasInitialized(true);
+      }
+    } else {
+      setHasInitialized(false);
     }
-  }, [isOpen, isGenerating, initialTopic, contextReferenceFile]);
+  }, [isOpen, hasInitialized, initialTopic, contextReferenceFile]);
 
   // Handle redirect when course generation succeeds
   useEffect(() => {
@@ -192,6 +200,14 @@ const GenerateCourseModal: React.FC = () => {
                   );
                 })}
               </div>
+
+              <button
+                type="button"
+                onClick={cancelPublish}
+                className="mt-8 px-6 py-2 rounded-xl font-bold font-['Kalam',cursive] text-lg border-2 border-red-500 bg-red-100 text-red-700 dark:bg-red-950/40 dark:border-red-800 dark:text-red-300 hover:bg-red-250 dark:hover:bg-red-900/40 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_rgba(239,68,68,0.3)] active:translate-y-0.5 active:shadow-none z-10"
+              >
+                Cancel Publishing
+              </button>
 
               {/* Fun background graphic when generating */}
               <div className="absolute -bottom-8 -right-8 opacity-20 pointer-events-none">
@@ -455,6 +471,14 @@ const GenerateCourseModal: React.FC = () => {
                     );
                   })}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={cancelGeneration}
+                  className="mt-8 px-6 py-2 rounded-xl font-bold font-['Kalam',cursive] text-lg border-2 border-red-500 bg-red-100 text-red-700 dark:bg-red-950/40 dark:border-red-800 dark:text-red-300 hover:bg-red-250 dark:hover:bg-red-900/40 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_rgba(239,68,68,0.3)] active:translate-y-0.5 active:shadow-none z-10"
+                >
+                  Cancel Generation
+                </button>
 
                 {/* Fun background graphic when generating */}
                 <div className="absolute -bottom-8 -right-8 opacity-20 pointer-events-none">

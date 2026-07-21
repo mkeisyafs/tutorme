@@ -2,7 +2,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, MessageCircle, Pencil, Play, RefreshCw, Save, Send, Sidebar, Sparkles, X, Check, Hourglass, Square } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
-import { useCourseGeneration } from '../context/CourseGenerationContext';
+import { useCourseGeneration, saveDraftToLocalStorage } from '../context/CourseGenerationContext';
 import type {
   DraftOutline,
   EditorChatResponse,
@@ -37,7 +37,8 @@ const Roadmap = () => {
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
-  const { isPublishing, startPublish, publishError, resetPublish } = useCourseGeneration();
+  const { isPublishing, isGenerating, startPublish, publishError, resetPublish } = useCourseGeneration();
+  const isBackgroundBusy = isGenerating || isPublishing;
   const [chatMessages, setChatMessages] = useState<EditorMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatting, setIsChatting] = useState(false);
@@ -63,6 +64,7 @@ const Roadmap = () => {
       }
 
       setDraft(data);
+      saveDraftToLocalStorage(data.draftId, data.courseTitle, data.topic || data.courseTitle);
       setEditedTitle(data.courseTitle);
       setEditedDescription(data.courseDescription);
       setExpandedModule(data.modules[0]?.id ?? null);
@@ -131,6 +133,7 @@ const Roadmap = () => {
       });
 
       setDraft(updatedDraft);
+      saveDraftToLocalStorage(draftId, updatedDraft.courseTitle, updatedDraft.topic || updatedDraft.courseTitle);
       setEditedTitle(updatedDraft.courseTitle);
       setEditedDescription(updatedDraft.courseDescription);
       setIsEditingDetails(false);
@@ -168,6 +171,7 @@ const Roadmap = () => {
       }
 
       setDraft(result.draft);
+      saveDraftToLocalStorage(draftId, result.draft.courseTitle, result.draft.topic || result.draft.courseTitle);
       setEditedTitle(result.draft.courseTitle);
       setEditedDescription(result.draft.courseDescription);
       setExpandedModule(result.draft.modules[0]?.id ?? null);
@@ -290,7 +294,7 @@ const Roadmap = () => {
               </button>
               <button
                 onClick={() => void handlePublish()}
-                disabled={isPublishing || isSavingDetails || isChatting}
+                disabled={isBackgroundBusy || isSavingDetails || isChatting}
                 className="flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-4 sm:px-6 py-2.5 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(21,128,61,1)] transition-all active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-green-600 dark:hover:bg-green-500"
               >
                 {isPublishing && <LoaderCircle className="h-5 w-5 animate-spin" />}
@@ -298,6 +302,15 @@ const Roadmap = () => {
               </button>
             </div>
           </div>
+
+          {isBackgroundBusy && !isPublishing && (
+            <div role="alert" className="mb-6 flex items-start gap-3 rounded-2xl border-4 border-yellow-300 bg-yellow-50 p-4 font-bold text-yellow-800 shadow-[4px_4px_0px_0px_rgba(250,204,21,1)] dark:border-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300">
+              <CircleAlert className="mt-0.5 h-5 w-5 flex-shrink-0" />
+              <span>
+                Another course generation or publishing process is running in the background. Please wait until it completes or cancel it before starting this course.
+              </span>
+            </div>
+          )}
 
           <div className="mb-6 sm:mb-8 flex items-start gap-4 rounded-2xl border-4 border-purple-300 bg-purple-100 p-4 sm:p-5 shadow-[4px_4px_0px_0px_rgba(168,85,247,1)] rotate-1 transform dark:border-purple-700/50 dark:bg-purple-900/40 dark:shadow-[4px_4px_0px_0px_rgba(126,34,206,0.8)] sm:items-center">
             <div className="flex-shrink-0 rounded-full border-2 border-purple-400 bg-purple-200 p-2.5 sm:p-3 dark:border-purple-600 dark:bg-purple-800">
@@ -449,11 +462,11 @@ const Roadmap = () => {
             type="text"
             value={chatInput}
             onChange={(event) => setChatInput(event.target.value)}
-            disabled={isChatting || isPublishing}
-            placeholder="Add, remove, or reorder…"
+            disabled={isChatting || isBackgroundBusy}
+            placeholder={isBackgroundBusy ? "Generation in progress..." : "Add, remove, or reorder…"}
             className="w-full rounded-full border-2 sm:border-4 border-purple-200 bg-white/90 py-3 sm:py-4 pl-4 sm:pl-5 pr-12 sm:pr-14 text-sm sm:text-lg font-bold text-gray-700 shadow-inner transition-all placeholder-gray-400 focus:border-purple-400 focus:outline-none focus:ring-4 focus:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-purple-800/50 dark:bg-gray-900/90 dark:text-gray-200 dark:focus:border-purple-500 dark:focus:ring-purple-900/50"
           />
-          <button type="submit" disabled={!chatInput.trim() || isChatting || isPublishing} className="absolute right-2 top-1/2 flex -translate-y-1/2 transform rounded-full bg-purple-500 p-2 sm:p-3 text-white shadow-[0_4px_0px_0px_rgba(126,34,206,1)] transition-all active:translate-y-[calc(-50%+4px)] active:shadow-none disabled:cursor-not-allowed disabled:opacity-55 hover:bg-purple-600" aria-label="Send editor request">
+          <button type="submit" disabled={!chatInput.trim() || isChatting || isBackgroundBusy} className="absolute right-2 top-1/2 flex -translate-y-1/2 transform rounded-full bg-purple-500 p-2 sm:p-3 text-white shadow-[0_4px_0px_0px_rgba(126,34,206,1)] transition-all active:translate-y-[calc(-50%+4px)] active:shadow-none disabled:cursor-not-allowed disabled:opacity-55 hover:bg-purple-600" aria-label="Send editor request">
             {isChatting ? <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : <Send className="h-4 w-4 sm:h-5 sm:w-5" />}
           </button>
         </form>

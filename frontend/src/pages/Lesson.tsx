@@ -41,6 +41,13 @@ function makeMessage(role: TutorMessage['role'], content: string): TutorMessage 
   };
 }
 
+function getYouTubeId(url: string | null): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
 const initialQuizStatus: QuizGenerationStatus = {
   state: 'blocked',
   isGenerated: false,
@@ -582,22 +589,53 @@ const Lesson = () => {
                 )}
               </div>
             </div>
-          ) : lesson?.videoUrl ? (
-            <a
-              href={lesson.videoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 flex items-center justify-center relative overflow-hidden group cursor-pointer no-underline"
-            >
-              <div className="absolute inset-0 bg-blue-900/20 group-hover:bg-transparent transition-colors z-10"></div>
-              <div className="w-20 h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] transform group-hover:scale-110 transition-transform z-20">
-                <Video className="w-10 h-10 text-white ml-1" />
-              </div>
-              <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="font-bold">{lesson.title} — Supporting video</div>
-              </div>
-            </a>
-          ) : null}
+          ) : lesson?.videoUrl ? (() => {
+            const ytId = getYouTubeId(lesson.videoUrl);
+            const isDirectVideo = lesson.videoUrl.endsWith('.mp4') || lesson.videoUrl.endsWith('.webm') || lesson.videoUrl.endsWith('.ogg');
+
+            if (ytId) {
+              return (
+                <div className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 relative overflow-hidden">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${ytId}?rel=0&showinfo=0`}
+                    title={lesson.title || 'Supporting video'}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full border-none"
+                  />
+                </div>
+              );
+            }
+
+            if (isDirectVideo) {
+              return (
+                <div className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 relative overflow-hidden">
+                  <video
+                    src={lesson.videoUrl}
+                    controls
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                </div>
+              );
+            }
+
+            return (
+              <a
+                href={lesson.videoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 flex items-center justify-center relative overflow-hidden group cursor-pointer no-underline"
+              >
+                <div className="absolute inset-0 bg-blue-900/20 group-hover:bg-transparent transition-colors z-10"></div>
+                <div className="w-20 h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] transform group-hover:scale-110 transition-transform z-20">
+                  <Video className="w-10 h-10 text-white ml-1" />
+                </div>
+                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="font-bold text-sm sm:text-base">{lesson.title} — Supporting video link</div>
+                </div>
+              </a>
+            );
+          })() : null}
 
           {/* Lesson Content */}
           {isLessonReady && (

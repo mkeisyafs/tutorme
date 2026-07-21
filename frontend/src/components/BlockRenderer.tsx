@@ -98,15 +98,71 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
+const highlightStyles = [
+  {
+    bg: 'bg-blue-100/70 dark:bg-blue-950/40',
+    border: 'border-blue-400 dark:border-blue-500',
+    text: 'text-blue-950 dark:text-blue-300',
+  },
+  {
+    bg: 'bg-pink-100/70 dark:bg-pink-950/40',
+    border: 'border-pink-400 dark:border-pink-500',
+    text: 'text-pink-950 dark:text-pink-300',
+  },
+  {
+    bg: 'bg-green-100/70 dark:bg-green-950/40',
+    border: 'border-green-400 dark:border-green-500',
+    text: 'text-green-950 dark:text-green-300',
+  },
+  {
+    bg: 'bg-yellow-100/70 dark:bg-yellow-950/40',
+    border: 'border-yellow-400 dark:border-yellow-500',
+    text: 'text-yellow-950 dark:text-yellow-300',
+  },
+  {
+    bg: 'bg-purple-100/70 dark:bg-purple-950/40',
+    border: 'border-purple-400 dark:border-purple-500',
+    text: 'text-purple-950 dark:text-purple-300',
+  },
+];
+
+const getHighlightStyle = (children: React.ReactNode) => {
+  let text = '';
+  if (typeof children === 'string') {
+    text = children;
+  } else if (Array.isArray(children)) {
+    text = children.map(c => (typeof c === 'string' ? c : '')).join('');
+  } else if (children && typeof children === 'object' && 'props' in children) {
+    text = String((children as any).props.children || '');
+  } else {
+    text = String(children || '');
+  }
+
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = text.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % highlightStyles.length;
+  return highlightStyles[index];
+};
+
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
         components={{
           p: ({ node, ...props }) => <p className="mb-4 last:mb-0 leading-relaxed" {...props} />,
-          strong: ({ node, ...props }) => (
-            <strong className="font-black text-gray-950 dark:text-pink-300 bg-pink-100/60 dark:bg-pink-950/40 px-1 py-0.5 rounded border-b-2 border-pink-400 dark:border-pink-500" {...props} />
-          ),
+          strong: ({ node, children, ...props }) => {
+            const style = getHighlightStyle(children);
+            return (
+              <strong
+                className={`font-black px-1.5 py-0.5 rounded border-b-2 transition-colors ${style.bg} ${style.border} ${style.text}`}
+                {...props}
+              >
+                {children}
+              </strong>
+            );
+          },
           em: ({ node, ...props }) => <em className="italic" {...props} />,
           code: ({ node, inline, className, children, ...props }: any) => {
             return inline ? (
