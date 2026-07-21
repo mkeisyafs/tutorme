@@ -4,6 +4,8 @@ import LoginModal from '../components/LoginModal';
 import SignUpModal from '../components/SignUpModal';
 import { useTheme } from '../hooks/useTheme';
 
+import RobotLogo from '../components/RobotLogo';
+
 const Landing = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
@@ -40,8 +42,9 @@ const Landing = () => {
       {/* Navigation Header (Outside Grid Background) */}
       <div className="bg-white dark:bg-gray-800 relative z-20 border-b-2 border-gray-100 dark:border-gray-700 shadow-sm transition-colors duration-300">
         <nav className="flex justify-between items-center py-4 px-8 md:px-16 max-w-7xl mx-auto">
-          <div className="text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:scale-105 transition-transform transform -rotate-2">
-            TutorMe
+          <div className="flex items-center gap-2 text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:scale-105 transition-transform transform -rotate-2">
+            <RobotLogo className="w-10 h-10 inline-block" />
+            <span>TutorMe</span>
           </div>
           <div className="flex gap-4 md:gap-6 items-center">
             <a href="#how-it-works" className="font-bold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-['Kalam',cursive] text-lg hidden md:block">How It Works</a>

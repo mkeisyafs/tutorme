@@ -153,8 +153,8 @@ export const generationController = new Elysia({ prefix: "/generation" })
     "/outline/:draftId/publish",
     async ({ params, error }) => {
       try {
-        const courseId = await CoursePersistenceService.publishDraft(params.draftId);
-        return { courseId };
+        const result = await CoursePersistenceService.publishDraft(params.draftId);
+        return result;
       } catch (e: any) {
         return error(400, e.message);
       }

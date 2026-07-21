@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env.VITE_API_PROXY_TARGET || 'http://localhost:5000',
           changeOrigin: true,
+          timeout: 300000,
+          proxyTimeout: 300000,
         },
       },
     },

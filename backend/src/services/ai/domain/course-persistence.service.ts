@@ -1,18 +1,22 @@
 import prisma from "../../../lib/prisma";
 import { outlineCache } from "./outline-cache.service";
-import { status } from "elysia";
 
 export class CoursePersistenceService {
   /**
    * Persists a cached draft outline to the real database.
    * This is triggered when the user clicks "Start Learning".
    */
-  static async publishDraft(draftId: string): Promise<string> {
+  static async publishDraft(draftId: string): Promise<{ courseId: string, firstLessonId: string }> {
     const draft = outlineCache.get(draftId);
     
     if (!draft) {
       throw new Error("Draft not found or expired.");
     }
+
+    let firstLessonId = "";
+
+    const COURSE_COLORS: import("@prisma/client").CourseColor[] = ["blue", "yellow", "green", "pink", "purple"];
+    const randomColor = COURSE_COLORS[Math.floor(Math.random() * COURSE_COLORS.length)];
 
     // Use Prisma transaction to ensure atomic saves
     const course = await prisma.$transaction(async (tx) => {
@@ -23,6 +27,7 @@ export class CoursePersistenceService {
           description: draft.courseDescription,
           category: draft.courseCategory,
           level: draft.courseLevel,
+          color: randomColor,
           creatorId: draft.userId, // The user who generated it becomes the creator/owner
           isPublic: false,
         },
@@ -40,7 +45,7 @@ export class CoursePersistenceService {
         });
 
         for (const lesson of mod.lessons) {
-          await tx.lesson.create({
+          const createdLesson = await tx.lesson.create({
             data: {
               moduleId: createdModule.id,
               title: lesson.title,
@@ -48,6 +53,9 @@ export class CoursePersistenceService {
               // content and videoUrl remain null. Generated on demand later.
             },
           });
+          if (!firstLessonId) {
+            firstLessonId = createdLesson.id;
+          }
         }
       }
 
@@ -65,6 +73,6 @@ export class CoursePersistenceService {
     // Cleanup the cache
     outlineCache.delete(draftId);
 
-    return course.id;
+    return { courseId: course.id, firstLessonId };
   }
 }

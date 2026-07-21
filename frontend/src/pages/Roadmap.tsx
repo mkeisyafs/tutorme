@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, MessageCircle, Pencil, Play, RefreshCw, Save, Send, Sidebar, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, MessageCircle, Pencil, Play, RefreshCw, Save, Send, Sidebar, Sparkles, X, Check, Hourglass, Square } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
 import type {
   DraftOutline,
@@ -37,6 +37,8 @@ const Roadmap = () => {
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
+  const [isMagicLoading, setIsMagicLoading] = useState(false);
+  const [magicLoadingStep, setMagicLoadingStep] = useState(0);
   const [chatMessages, setChatMessages] = useState<EditorMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatting, setIsChatting] = useState(false);
@@ -180,20 +182,35 @@ const Roadmap = () => {
 
     setActionError('');
     setIsPublishing(true);
+    setIsMagicLoading(true);
+    setMagicLoadingStep(0);
 
     try {
       const result = await apiRequest<PublishResponse>(`/generation/outline/${encodeURIComponent(draftId)}/publish`, {
         method: 'POST',
       });
 
-      if (!result.courseId) {
-        throw new Error('The server did not return a course ID.');
+      if (!result.courseId || !result.firstLessonId) {
+        throw new Error('The server did not return a valid course ID or lesson ID.');
       }
 
-      navigate(`/courses/${encodeURIComponent(result.courseId)}`);
+      setMagicLoadingStep(1); // Moving to lesson generation
+      
+      // Start generation for the first lesson in the background/await it
+      await apiRequest(`/generation/lesson/${encodeURIComponent(result.firstLessonId)}/generate`, {
+        method: 'POST',
+      });
+
+      setMagicLoadingStep(2); // Finalizing
+      
+      // Give the user a moment to see the completion state before navigating
+      await new Promise(r => setTimeout(r, 800));
+
+      navigate(`/courses/${encodeURIComponent(result.courseId)}/lessons/${encodeURIComponent(result.firstLessonId)}`);
     } catch (error) {
       setActionError(getErrorMessage(error, 'We could not publish this course. Please try again.'));
       setIsPublishing(false);
+      setIsMagicLoading(false);
     }
   };
 
@@ -232,6 +249,46 @@ const Roadmap = () => {
 
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-white font-['Nunito',sans-serif] text-gray-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100">
+      {isMagicLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/20 dark:bg-gray-900/40 backdrop-blur-md transition-opacity">
+          <div className="relative max-w-2xl w-full flex flex-col transform scale-105 transition-all duration-300">
+            <div className="absolute top-0 left-1/2 w-24 h-8 bg-pink-400/40 dark:bg-pink-500/40 -translate-x-1/2 -translate-y-4 rounded-sm transform -rotate-2 backdrop-blur-md border border-pink-200/50 dark:border-pink-700/50 pointer-events-none z-20"></div>
+            
+            <div className="bg-pink-50/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-[8px_8px_0px_0px_rgba(236,72,153,1)] dark:shadow-[8px_8px_0px_0px_rgba(157,23,77,0.8)] border-4 border-pink-400 dark:border-pink-700 w-full flex flex-col relative overflow-hidden">
+              <div className="p-8 md:p-10 relative z-10 py-6 px-2 flex flex-col items-center">
+                <h2 className="text-3xl font-bold mb-10 font-['Nunito',sans-serif] text-gray-900 dark:text-gray-100 text-center leading-tight">
+                  Preparing your course...
+                </h2>
+                <div className="space-y-6 font-['Nunito',sans-serif] font-bold text-lg text-gray-700 dark:text-gray-300 w-full">
+                  {[
+                    "Saving your curriculum",
+                    "Generating the first lesson",
+                    "Finalizing course setup"
+                  ].map((step, idx) => {
+                    const isCompleted = idx < magicLoadingStep;
+                    const isCurrent = idx === magicLoadingStep;
+                    const isPending = idx > magicLoadingStep;
+                    return (
+                      <div key={idx} className={`flex items-center gap-4 transition-all duration-500 ${isCurrent ? 'scale-105 transform translate-x-2 text-pink-600 dark:text-pink-400 origin-left' : isCompleted ? 'opacity-80' : 'opacity-40'}`}>
+                        <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                          {isCompleted && <Check className="w-6 h-6 text-green-500" strokeWidth={3} />}
+                          {isCurrent && <Hourglass className="w-6 h-6 text-pink-500 animate-pulse" strokeWidth={2.5} />}
+                          {isPending && <Square className="w-5 h-5 text-gray-400" strokeWidth={3} />}
+                        </div>
+                        <span>{step}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="absolute -bottom-8 -right-8 opacity-20 pointer-events-none">
+                  <Sparkles className="w-40 h-40 fill-pink-500 text-pink-500 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!isSidebarOpen && (
         <button
           onClick={() => setIsSidebarOpen(true)}

@@ -1,24 +1,36 @@
 import { createOpenAI } from "@ai-sdk/openai";
 
-// This provider is OpenAI-compatible but expects an explicit `stream: false`
-// for non-streaming Chat Completions requests. The AI SDK omits that field for
-// generateText/generateObject calls, which the provider otherwise rejects with
-// a misleading 200 upstream_error response. Preserve explicit streaming calls.
+// This provider requires an explicit `stream: false` on every non-streaming
+// Chat Completions request. AI SDK v7 changed generateText/generateObject to
+// use streaming internally (sends stream: true by default), so the old
+// `stream === undefined` guard no longer works. We force stream: false on
+// every request. Streaming responses (from streamText/streamObject) set up
+// their own SSE parsers, so this only affects non-streaming callers.
 const openAICompatibleFetch: typeof fetch = async (input, init) => {
+  const url = typeof input === "string" ? input : input.toString();
+  console.debug("[ai-providers] → URL:", url);
+
   if (typeof init?.body !== "string") {
     return fetch(input, init);
   }
 
   try {
     const body = JSON.parse(init.body) as Record<string, unknown>;
-    if (body && typeof body === "object" && body.stream === undefined) {
-      return fetch(input, {
-        ...init,
-        body: JSON.stringify({ ...body, stream: false }),
-      });
-    }
-  } catch {
-    // Forward non-JSON requests unchanged.
+    console.debug("[ai-providers] → body keys:", Object.keys(body));
+    console.debug("[ai-providers] → stream:", body.stream, "model:", body.model);
+
+    const newBody = JSON.stringify({ ...body, stream: false });
+    const response = await fetch(input, { ...init, body: newBody });
+
+    // Clone so we can read the body for debugging without consuming the real response
+    const clone = response.clone();
+    const rawText = await clone.text();
+    console.debug("[ai-providers] ← status:", response.status);
+    console.debug("[ai-providers] ← body (first 300):", rawText.substring(0, 300));
+
+    return response;
+  } catch (e) {
+    console.error("[ai-providers] fetch error:", e);
   }
 
   return fetch(input, init);

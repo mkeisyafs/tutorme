@@ -391,9 +391,9 @@ const Course = () => {
                     <Pin className="w-5 h-5" fill={isPinned ? 'currentColor' : 'none'} />
                   </button>
 
-                  <span className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 px-2.5 py-1 bg-white/50 dark:bg-gray-900/30 rounded-md ${styles.text} w-max`}>
-                    {getCategoryIcon(course.category)}
-                    {course.category}
+                  <span className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 px-2.5 py-1 bg-white/50 dark:bg-gray-900/30 rounded-md ${styles.text} w-fit max-w-[calc(100%-2.5rem)]`}>
+                    <div className="shrink-0">{getCategoryIcon(course.category)}</div>
+                    <span className="truncate">{course.category}</span>
                   </span>
 
                   <h3 className={`text-2xl font-bold font-['Kalam',cursive] ${styles.text} mb-4 flex-grow pr-8`}>{course.title}</h3>

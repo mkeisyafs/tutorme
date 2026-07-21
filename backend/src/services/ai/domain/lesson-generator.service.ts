@@ -1,8 +1,9 @@
 import prisma from "../../../lib/prisma";
 import { AiService } from "../core/ai.service";
-import { webSearchTool, youtubeSearchTool } from "../core/tools/search-tools";
+import { performWebSearch, performYoutubeSearch } from "../core/tools/search-tools";
 import { QuizWorkerService } from "../workers/quiz-worker.service";
 import { getPowerfulModel } from "../core/ai-providers";
+import { LessonBlocksSchema, type LessonBlocks } from "./lesson-blocks";
 
 export class LessonGeneratorService {
   private static generationJobs = new Map<string, Promise<any>>();
@@ -76,15 +77,25 @@ CRITICAL RULES:
 - If you use the youtubeSearch tool and find a video, embed the URL naturally in the content (e.g. as a Markdown link).
 - Write in a friendly, encouraging tone suitable for learners.`;
 
-    const prompt = `Write the full lesson content for "${lessonTitle}" in Markdown. Start directly with the material — no preamble.`;
+    // Perform searches directly to gather context since tools cause the proxy to crash
+    const [webSearchResult, youtubeSearchResult] = await Promise.all([
+      performWebSearch(`${courseTitle} ${lessonTitle}`),
+      performYoutubeSearch(`${courseTitle} ${lessonTitle}`)
+    ]);
 
-    // Tools available to the AI
-    const tools = {
-      webSearch: webSearchTool,
-      youtubeSearch: youtubeSearchTool,
-    };
+    const contextSection = `
+Here is some up-to-date context from the web to help you write the lesson:
+${webSearchResult.results}
 
-    const rawContent = await AiService.text(prompt, getPowerfulModel(), system, tools);
+${youtubeSearchResult.videoUrl ? `Here is a relevant YouTube video URL you MUST embed in the lesson naturally: ${youtubeSearchResult.videoUrl}` : ""}
+`;
+
+    const prompt = `Write the full lesson content for "${lessonTitle}" in Markdown. Start directly with the material — no preamble.
+${contextSection}`;
+
+    // We omit `tools` here because the current AI provider (HaluAI) crashes
+    // with a "socket hang up" when the `tools` array is sent in the request.
+    const rawContent = await AiService.text(prompt, getPowerfulModel(), system);
 
     // Strip any AI preamble that appears before the actual lesson content.
     // If the model starts with meta-commentary (e.g. "I'll create..." or
@@ -103,10 +114,12 @@ CRITICAL RULES:
     );
     const videoUrl = youtubeMatch?.[0]?.replace(/[.,!?)\]]+$/, "") ?? null;
 
+    const structuredContent = await this.convertMarkdownToBlocks(lessonTitle, content);
+
     const updatedLesson = await prisma.lesson.update({
       where: { id: lessonId },
       data: {
-        content,
+        content: structuredContent,
         videoUrl,
       },
       include: {
@@ -127,5 +140,69 @@ CRITICAL RULES:
     });
 
     return updatedLesson;
+  }
+
+  private static async convertMarkdownToBlocks(lessonTitle: string, markdownContent: string) {
+    const prompt = `Convert the following lesson markdown content for the lesson titled "${lessonTitle}" into structured blocks.
+    
+Lesson Markdown Content:
+${markdownContent}`;
+
+    const system = `You are a curriculum developer. Your task is to convert a Markdown lesson into a structured JSON format containing a list of interactive and instructional blocks.
+
+Return a JSON object matching this schema:
+{
+  "title": string,
+  "blocks": Array of blocks
+}
+
+Every block must have a "type" field. The possible block types and their properties are:
+
+1. { "type": "objective", "title": string, "content": string }
+2. { "type": "paragraph", "content": string } (Plain text containing explanation. Keep it clean without markdown headers, but bold/italic/code-inline is fine)
+3. { "type": "analogy", "title": string, "content": string }
+4. { "type": "example", "title": string, "content": string } (Code examples or walkthroughs)
+5. { "type": "warning", "title": string, "items": string[] }
+6. { "type": "summary", "content": string }
+7. { "type": "interactive-quiz", "question": string, "options": string[], "correctIndex": number, "explanation": string }
+8. { "type": "flashcard", "front": string, "back": string }
+9. { "type": "interactive-reveal", "summary": string, "details": string }
+10. { "type": "code-sandbox", "code": string, "language": string, "expectedOutput": string, "instructions": string }
+
+Guidelines:
+- Analyze the Markdown content and map it into these block types.
+- Ensure all important lesson information from the Markdown is preserved.
+- Divide long paragraphs into multiple smaller blocks of relevant types.
+- Inject 2-3 interactive blocks (interactive-quiz, flashcard, interactive-reveal, or code-sandbox) spaced throughout the lesson to test user understanding and engage them.
+- If there is code in the Markdown, represent it as a "code-sandbox" or "example" block.
+- For code-sandbox, make sure the "code" is a complete runnable snippet (e.g. in python or javascript) and "expectedOutput" is what it prints when executed.
+- Ensure the output is strictly valid JSON conforming to the schema. Do not output anything else.`;
+
+    try {
+      const parsedBlocks = await AiService.structuredObject<LessonBlocks>(
+        prompt,
+        LessonBlocksSchema,
+        getPowerfulModel(),
+        system
+      );
+      return JSON.stringify(parsedBlocks);
+    } catch (error) {
+      console.error("Failed to convert markdown to structured blocks, falling back to raw markdown wrapped in paragraph", error);
+      // Fallback
+      return JSON.stringify({
+        title: lessonTitle,
+        blocks: [
+          {
+            type: "objective",
+            title: "Learning Objectives",
+            content: "Learn about the concepts discussed in this lesson."
+          },
+          {
+            type: "paragraph",
+            content: markdownContent
+          }
+        ]
+      });
+    }
   }
 }

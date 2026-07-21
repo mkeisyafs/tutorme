@@ -2,6 +2,7 @@ import { z } from "zod";
 import prisma from "../../../lib/prisma";
 import { AiService } from "../core/ai.service";
 import { getDefaultModel } from "../core/ai-providers";
+import { getLessonPlainContent } from "./lesson-blocks";
 
 const QuestionSchema = z.object({
   questions: z.array(
@@ -51,7 +52,7 @@ export class QuizGeneratorService {
     const prompt = `Generate a short quiz for the following educational content. 
 Include 3 multiple choice questions and 1 essay question.
 Lesson Content:
-${lesson.content}`;
+${getLessonPlainContent(lesson.content)}`;
 
     const system = "You are an expert curriculum designer creating assessments.";
 

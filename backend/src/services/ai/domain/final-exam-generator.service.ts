@@ -2,6 +2,7 @@ import { z } from "zod";
 import prisma from "../../../lib/prisma";
 import { AiService } from "../core/ai.service";
 import { getDefaultModel } from "../core/ai-providers";
+import { getLessonPlainContent } from "./lesson-blocks";
 
 const FINAL_EXAM_TITLE = "Course Final Exam";
 const MAX_MATERIAL_CHARS = 60_000;
@@ -273,7 +274,7 @@ export class FinalExamGeneratorService {
         lessons: lessons.map((lesson) => ({
           moduleTitle: lesson.moduleTitle,
           lessonTitle: lesson.title,
-          content: lesson.content!,
+          content: getLessonPlainContent(lesson.content),
         })),
       },
     };

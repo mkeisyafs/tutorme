@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom"
 import type { ReactNode } from "react"
 import { listed } from "./listed"
 import { ProtectedRoute } from "../auth/ProtectedRoute"
+import RouteErrorBoundary from "../components/RouteErrorBoundary"
 import Landing from "../pages/Landing"
 import Home from "../pages/Home"
 import Course from "../pages/Course"
@@ -16,7 +17,7 @@ import CourseAnalysis from "../pages/CourseAnalysis"
 
 const protectedPage = (page: ReactNode) => <ProtectedRoute>{page}</ProtectedRoute>
 
-const router = createBrowserRouter([
+const routes = [
     {
         path: listed.landing,
         element: <Landing/>
@@ -89,6 +90,11 @@ const router = createBrowserRouter([
         path: "/submissions/:submissionId",
         element: protectedPage(<CourseAnalysis/>)
     }
-])
+].map((route) => ({
+    ...route,
+    errorElement: <RouteErrorBoundary />,
+}))
+
+const router = createBrowserRouter(routes)
 
 export default router

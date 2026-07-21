@@ -16,7 +16,7 @@ import authRoute from "./models/auth/auth.route";
 import GenerationController from "./models/generation/generation.route";
 import { swagger } from "@elysiajs/swagger";
 
-const app = new Elysia()
+const app = new Elysia({ serve: { idleTimeout: 255 } })
   .use(Logestic.preset("common"))
   .decorate("error", status)
   // Health check at root level (e.g. for external monitoring/pinging)

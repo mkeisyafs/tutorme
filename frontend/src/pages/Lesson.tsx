@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { BlockRenderer } from '../components/BlockRenderer';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -579,26 +580,14 @@ const Lesson = () => {
                 <div className="font-bold">{lesson.title} — Supporting video</div>
               </div>
             </a>
-          ) : (
-            <div className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 flex items-center justify-center relative overflow-hidden group cursor-pointer">
-              <div className="absolute inset-0 bg-blue-900/20 group-hover:bg-transparent transition-colors z-10"></div>
-              <div className="w-20 h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] transform group-hover:scale-110 transition-transform z-20">
-                <Play className="w-10 h-10 text-white fill-white ml-2" />
-              </div>
-              <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="font-bold">{lesson?.title} — Introduction</div>
-              </div>
-            </div>
-          )}
+          ) : null}
 
           {/* Lesson Content */}
           {isLessonReady && (
             <div className="bg-white dark:bg-gray-800 p-8 md:p-12 rounded-3xl border-4 border-gray-300 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(156,163,175,1)] dark:shadow-[8px_8px_0px_0px_rgba(55,65,81,0.8)] relative">
               <div className="absolute -top-4 -right-4 w-12 h-6 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600"></div>
               <h1 className="text-4xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-6">{lesson?.title}</h1>
-              <div className="whitespace-pre-wrap leading-8 text-gray-700 dark:text-gray-200 font-semibold">
-                {lessonContent}
-              </div>
+              <BlockRenderer content={lessonContent} />
             </div>
           )}
 

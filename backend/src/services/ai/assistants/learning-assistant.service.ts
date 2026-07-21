@@ -1,13 +1,13 @@
 import prisma from "../../../lib/prisma";
 import { AiService } from "../core/ai.service";
-import type { CoreMessage } from "ai";
 import { getDefaultModel } from "../core/ai-providers";
+import { getLessonPlainContent } from "../domain/lesson-blocks";
 
 export class LearningAssistantService {
   /**
    * Tutors the user based on the current lesson context.
    */
-  static async chatWithTutor(lessonId: string, messages: CoreMessage[]) {
+  static async chatWithTutor(lessonId: string, messages: any[]) {
     const lesson = await prisma.lesson.findUnique({
       where: { id: lessonId },
     });
@@ -24,7 +24,7 @@ You must:
 - Refuse to answer questions that are completely unrelated to the lesson content or general course topic.
 
 CURRENT LESSON CONTENT:
-${lesson.content}`;
+${getLessonPlainContent(lesson.content)}`;
 
     // Note: We use the plain text chat stream here (not structured object)
     // In a real app, you would likely stream this response using \`streamText\`.
