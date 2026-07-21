@@ -3,21 +3,25 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { BlockRenderer, MarkdownRenderer } from '../components/BlockRenderer';
 import {
   ArrowLeft,
+  Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
   ClipboardCheck,
+  History,
   LoaderCircle,
   Lock,
   MessageCircle,
   Minus,
+  Pencil,
   Play,
   Plus,
   RefreshCw,
   Send,
   Sidebar,
   Sparkles,
+  Trash2,
   Video,
   X,
 } from 'lucide-react';
@@ -32,6 +36,13 @@ import type {
   TutorMessage,
   TutorResponse,
 } from '../types/lesson';
+
+interface ChatThread {
+  id: string;
+  title: string;
+  createdAt: number;
+  messages: TutorMessage[];
+}
 
 function makeMessage(role: TutorMessage['role'], content: string): TutorMessage {
   return {
@@ -90,6 +101,11 @@ const Lesson = () => {
   const [chatInput, setChatInput] = useState('');
   const [isChatting, setIsChatting] = useState(false);
   const [messages, setMessages] = useState<TutorMessage[]>([]);
+  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   const [courseModules, setCourseModules] = useState<CourseModule[]>([]);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
@@ -208,27 +224,69 @@ const Lesson = () => {
       setQuizStatus(nextQuizStatus);
       if (nextLesson.module?.id) setSidebarExpandedModule(nextLesson.module.id);
       await loadProgress();
-      if (nextLesson.content) {
+      const activeCourseId = routeCourseId || nextLesson.module?.courseId || '';
+      if (activeCourseId) {
+        const chatsKey = `tutorme_ai_chats_${activeCourseId}`;
+        const activeThreadKey = `tutorme_active_chat_thread_${activeCourseId}`;
+        
+        let loadedThreads: ChatThread[] = [];
+        const storedChats = localStorage.getItem(chatsKey);
+        if (storedChats) {
+          try {
+            loadedThreads = JSON.parse(storedChats);
+          } catch {
+            loadedThreads = [];
+          }
+        }
+        
+        if (loadedThreads.length === 0) {
+          const oldChatKey = `tutorme_ai_chat_${activeCourseId}`;
+          const storedOldChat = localStorage.getItem(oldChatKey);
+          let initialMessages = [makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")];
+          if (storedOldChat) {
+            try {
+              initialMessages = JSON.parse(storedOldChat);
+            } catch {}
+          }
+          const defaultThread: ChatThread = {
+            id: 'thread_' + Date.now(),
+            title: 'Chat Session 1',
+            createdAt: Date.now(),
+            messages: initialMessages
+          };
+          loadedThreads = [defaultThread];
+          localStorage.setItem(chatsKey, JSON.stringify(loadedThreads));
+        }
+        
+        setThreads(loadedThreads);
+        
+        let activeId = localStorage.getItem(activeThreadKey);
+        if (!activeId || !loadedThreads.some(t => t.id === activeId)) {
+          activeId = loadedThreads[0]?.id || null;
+        }
+        
+        setActiveThreadId(activeId);
+        const activeThread = loadedThreads.find(t => t.id === activeId);
+        setMessages(activeThread ? activeThread.messages : []);
+      } else {
         const storageKey = `tutorme_ai_chat_${lessonId}`;
         const stored = localStorage.getItem(storageKey);
+        let initialMessages = [makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")];
         if (stored) {
           try {
-            setMessages(JSON.parse(stored));
-          } catch {
-            setMessages([makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]);
-          }
-        } else {
-          setMessages([makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]);
+            initialMessages = JSON.parse(stored);
+          } catch {}
         }
-      } else {
-        setMessages([]);
+        setMessages(initialMessages);
+        setThreads([]);
+        setActiveThreadId(null);
       }
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'We could not load this lesson.'));
     } finally {
       setIsLoading(false);
     }
-  }, [lessonId, loadProgress]);
+  }, [lessonId, loadProgress, routeCourseId]);
 
   useEffect(() => { void loadLesson(); }, [loadLesson]);
 
@@ -306,6 +364,26 @@ const Lesson = () => {
     navigate(`/courses/${encodeURIComponent(cid)}/lessons/${encodeURIComponent(prevLesson.id)}`);
   };
 
+  const updateThreadMessages = (activeCourseId: string, threadId: string, nextMessages: TutorMessage[]) => {
+    setThreads((prevThreads) => {
+      const nextThreads = prevThreads.map((thread) => {
+        if (thread.id !== threadId) return thread;
+        
+        let title = thread.title;
+        if (title === 'New Chat' || title === 'Chat Session 1') {
+          const userMsg = nextMessages.find(m => m.role === 'user');
+          if (userMsg) {
+            title = userMsg.content.slice(0, 30) + (userMsg.content.length > 30 ? '...' : '');
+          }
+        }
+        
+        return { ...thread, messages: nextMessages, title };
+      });
+      localStorage.setItem(`tutorme_ai_chats_${activeCourseId}`, JSON.stringify(nextThreads));
+      return nextThreads;
+    });
+  };
+
   const handleTutorMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const content = chatInput.trim();
@@ -313,8 +391,15 @@ const Lesson = () => {
     const userMessage = makeMessage('user', content);
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
-    const storageKey = `tutorme_ai_chat_${lessonId}`;
-    localStorage.setItem(storageKey, JSON.stringify(nextMessages));
+    
+    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
+    if (activeCourseId && activeThreadId) {
+      updateThreadMessages(activeCourseId, activeThreadId, nextMessages);
+    } else {
+      const storageKey = `tutorme_ai_chat_${lessonId}`;
+      localStorage.setItem(storageKey, JSON.stringify(nextMessages));
+    }
+    
     setChatInput('');
     setChatError('');
     setIsChatting(true);
@@ -328,7 +413,12 @@ const Lesson = () => {
       const assistantMessage = makeMessage('assistant', reply);
       setMessages((cur) => {
         const updated = [...cur, assistantMessage];
-        localStorage.setItem(storageKey, JSON.stringify(updated));
+        if (activeCourseId && activeThreadId) {
+          updateThreadMessages(activeCourseId, activeThreadId, updated);
+        } else {
+          const storageKey = `tutorme_ai_chat_${lessonId}`;
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+        }
         return updated;
       });
     } catch (requestError) {
@@ -336,6 +426,105 @@ const Lesson = () => {
     } finally {
       setIsChatting(false);
     }
+  };
+
+  const handleCreateNewThread = () => {
+    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
+    if (!activeCourseId) return;
+    
+    const newThread: ChatThread = {
+      id: 'thread_' + Date.now(),
+      title: 'New Chat',
+      createdAt: Date.now(),
+      messages: [makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]
+    };
+    
+    const nextThreads = [...threads, newThread];
+    setThreads(nextThreads);
+    setActiveThreadId(newThread.id);
+    setMessages(newThread.messages);
+    localStorage.setItem(`tutorme_ai_chats_${activeCourseId}`, JSON.stringify(nextThreads));
+    localStorage.setItem(`tutorme_active_chat_thread_${activeCourseId}`, newThread.id);
+    setIsHistoryOpen(false);
+  };
+
+  const handleDeleteThread = (threadId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
+    if (!activeCourseId) return;
+    
+    const nextThreads = threads.filter(t => t.id !== threadId);
+    setThreads(nextThreads);
+    
+    let nextActiveId = activeThreadId;
+    if (activeThreadId === threadId) {
+      if (nextThreads.length > 0) {
+        nextActiveId = nextThreads[0].id;
+        setMessages(nextThreads[0].messages);
+      } else {
+        const defaultThread: ChatThread = {
+          id: 'thread_' + Date.now(),
+          title: 'New Chat',
+          createdAt: Date.now(),
+          messages: [makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]
+        };
+        nextThreads.push(defaultThread);
+        setThreads(nextThreads);
+        nextActiveId = defaultThread.id;
+        setMessages(defaultThread.messages);
+      }
+    }
+    
+    setActiveThreadId(nextActiveId);
+    localStorage.setItem(`tutorme_ai_chats_${activeCourseId}`, JSON.stringify(nextThreads));
+    if (nextActiveId) {
+      localStorage.setItem(`tutorme_active_chat_thread_${activeCourseId}`, nextActiveId);
+    } else {
+      localStorage.removeItem(`tutorme_active_chat_thread_${activeCourseId}`);
+    }
+  };
+
+  const handleSwitchThread = (threadId: string) => {
+    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
+    if (!activeCourseId) return;
+    
+    setActiveThreadId(threadId);
+    localStorage.setItem(`tutorme_active_chat_thread_${activeCourseId}`, threadId);
+    const target = threads.find(t => t.id === threadId);
+    setMessages(target ? target.messages : []);
+    setIsHistoryOpen(false);
+  };
+
+  const handleStartRename = (threadId: string, currentTitle: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setEditingThreadId(threadId);
+    setEditingTitle(currentTitle);
+  };
+
+  const handleSaveRename = (threadId: string, event: React.MouseEvent | React.KeyboardEvent) => {
+    event.stopPropagation();
+    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
+    if (!activeCourseId) return;
+
+    const trimmed = editingTitle.trim();
+    if (!trimmed) return;
+
+    const nextThreads = threads.map((t) => {
+      if (t.id === threadId) {
+        return { ...t, title: trimmed };
+      }
+      return t;
+    });
+
+    setThreads(nextThreads);
+    setEditingThreadId(null);
+    localStorage.setItem(`tutorme_ai_chats_${activeCourseId}`, JSON.stringify(nextThreads));
+  };
+
+  const handleCancelRename = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setEditingThreadId(null);
+    setEditingTitle('');
   };
 
   const lessonContent = useMemo(() => lesson?.content?.trim() || '', [lesson?.content]);
@@ -767,35 +956,154 @@ const Lesson = () => {
                 <Sparkles className="w-8 h-8 fill-purple-500 text-purple-500" />
                 AI Assistant
               </h2>
-              <button
-                onClick={() => setIsAIAssistantOpen(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-white/50 dark:bg-gray-800/50 rounded-full p-1"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-2">
+                {courseId && (
+                  <>
+                    <button
+                      onClick={handleCreateNewThread}
+                      title="New Chat"
+                      className="text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 bg-white/50 dark:bg-gray-800/50 rounded-full p-2 border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:scale-105"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+                      title="Chat History"
+                      className={`text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 bg-white/50 dark:bg-gray-800/50 rounded-full p-2 border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:scale-105 ${isHistoryOpen ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400' : ''}`}
+                    >
+                      <History className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setIsAIAssistantOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-white/50 dark:bg-gray-800/50 rounded-full p-1"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
+            {isHistoryOpen && (
+              <div className="absolute top-[80px] left-6 right-6 bg-white/95 dark:bg-gray-900/95 border-4 border-purple-300 dark:border-purple-800 rounded-3xl p-4 shadow-[8px_8px_0_#c084fc] z-50 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-2 transition-all">
+                <div className="flex justify-between items-center mb-2 pb-2 border-b-2 border-dashed border-gray-200 dark:border-gray-700">
+                  <span className="font-['Kalam',cursive] font-bold text-lg text-purple-950 dark:text-purple-100">Chat History</span>
+                  <button
+                    onClick={() => setIsHistoryOpen(false)}
+                    className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline"
+                  >
+                    Close
+                  </button>
+                </div>
+                {threads.length === 0 ? (
+                  <p className="text-sm font-semibold text-gray-400 dark:text-gray-500 py-4 text-center">No chat history yet.</p>
+                ) : (
+                  threads.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => {
+                        if (editingThreadId !== t.id) {
+                          handleSwitchThread(t.id);
+                        }
+                      }}
+                      className={`group flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer ${
+                        t.id === activeThreadId
+                          ? 'bg-purple-100 dark:bg-purple-900/40 border-purple-400 dark:border-purple-700 text-purple-900 dark:text-purple-100'
+                          : 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-800 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {editingThreadId === t.id ? (
+                        <div className="flex items-center gap-2 w-full" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleSaveRename(t.id, e);
+                              } else if (e.key === 'Escape') {
+                                handleCancelRename(e as any);
+                              }
+                            }}
+                            className="flex-1 bg-white dark:bg-gray-800 border-2 border-purple-400 rounded-xl px-2 py-1 text-sm font-bold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                            autoFocus
+                          />
+                          <button
+                            onClick={(e) => handleSaveRename(t.id, e)}
+                            className="p-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                            title="Save"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={handleCancelRename}
+                            className="p-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex flex-col gap-0.5 overflow-hidden flex-1 pr-2">
+                            <span className="text-sm font-bold truncate">{t.title}</span>
+                            <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+                              {new Date(t.createdAt).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => handleStartRename(t.id, t.title, e)}
+                              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-400 hover:text-purple-600 dark:text-gray-500 dark:hover:text-purple-400 hover:bg-white dark:hover:bg-gray-700 transition-all"
+                              title="Rename Chat"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteThread(t.id, e)}
+                              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 hover:bg-white dark:hover:bg-gray-700 transition-all"
+                              title="Delete Chat"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
             <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-4 pr-1 custom-scrollbar" aria-live="polite">
-              {!isLessonReady && (
+              {!isLessonReady ? (
                 <div className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-md font-bold text-gray-700 dark:text-gray-300">
                   Generate the lesson first, then I can help explain the material!
                 </div>
-              )}
-              {messages.map((message) =>
-                message.role === 'assistant' ? (
-                  <div key={message.id} className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    <MarkdownRenderer content={message.content} />
-                  </div>
-                ) : (
-                  <div key={message.id} className="bg-pink-100 dark:bg-pink-900/40 border-4 border-pink-300 dark:border-pink-700 p-4 rounded-3xl rounded-tr-none shadow-[4px_4px_0px_0px_rgba(244,114,182,1)] dark:shadow-[4px_4px_0px_0px_rgba(190,24,93,0.8)] ml-4 text-sm font-semibold text-pink-900 dark:text-pink-100 self-end transform rotate-1">
-                    <MarkdownRenderer content={message.content} />
-                  </div>
-                )
-              )}
-              {isChatting && (
-                <div className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] mr-4 inline-flex items-center gap-2 font-bold text-gray-600 dark:text-gray-300">
-                  <LoaderCircle className="h-5 w-5 animate-spin" /> Thinking…
-                </div>
+              ) : (
+                <>
+                  {messages.map((message) =>
+                    message.role === 'assistant' ? (
+                      <div key={message.id} className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        <MarkdownRenderer content={message.content} />
+                      </div>
+                    ) : (
+                      <div key={message.id} className="bg-pink-100 dark:bg-pink-900/40 border-4 border-pink-300 dark:border-pink-700 p-4 rounded-3xl rounded-tr-none shadow-[4px_4px_0px_0px_rgba(244,114,182,1)] dark:shadow-[4px_4px_0px_0px_rgba(190,24,93,0.8)] ml-4 text-sm font-semibold text-pink-900 dark:text-pink-100 self-end transform rotate-1">
+                        <MarkdownRenderer content={message.content} />
+                      </div>
+                    )
+                  )}
+                  {isChatting && (
+                    <div className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] mr-4 inline-flex items-center gap-2 font-bold text-gray-600 dark:text-gray-300">
+                      <LoaderCircle className="h-5 w-5 animate-spin" /> Thinking…
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
