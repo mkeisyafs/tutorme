@@ -6,14 +6,20 @@ import { getLessonPlainContent } from "./lesson-blocks";
 
 const QuestionSchema = z.object({
   questions: z.array(
-    z.object({
-      type: z.enum(["MULTIPLE_CHOICE", "ESSAY"]),
-      prompt: z.string().describe("The question text"),
-      options: z.array(z.string()).optional().describe("Options for multiple choice"),
-      explanations: z.array(z.string()).optional().describe("Explanations for why each option is correct or incorrect"),
-      correctAnswer: z.number().optional().describe("Index of the correct option (0-based)"),
-      requiresImage: z.boolean().default(false).describe("If this essay question needs an image upload"),
-    })
+    z.discriminatedUnion("type", [
+      z.object({
+        type: z.literal("MULTIPLE_CHOICE"),
+        prompt: z.string().describe("The question text"),
+        options: z.array(z.string()).describe("Options for multiple choice"),
+        explanations: z.array(z.string()).describe("Explanations for why each option is correct or incorrect"),
+        correctAnswer: z.number().describe("Index of the correct option (0-based)"),
+      }),
+      z.object({
+        type: z.literal("ESSAY"),
+        prompt: z.string().describe("The question text"),
+        requiresImage: z.boolean().default(false).describe("If this essay question needs an image upload"),
+      })
+    ])
   ),
 });
 
@@ -33,21 +39,53 @@ export class QuizGeneratorService {
       throw new Error("Lesson content not found to generate quiz.");
     }
 
-    // Check if a chapter quiz already exists for this course (we'll attach it to the course)
-    // Or we can create a Quiz per module/lesson. 
-    // The schema says Quiz belongs to Course. We'll create a CHAPTER_QUIZ for the course based on this lesson.
     const quizTitle = `Quiz for Lesson: ${lesson.title}`;
+    const sameTitleLessonCount = await prisma.lesson.count({
+      where: {
+        title: lesson.title,
+        module: { courseId: lesson.module.courseId },
+      },
+    });
+    const canUseLegacyTitleFallback = sameTitleLessonCount === 1;
 
     const existingQuiz = await prisma.quiz.findFirst({
       where: {
-        courseId: lesson.module.courseId,
-        title: quizTitle,
+        lessonId: lesson.id,
         type: "CHAPTER_QUIZ",
         questions: { some: {} },
       },
-      select: { id: true },
+      select: { id: true, chapterQuizLessonKey: true },
     });
-    if (existingQuiz) return existingQuiz.id;
+    if (existingQuiz) {
+      if (existingQuiz.chapterQuizLessonKey !== lesson.id) {
+        await prisma.quiz.update({
+          where: { id: existingQuiz.id },
+          data: { chapterQuizLessonKey: lesson.id },
+        });
+      }
+      return existingQuiz.id;
+    }
+
+    const existingLegacyQuizzes = canUseLegacyTitleFallback
+      ? await prisma.quiz.findMany({
+          where: {
+            courseId: lesson.module.courseId,
+            lessonId: null,
+            title: quizTitle,
+            type: "CHAPTER_QUIZ",
+            questions: { some: {} },
+          },
+          select: { id: true },
+          take: 2,
+        })
+      : [];
+    if (existingLegacyQuizzes.length === 1) {
+      await prisma.quiz.update({
+        where: { id: existingLegacyQuizzes[0].id },
+        data: { lessonId: lesson.id, chapterQuizLessonKey: lesson.id },
+      });
+      return existingLegacyQuizzes[0].id;
+    }
 
     const prompt = `Generate a short quiz for the following educational content. 
 Include 3 multiple choice questions and 1 essay question.
@@ -72,28 +110,88 @@ ${getLessonPlainContent(lesson.content)}`;
     const quizId = await prisma.$transaction(async (tx) => {
       const completedQuiz = await tx.quiz.findFirst({
         where: {
-          courseId: lesson.module.courseId,
-          title: quizTitle,
+          lessonId: lesson.id,
           type: "CHAPTER_QUIZ",
           questions: { some: {} },
         },
-        select: { id: true },
+        select: { id: true, chapterQuizLessonKey: true },
       });
-      if (completedQuiz) return completedQuiz.id;
+      if (completedQuiz) {
+        if (completedQuiz.chapterQuizLessonKey !== lesson.id) {
+          await tx.quiz.update({
+            where: { id: completedQuiz.id },
+            data: { chapterQuizLessonKey: lesson.id },
+          });
+        }
+        return completedQuiz.id;
+      }
 
-      const emptyQuiz = await tx.quiz.findFirst({
+      const completedLegacyQuizzes = canUseLegacyTitleFallback
+        ? await tx.quiz.findMany({
+            where: {
+              courseId: lesson.module.courseId,
+              lessonId: null,
+              title: quizTitle,
+              type: "CHAPTER_QUIZ",
+              questions: { some: {} },
+            },
+            select: { id: true },
+            take: 2,
+          })
+        : [];
+      if (completedLegacyQuizzes.length === 1) {
+        await tx.quiz.update({
+          where: { id: completedLegacyQuizzes[0].id },
+          data: { lessonId: lesson.id, chapterQuizLessonKey: lesson.id },
+        });
+        return completedLegacyQuizzes[0].id;
+      }
+
+      const emptyQuizzes = await tx.quiz.findMany({
         where: {
-          courseId: lesson.module.courseId,
-          title: quizTitle,
+          lessonId: lesson.id,
           type: "CHAPTER_QUIZ",
         },
-        select: { id: true },
+        select: { id: true, chapterQuizLessonKey: true },
+        take: 2,
       });
+      const emptyQuiz = emptyQuizzes.length === 1 ? emptyQuizzes[0] : null;
+      const legacyQuizzes = canUseLegacyTitleFallback
+        ? await tx.quiz.findMany({
+            where: {
+              courseId: lesson.module.courseId,
+              lessonId: null,
+              title: quizTitle,
+              type: "CHAPTER_QUIZ",
+            },
+            select: { id: true },
+            take: 2,
+          })
+        : [];
       const quiz =
-        emptyQuiz ??
-        (await tx.quiz.create({
-          data: {
+        (emptyQuiz?.chapterQuizLessonKey === lesson.id
+          ? { id: emptyQuiz.id }
+          : emptyQuiz
+            ? await tx.quiz.update({
+                where: { id: emptyQuiz.id },
+                data: { chapterQuizLessonKey: lesson.id },
+                select: { id: true },
+              })
+            : null) ??
+        (legacyQuizzes.length === 1
+          ? await tx.quiz.update({
+              where: { id: legacyQuizzes[0].id },
+              data: { lessonId: lesson.id, chapterQuizLessonKey: lesson.id },
+              select: { id: true },
+            })
+          : null) ??
+        (await tx.quiz.upsert({
+          where: { chapterQuizLessonKey: lesson.id },
+          update: { lessonId: lesson.id },
+          create: {
             courseId: lesson.module.courseId,
+            lessonId: lesson.id,
+            chapterQuizLessonKey: lesson.id,
             title: quizTitle,
             type: "CHAPTER_QUIZ",
             passingScore: 70,
@@ -107,10 +205,10 @@ ${getLessonPlainContent(lesson.content)}`;
             quizId: quiz.id,
             type: q.type,
             prompt: q.prompt,
-            options: q.options || [],
-            explanations: q.explanations || [],
-            correctAnswer: q.correctAnswer ?? null,
-            requiresImage: q.requiresImage,
+            options: "options" in q ? q.options : [],
+            explanations: "explanations" in q ? q.explanations : [],
+            correctAnswer: "correctAnswer" in q ? q.correctAnswer : null,
+            requiresImage: "requiresImage" in q ? q.requiresImage : false,
           },
         });
       }

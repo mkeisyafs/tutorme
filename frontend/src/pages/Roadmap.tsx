@@ -288,14 +288,14 @@ const Roadmap = () => {
               <button
                 onClick={() => navigate(-1)}
                 disabled={isPublishing}
-                className="rounded-xl border-2 border-gray-300 bg-white px-3 sm:px-6 py-2.5 font-['Kalam',cursive] text-base sm:text-lg font-bold text-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] transition-all active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] dark:hover:bg-gray-700"
+                className="rounded-xl border-2 border-gray-300 bg-white px-4 py-2.5 font-['Kalam',cursive] text-lg font-bold text-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] transition-all hover:bg-gray-100 hover:text-gray-900 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] dark:hover:bg-gray-700"
               >
                 Cancel
               </button>
               <button
                 onClick={() => void handlePublish()}
-                disabled={isBackgroundBusy || isSavingDetails || isChatting}
-                className="flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-4 sm:px-6 py-2.5 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(21,128,61,1)] transition-all active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 dark:bg-green-600 dark:hover:bg-green-500"
+                disabled={isPublishing || isSavingDetails || isChatting}
+                className="flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 hover:bg-green-600 px-4 py-2.5 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(21,128,61,1)] transition-all active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 dark:bg-green-600 dark:hover:bg-green-500"
               >
                 {isPublishing && <LoaderCircle className="h-5 w-5 animate-spin" />}
                 {isPublishing ? 'Starting…' : 'Start Learning'}

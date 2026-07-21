@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 
-import FirecrawlApp, { SearchResponse } from "@mendable/firecrawl-js";
+import FirecrawlApp from "@mendable/firecrawl-js";
 
 export async function performWebSearch(query: string) {
   try {
@@ -43,7 +43,7 @@ export const webSearchTool = tool({
   parameters: z.object({
     query: z.string().describe("The search query to look up."),
   }),
-  execute: async ({ query }) => performWebSearch(query),
+  execute: async (args: any) => performWebSearch(args.query),
 });
 
 export async function performYoutubeSearch(topic: string) {
@@ -91,5 +91,5 @@ export const youtubeSearchTool = tool({
   parameters: z.object({
     topic: z.string().describe("The topic to search for on YouTube."),
   }),
-  execute: async ({ topic }) => performYoutubeSearch(topic),
+  execute: async (args: any) => performYoutubeSearch(args.topic),
 });

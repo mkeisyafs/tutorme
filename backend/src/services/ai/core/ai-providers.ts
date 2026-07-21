@@ -6,7 +6,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 // `stream === undefined` guard no longer works. We force stream: false on
 // every request. Streaming responses (from streamText/streamObject) set up
 // their own SSE parsers, so this only affects non-streaming callers.
-const openAICompatibleFetch: typeof fetch = async (input, init) => {
+const openAICompatibleFetch: any = async (input: any, init: any) => {
   const url = typeof input === "string" ? input : input.toString();
   console.debug("[ai-providers] → URL:", url);
 

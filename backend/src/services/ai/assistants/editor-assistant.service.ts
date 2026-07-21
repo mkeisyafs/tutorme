@@ -2,7 +2,7 @@ import { AiService } from "../core/ai.service";
 import { outlineCache } from "../domain/outline-cache.service";
 import { z } from "zod";
 import crypto from "crypto";
-import type { CoreMessage } from "ai";
+
 import { getDefaultModel } from "../core/ai-providers";
 
 // We re-use a schema similar to the generator, but for editing

@@ -101,6 +101,7 @@ model Lesson {
   orderIndex Int                  @default(0)
 
   progress   UserLessonProgress[]
+  quizzes    Quiz[]
 
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
@@ -182,6 +183,9 @@ model Quiz {
   id           String           @id @default(uuid())
   courseId     String
   course       Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId     String?
+  lesson       Lesson?          @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  chapterQuizLessonKey String?          @unique
   title        String
   type         QuizType         @default(FINAL_EXAM)
   passingScore Int              @default(70)
@@ -191,6 +195,8 @@ model Quiz {
 
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+
+  @@index([lessonId])
 }
 
 model Question {
@@ -227,6 +233,10 @@ model ExamSubmission {
   userAnswers    Json
   essayImageUrl  String?
   aiFeedback     String?  @db.Text
+  // Versioned per-question review JSON, nullable until review is generated.
+  // Shape: { "version": 1, "questions": { "question_id": { ...review } } }
+  review              Json?
+  canonicalAttemptKey String?  @unique
 
   submittedAt    DateTime @default(now())
 }

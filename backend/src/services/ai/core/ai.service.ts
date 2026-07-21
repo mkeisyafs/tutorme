@@ -153,10 +153,19 @@ const KEY_ALIASES: Record<string, string> = {
   question: "prompt",
   correct_answer: "correctAnswer",
   correct_answer_index: "correctAnswer",
+  correct_option_index: "correctAnswer",
   correctAnswerIndex: "correctAnswer",
+  explanation: "explanations",
+  rubric: "explanations",
   requires_image: "requiresImage",
   quiz_title: "_ignored",
-  quizTitle: "_ignored"
+  quizTitle: "_ignored",
+  answer: "correctAnswer",
+  sample_answer: "sampleAnswer",
+  // Essay review fields
+  results: "essays",
+  reviews: "essays",
+  feedback: "rationale"
 };
 
 const LOWERCASE_ALIASES = Object.fromEntries(
@@ -181,6 +190,8 @@ function normalizeModelResponse(value: unknown): unknown {
         result[mapped] = "MULTIPLE_CHOICE";
       } else if (mapped === "type" && normalized === "essay") {
         result[mapped] = "ESSAY";
+      } else if (mapped === "explanations" && typeof normalized === "string") {
+        result[mapped] = [normalized];
       } else {
         result[mapped] = normalized;
       }
@@ -200,6 +211,100 @@ function normalizeModelResponse(value: unknown): unknown {
             if (!mod.description) {
               mod.description = (mod.title as string) || "No description provided.";
             }
+          }
+        }
+      }
+    }
+
+    // Merge separate question arrays from some OpenAI-compatible providers
+    const mcqs = Array.isArray(result.multiple_choice_questions) ? result.multiple_choice_questions : Array.isArray(result.multipleChoiceQuestions) ? result.multipleChoiceQuestions : null;
+    const eqs = Array.isArray(result.essay_questions) ? result.essay_questions : Array.isArray(result.essayQuestions) ? result.essayQuestions : null;
+
+    if (mcqs || eqs) {
+      if (!Array.isArray(result.questions)) {
+        result.questions = [];
+      }
+      if (mcqs) {
+        for (const q of mcqs) {
+          if (typeof q === "object" && q !== null) {
+             (q as any).type = "MULTIPLE_CHOICE";
+             (result.questions as any[]).push(q);
+          }
+        }
+        delete result.multiple_choice_questions;
+        delete result.multipleChoiceQuestions;
+      }
+      if (eqs) {
+        for (const q of eqs) {
+          if (typeof q === "object" && q !== null) {
+             (q as any).type = "ESSAY";
+             (result.questions as any[]).push(q);
+          }
+        }
+        delete result.essay_questions;
+        delete result.essayQuestions;
+      }
+    }
+
+    // Handle hallucinated essay review format (map of questionId -> { score, rationale })
+    const keys = Object.keys(result);
+    if (!result.essays && !result.aggregateFeedback && keys.length > 0) {
+      const isMap = keys.every(key => {
+        const val = result[key];
+        return typeof val === "object" && val !== null && ("score" in val || "rationale" in val);
+      });
+      if (isMap) {
+        const essays: any[] = [];
+        for (const [qId, reviewObj] of Object.entries(result)) {
+          if (typeof reviewObj === "object" && reviewObj !== null) {
+            essays.push({
+              questionId: qId,
+              ...reviewObj
+            });
+          }
+          delete result[qId];
+        }
+        result.essays = essays;
+      }
+    }
+
+    // Fix up hallucinated string correctAnswers in MULTIPLE_CHOICE questions
+    if (Array.isArray(result.questions)) {
+      for (const q of result.questions) {
+        if (typeof q === "object" && q !== null && q.type === "MULTIPLE_CHOICE") {
+          if (typeof q.correctAnswer === "string" && Array.isArray(q.options)) {
+            const idx = q.options.findIndex((opt: unknown) => 
+              typeof opt === "string" && opt.trim() === (q.correctAnswer as string).trim()
+            );
+            if (idx !== -1) {
+              q.correctAnswer = idx;
+            } else {
+              const partialIdx = q.options.findIndex((opt: unknown) => 
+                typeof opt === "string" && opt.toLowerCase().includes((q.correctAnswer as string).toLowerCase())
+              );
+              q.correctAnswer = partialIdx !== -1 ? partialIdx : 0;
+            }
+          }
+        }
+      }
+    }
+
+    // Fix up EssayReview object if it looks like one (has essays array)
+    if (Array.isArray(result.essays)) {
+      if (result.schemaVersion === undefined) {
+        result.schemaVersion = 1;
+      }
+      if (!result.aggregateFeedback || typeof result.aggregateFeedback !== "string") {
+        result.aggregateFeedback = "Review completed by AI.";
+      }
+      for (const essay of result.essays) {
+        if (typeof essay === "object" && essay !== null) {
+          const e = essay as Record<string, unknown>;
+          if (!Array.isArray(e.strengths) || e.strengths.length === 0) {
+            e.strengths = ["See rationale for details."];
+          }
+          if (!Array.isArray(e.improvements) || e.improvements.length === 0) {
+            e.improvements = ["See rationale for details."];
           }
         }
       }

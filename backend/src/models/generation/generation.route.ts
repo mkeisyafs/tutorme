@@ -11,86 +11,12 @@ import { QuizWorkerService } from "../../services/ai/workers/quiz-worker.service
 import prisma from "../../lib/prisma";
 import { authMiddleware } from "../../middleware/auth";
 
+import { protectedAssessmentRoute } from "./generation-assessment.route";
+
 // The existing outline and lesson routes intentionally remain compatible with
 // their current client-supplied user IDs. Final-exam eligibility is different:
 // it is tied to a learner's persisted progress, so this nested route derives
 // that learner from the verified JWT rather than accepting a spoofable userId.
-const protectedAssessmentRoute = new Elysia()
-  .use(authMiddleware.as("scoped"))
-  .onBeforeHandle(({ user, set }: any) => {
-    if (!user) {
-      set.status = 401;
-      return { message: "Unauthorized: Invalid or missing token" };
-    }
-  })
-  .post(
-    "/course/:courseId/final-exam",
-    async ({ params, user }: any) => {
-      return FinalExamGeneratorService.requestGeneration(user.sub, params.courseId);
-    },
-    {
-      params: t.Object({ courseId: t.String() }),
-    }
-  )
-  .get(
-    "/course/:courseId/final-exam",
-    async ({ params, user }: any) => {
-      return FinalExamGeneratorService.getStatus(user.sub, params.courseId);
-    },
-    {
-      params: t.Object({ courseId: t.String() }),
-    }
-  )
-  .get(
-    "/quiz/:quizId/attempt",
-    async ({ params, user, set }: any) => {
-      const result = await LearnerAssessmentService.getAttempt(user.sub, params.quizId);
-      if (!result.ok) {
-        set.status = result.status;
-        return { message: result.message };
-      }
-      return result.data;
-    },
-    {
-      params: t.Object({ quizId: t.String() }),
-    }
-  )
-  .post(
-    "/quiz/:quizId/submit",
-    async ({ params, body, user, set }: any) => {
-      const result = await LearnerAssessmentService.submit(user.sub, params.quizId, body);
-      if (!result.ok) {
-        set.status = result.status;
-        return { message: result.message };
-      }
-      return result.data;
-    },
-    {
-      params: t.Object({ quizId: t.String() }),
-      body: t.Object({
-        answers: t.Record(t.String(), t.Any()),
-        timeSpentSec: t.Optional(t.Number({ minimum: 0 })),
-        essayImageUrl: t.Optional(t.Nullable(t.String())),
-      }),
-    }
-  )
-  .get(
-    "/submission/:submissionId",
-    async ({ params, user, set }: any) => {
-      const result = await LearnerAssessmentService.getSubmission(
-        user.sub,
-        params.submissionId
-      );
-      if (!result.ok) {
-        set.status = result.status;
-        return { message: result.message };
-      }
-      return result.data;
-    },
-    {
-      params: t.Object({ submissionId: t.String() }),
-    }
-  );
 
 export const generationController = new Elysia({ prefix: "/generation" })
 
@@ -131,9 +57,12 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 2. Get Cached Outline
   .get(
     "/outline/:draftId",
-    async ({ params, error }) => {
+    async ({ params, set }) => {
       const draft = outlineCache.get(params.draftId);
-      if (!draft) return error(404, "Draft not found");
+      if (!draft) {
+        set.status = 404;
+        return { message: "Draft not found" };
+      }
       return draft;
     }
   )
@@ -141,9 +70,12 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 3. Manual Update Cached Outline
   .patch(
     "/outline/:draftId",
-    async ({ params, body, error }) => {
+    async ({ params, body, set }) => {
       const draft = outlineCache.update(params.draftId, body as any);
-      if (!draft) return error(404, "Draft not found");
+      if (!draft) {
+        set.status = 404;
+        return { message: "Draft not found" };
+      }
       return draft;
     }
   )
@@ -151,12 +83,13 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 4. Start Learning (Persist to DB)
   .post(
     "/outline/:draftId/publish",
-    async ({ params, error }) => {
+    async ({ params, set }) => {
       try {
         const result = await CoursePersistenceService.publishDraft(params.draftId);
         return result;
       } catch (e: any) {
-        return error(400, e.message);
+        set.status = 400;
+        return { message: e.message };
       }
     }
   )
@@ -164,12 +97,13 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 5. Chat with Editor Assistant (Assistant 1)
   .post(
     "/outline/:draftId/chat",
-    async ({ params, body, error }) => {
+    async ({ params, body, set }) => {
       try {
         const result = await EditorAssistantService.chatWithEditor(params.draftId, body.messages);
         return result;
       } catch (e: any) {
-        return error(400, e.message);
+        set.status = 400;
+        return { message: e.message };
       }
     },
     {
@@ -182,12 +116,27 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 6. Generate Lesson on Demand
   .post(
     "/lesson/:lessonId/generate",
-    async ({ params, error }) => {
+    async ({ params, set }) => {
       try {
         const lesson = await LessonGeneratorService.generateLessonOnDemand(params.lessonId);
         return lesson;
       } catch (e: any) {
-        return error(400, e.message);
+        set.status = 400;
+        return { message: e.message };
+      }
+    }
+  )
+
+  // 6.5. Generate Quiz on Demand
+  .post(
+    "/lesson/:lessonId/quiz/generate",
+    async ({ params, set }) => {
+      try {
+        await QuizWorkerService.enqueueQuizGeneration(params.lessonId);
+        return { status: "queued" };
+      } catch (e: any) {
+        set.status = 400;
+        return { message: e.message };
       }
     }
   )
@@ -195,9 +144,12 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 7. Check Lesson Generation Status
   .get(
     "/lesson/:lessonId/status",
-    async ({ params, error }) => {
+    async ({ params, set }) => {
       const lesson = await prisma.lesson.findUnique({ where: { id: params.lessonId } });
-      if (!lesson) return error(404, "Lesson not found");
+      if (!lesson) {
+        set.status = 404;
+        return { message: "Lesson not found" };
+      }
       const isGenerating = LessonGeneratorService.isGenerating(params.lessonId);
       return { 
         state: lesson.content ? "ready" : isGenerating ? "generating" : "not_started",
@@ -211,13 +163,16 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 8. Check Quiz Generation Status
   .get(
     "/lesson/:lessonId/quiz-status",
-    async ({ params, error }) => {
+    async ({ params, set }) => {
       // Find the quiz attached to this course created AFTER the lesson generation
       const lesson = await prisma.lesson.findUnique({ 
         where: { id: params.lessonId },
         include: { module: true }
       });
-      if (!lesson) return error(404, "Lesson not found");
+      if (!lesson) {
+        set.status = 404;
+        return { message: "Lesson not found" };
+      }
       
       const quiz = await prisma.quiz.findFirst({
         where: {
@@ -255,12 +210,13 @@ export const generationController = new Elysia({ prefix: "/generation" })
   // 9. Chat with Learning Assistant (Assistant 2)
   .post(
     "/lesson/:lessonId/chat",
-    async ({ params, body, error }) => {
+    async ({ params, body, set }) => {
       try {
         const result = await LearningAssistantService.chatWithTutor(params.lessonId, body.messages);
         return result;
       } catch (e: any) {
-        return error(400, e.message);
+        set.status = 400;
+        return { message: e.message };
       }
     },
     {

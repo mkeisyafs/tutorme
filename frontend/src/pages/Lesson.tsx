@@ -2,8 +2,6 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react
 import { useNavigate, useParams } from 'react-router-dom';
 import { BlockRenderer, MarkdownRenderer } from '../components/BlockRenderer';
 import {
-  ArrowLeft,
-  Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -16,19 +14,18 @@ import {
   Minus,
   Pencil,
   Play,
-  Plus,
   RefreshCw,
   Send,
-  Sidebar,
   Sparkles,
   Trash2,
   Video,
   X,
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
+import { CourseSidebar } from '../components/CourseSidebar';
+import { useCourseSidebar } from '../hooks/useCourseSidebar';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-import type { ListResponse } from '../types/api';
-import type { CourseDetail, CourseLesson, CourseModule, LessonProgress } from '../types/course';
+
 import type {
   LessonGenerationStatus,
   LessonRecord,
@@ -66,23 +63,12 @@ const initialQuizStatus: QuizGenerationStatus = {
   reason: 'Generate this lesson before its quiz can be created.',
 };
 
-async function fetchAllLessonProgress(userId: string): Promise<LessonProgress[]> {
-  const PAGE = 100;
-  const results: LessonProgress[] = [];
-  let skip = 0;
-  let total = 0;
-  do {
-    const res = await apiRequest<ListResponse<LessonProgress>>(
-      `/lesson-progress?userId=${encodeURIComponent(userId)}&skip=${skip}&take=${PAGE}`
-    );
-    if (!Array.isArray(res.data)) break;
-    results.push(...res.data);
-    total = Math.max(0, Number(res.total) || 0);
-    skip += res.data.length;
-    if (res.data.length === 0) break;
-  } while (skip < total);
-  return results;
-}
+const quizGenerationSteps = [
+  'Reviewing this lesson',
+  'Writing thoughtful questions',
+  'Preparing answer guidance',
+  'Getting your quiz ready',
+];
 
 const Lesson = () => {
   const navigate = useNavigate();
@@ -94,6 +80,8 @@ const Lesson = () => {
   const [quizStatus, setQuizStatus] = useState<QuizGenerationStatus>(initialQuizStatus);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isQuizGenerationModalOpen, setIsQuizGenerationModalOpen] = useState(false);
+  const [quizGenerationStep, setQuizGenerationStep] = useState(0);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [error, setError] = useState('');
@@ -107,27 +95,19 @@ const Lesson = () => {
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
-  const [courseModules, setCourseModules] = useState<CourseModule[]>([]);
-  const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
+  const courseId = routeCourseId || lesson?.module?.courseId || '';
+  const { courseModules, completedLessonIds, setCompletedLessonIds, orderedLessons, progressPercent, allDone, refreshProgress } = useCourseSidebar(courseId);
 
-  const [sidebarExpandedModule, setSidebarExpandedModule] = useState<string | null>(null);
+  useEffect(() => {
+    if (lessonId) setIsCompleted(completedLessonIds.has(lessonId));
+  }, [completedLessonIds, lessonId]);
+
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [leftSidebarWidth, setLeftSidebarWidth] = useState(288);
-  const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [rightSidebarWidth, setRightSidebarWidth] = useState(340);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
 
-  const courseId = routeCourseId || lesson?.module?.courseId || '';
   const isLessonReady = Boolean(lesson?.content) || generationStatus?.state === 'ready';
   const isQuizReady = quizStatus.state === 'ready' && Boolean(quizStatus.quizId);
-  const currentModuleId = lesson?.module?.id ?? null;
-
-  const orderedLessons = useMemo<CourseLesson[]>(() => {
-    return [...courseModules]
-      .sort((a, b) => a.orderIndex - b.orderIndex)
-      .flatMap((m) => [...m.lessons].sort((a, b) => a.orderIndex - b.orderIndex));
-  }, [courseModules]);
 
   const currentLessonIndex = useMemo(
     () => orderedLessons.findIndex((l) => l.id === lessonId),
@@ -141,29 +121,15 @@ const Lesson = () => {
       : null;
   const isNextLessonAccessible = Boolean(nextLesson) && (isCompleted || Boolean(nextLesson?.isGenerated));
 
-  const totalLessons = orderedLessons.length;
-  const completedCount = useMemo(() => {
-    let count = 0;
-    for (const l of orderedLessons) {
-      if (completedLessonIds.has(l.id)) count++;
-    }
-    return count;
-  }, [orderedLessons, completedLessonIds]);
-  const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
-  const allDone = totalLessons > 0 && completedCount === totalLessons;
-
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDraggingLeft) {
-        const newWidth = e.clientX;
-        if (newWidth > 200 && newWidth < 600) setLeftSidebarWidth(newWidth);
-      } else if (isDraggingRight) {
+      if (isDraggingRight) {
         const newWidth = window.innerWidth - e.clientX;
         if (newWidth > 250 && newWidth < 800) setRightSidebarWidth(newWidth);
       }
     };
-    const handleMouseUp = () => { setIsDraggingLeft(false); setIsDraggingRight(false); };
-    if (isDraggingLeft || isDraggingRight) {
+    const handleMouseUp = () => { setIsDraggingRight(false); };
+    if (isDraggingRight) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.body.style.userSelect = 'none';
@@ -174,23 +140,7 @@ const Lesson = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingLeft, isDraggingRight]);
-
-  const loadProgress = useCallback(async () => {
-    if (!lessonId || !user?.id) {
-      setIsCompleted(false);
-      setCompletedLessonIds(new Set());
-      return;
-    }
-    const allProgress = await fetchAllLessonProgress(user.id);
-    const completed = new Set(
-      allProgress
-        .filter((p) => p.status === 'COMPLETED' && p.lessonId)
-        .map((p) => p.lessonId as string)
-    );
-    setCompletedLessonIds(completed);
-    setIsCompleted(completed.has(lessonId));
-  }, [lessonId, user?.id]);
+  }, [isDraggingRight]);
 
   const refreshStatuses = useCallback(async () => {
     if (!lessonId) return;
@@ -223,52 +173,9 @@ const Lesson = () => {
       setLesson(nextLesson);
       setGenerationStatus(nextLessonStatus);
       setQuizStatus(nextQuizStatus);
-      if (nextLesson.module?.id) setSidebarExpandedModule(nextLesson.module.id);
-      await loadProgress();
-      const activeCourseId = routeCourseId || nextLesson.module?.courseId || '';
-      if (activeCourseId) {
-        const chatsKey = `tutorme_ai_chats_${activeCourseId}`;
-        const activeThreadKey = `tutorme_active_chat_thread_${activeCourseId}`;
-        
-        let loadedThreads: ChatThread[] = [];
-        const storedChats = localStorage.getItem(chatsKey);
-        if (storedChats) {
-          try {
-            loadedThreads = JSON.parse(storedChats);
-          } catch {
-            loadedThreads = [];
-          }
-        }
-        
-        if (loadedThreads.length === 0) {
-          const oldChatKey = `tutorme_ai_chat_${activeCourseId}`;
-          const storedOldChat = localStorage.getItem(oldChatKey);
-          let initialMessages = [makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")];
-          if (storedOldChat) {
-            try {
-              initialMessages = JSON.parse(storedOldChat);
-            } catch {}
-          }
-          const defaultThread: ChatThread = {
-            id: 'thread_' + Date.now(),
-            title: 'Chat Session 1',
-            createdAt: Date.now(),
-            messages: initialMessages
-          };
-          loadedThreads = [defaultThread];
-          localStorage.setItem(chatsKey, JSON.stringify(loadedThreads));
-        }
-        
-        setThreads(loadedThreads);
-        
-        let activeId = localStorage.getItem(activeThreadKey);
-        if (!activeId || !loadedThreads.some(t => t.id === activeId)) {
-          activeId = loadedThreads[0]?.id || null;
-        }
-        
-        setActiveThreadId(activeId);
-        const activeThread = loadedThreads.find(t => t.id === activeId);
-        setMessages(activeThread ? activeThread.messages : []);
+      await refreshProgress();
+      if (nextLesson.content) {
+        setMessages([makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]);
       } else {
         const storageKey = `tutorme_ai_chat_${lessonId}`;
         const stored = localStorage.getItem(storageKey);
@@ -287,29 +194,30 @@ const Lesson = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [lessonId, loadProgress, routeCourseId]);
+  }, [lessonId, refreshProgress]);
 
   useEffect(() => { void loadLesson(); }, [loadLesson]);
 
-  useEffect(() => {
-    const resolvedCourseId = routeCourseId || lesson?.module?.courseId || '';
-    if (!resolvedCourseId) return;
-    apiRequest<CourseDetail>('/courses/' + encodeURIComponent(resolvedCourseId))
-      .then((course) => {
-        const sorted = [...course.modules].sort((a, b) => a.orderIndex - b.orderIndex).map((m) => ({
-          ...m,
-          lessons: [...m.lessons].sort((a, b) => a.orderIndex - b.orderIndex),
-        }));
-        setCourseModules(sorted);
-      })
-      .catch(() => undefined);
-  }, [routeCourseId, lesson?.module?.courseId]);
+  // Course sidebar handles fetching course detail
 
   useEffect(() => {
     if (!lessonId || (!isGenerating && !quizStatus.isGenerating && quizStatus.state !== 'queued')) return;
     const interval = window.setInterval(() => { void refreshStatuses().catch(() => undefined); }, 2500);
     return () => window.clearInterval(interval);
   }, [isGenerating, lessonId, quizStatus.isGenerating, quizStatus.state, refreshStatuses]);
+
+  useEffect(() => {
+    if (!isQuizGenerationModalOpen || quizStatus.state === 'failed' || isQuizReady) return;
+    const timer = window.setTimeout(() => {
+      setQuizGenerationStep((step) => Math.min(step + 1, 3));
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [isQuizGenerationModalOpen, isQuizReady, quizGenerationStep, quizStatus.state]);
+
+  useEffect(() => {
+    if (!isQuizGenerationModalOpen || !isQuizReady || !courseId || !quizStatus.quizId) return;
+    navigate('/courses/' + encodeURIComponent(courseId) + '/quizzes/' + encodeURIComponent(quizStatus.quizId));
+  }, [courseId, isQuizGenerationModalOpen, isQuizReady, navigate, quizStatus.quizId]);
 
   const handleGenerateLesson = async () => {
     if (!lessonId || isGenerating) return;
@@ -363,6 +271,23 @@ const Lesson = () => {
   const handleGoToQuiz = () => {
     if (!courseId || !quizStatus.quizId) return;
     navigate('/courses/' + encodeURIComponent(courseId) + '/quizzes/' + encodeURIComponent(quizStatus.quizId));
+  };
+
+  const handleStartQuiz = async () => {
+    if (!lessonId) return;
+    setError('');
+    setQuizGenerationStep(0);
+    setIsQuizGenerationModalOpen(true);
+    try {
+      const nextQuizStatus = await apiRequest<QuizGenerationStatus>(
+        '/generation/lesson/' + encodeURIComponent(lessonId) + '/quiz/generate',
+        { method: 'POST' }
+      );
+      setQuizStatus(nextQuizStatus);
+    } catch (requestError) {
+      setIsQuizGenerationModalOpen(false);
+      setError(getApiErrorMessage(requestError, 'The quiz could not be started. Please try again.'));
+    }
   };
 
   const handleNextLesson = () => {
@@ -571,172 +496,15 @@ const Lesson = () => {
   return (
     <div className="h-screen w-full flex bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-['Nunito',sans-serif] overflow-hidden transition-colors duration-300 relative">
 
-      {!isSidebarOpen && (
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="absolute top-6 left-6 z-30 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
-        >
-          <Sidebar className="w-6 h-6" />
-        </button>
-      )}
-
-      {isSidebarOpen && (
-        <aside
-          style={{ width: `${leftSidebarWidth}px` }}
-          className="relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border-r-2 border-dashed border-gray-300 dark:border-gray-700 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 flex-shrink-0 transition-colors duration-300"
-        >
-          <div
-            onMouseDown={() => setIsDraggingLeft(true)}
-            className={`absolute top-0 -right-2 bottom-0 w-4 cursor-col-resize hover:bg-blue-500/20 active:bg-blue-500/40 z-30 transition-colors ${isDraggingLeft ? 'bg-blue-500/40' : ''}`}
-          />
-          <div className="flex flex-col justify-between h-full p-6 overflow-y-auto custom-scrollbar">
-            <div className="flex flex-col gap-6">
-              <div className="flex justify-between items-center mt-2">
-                <div
-                  className="text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400 cursor-pointer transform -rotate-2"
-                  onClick={() => navigate('/home')}
-                >
-                  TutorMe
-                </div>
-                <button onClick={() => setIsSidebarOpen(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                  <Sidebar className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Course Progress Card — real % */}
-              <div className="bg-blue-100 dark:bg-blue-900/40 p-5 rounded-2xl border-4 border-blue-300 dark:border-blue-700/50 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[4px_4px_0px_0px_rgba(30,58,138,0.8)] transform -rotate-1 relative">
-                <div className="absolute -top-3 -right-2 w-8 h-4 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none"></div>
-                <span className="text-xs font-bold uppercase tracking-wider mb-2 inline-block text-blue-800 dark:text-blue-300">Your course</span>
-                <h3 className="text-2xl font-bold font-['Kalam',cursive] text-blue-950 dark:text-blue-100 mb-4 leading-tight">
-                  {courseModules.length > 0
-                    ? (courseModules[0] as CourseModule & { courseTitle?: string })?.courseTitle
-                      || lesson?.module?.title?.split(' ').slice(0, 3).join(' ')
-                      || 'Your Course'
-                    : lesson?.module?.title || 'Your Course'}
-                </h3>
-                <div className="w-full bg-blue-200 dark:bg-blue-800/50 rounded-full h-2 mb-2 border border-blue-300 dark:border-blue-700">
-                  <div
-                    className="bg-blue-500 dark:bg-blue-400 h-full rounded-full transition-all duration-700"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-xs font-bold text-blue-700 dark:text-blue-300">
-                  <span>{allDone ? 'Completed' : 'In progress'}</span>
-                  <span>{progressPercent}%</span>
-                </div>
-              </div>
-
-              {/* Course Roadmap Nav */}
-              <div className="mt-4 flex flex-col gap-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Course Roadmap</span>
-                <div className="flex flex-col gap-2">
-                  {courseModules.length === 0 ? (
-                    <div className="flex flex-col gap-2">
-                      <div
-                        className="flex justify-between items-center cursor-pointer group"
-                        onClick={() => setSidebarExpandedModule(sidebarExpandedModule === currentModuleId ? null : currentModuleId)}
-                      >
-                        <h4 className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-[15px]">
-                          {lesson?.module?.title || 'Module'}
-                        </h4>
-                        <button className="text-gray-400 group-hover:text-blue-500">
-                          {sidebarExpandedModule === currentModuleId ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                        </button>
-                      </div>
-                      {sidebarExpandedModule === currentModuleId && (
-                        <div className="flex flex-col gap-3 pl-2 mt-1 mb-2">
-                          <div className="flex items-center gap-3 text-[14px]">
-                            {isCompleted ? (
-                              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            ) : (
-                              <Lock className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                            )}
-                            <span className="font-semibold text-blue-600 dark:text-blue-400">
-                              {lesson?.title || 'Current lesson'}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    courseModules.map((module) => {
-                      const isExpanded = sidebarExpandedModule === module.id;
-                      const isCurrentModule = module.id === currentModuleId;
-                      return (
-                        <div key={module.id} className="flex flex-col gap-1">
-                          <div
-                            className="flex justify-between items-center cursor-pointer group py-1"
-                            onClick={() => setSidebarExpandedModule(isExpanded ? null : module.id)}
-                          >
-                            <h4 className={`font-bold transition-colors text-[15px] group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isCurrentModule ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                              {module.title}
-                            </h4>
-                            <button className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 ml-2">
-                              {isExpanded ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                            </button>
-                          </div>
-                          {isExpanded && (
-                            <div className="flex flex-col gap-2 pl-2 mt-1 mb-2">
-                              {module.lessons.map((moduleLesson) => {
-                                const isThisLesson = moduleLesson.id === lessonId;
-                                const isThisCompleted = completedLessonIds.has(moduleLesson.id);
-                                const isGenerated = moduleLesson.isGenerated;
-                                // A lesson is accessible if it's completed, or it's the current lesson,
-                                // or it's the very first lesson in the ordered list (index 0),
-                                // or it has already been generated, or the lesson immediately before it
-                                // (in global order) is completed.
-                                const globalIndex = orderedLessons.findIndex((l) => l.id === moduleLesson.id);
-                                const prevGlobalLesson = globalIndex > 0 ? orderedLessons[globalIndex - 1] : null;
-                                const isAccessible =
-                                  isThisLesson ||
-                                  isThisCompleted ||
-                                  isGenerated ||
-                                  globalIndex === 0 ||
-                                  (prevGlobalLesson !== null && completedLessonIds.has(prevGlobalLesson.id));
-                                return (
-                                  <div
-                                    key={moduleLesson.id}
-                                    className={`flex items-center gap-3 text-[14px] group/lesson ${isAccessible ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
-                                    onClick={() => {
-                                      if (!isThisLesson && isAccessible) {
-                                        const cid = routeCourseId || lesson?.module?.courseId || '';
-                                        navigate(`/courses/${encodeURIComponent(cid)}/lessons/${encodeURIComponent(moduleLesson.id)}`);
-                                      }
-                                    }}
-                                  >
-                                    {isThisCompleted ? (
-                                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                                    ) : isAccessible ? (
-                                      <Play className="w-4 h-4 text-blue-500 fill-blue-500 flex-shrink-0" />
-                                    ) : (
-                                      <Lock className={`w-4 h-4 flex-shrink-0 ${isAccessible ? 'text-blue-400' : 'text-gray-400'}`} />
-                                    )}
-                                    <span className={`font-semibold transition-colors ${isThisLesson ? 'text-blue-600 dark:text-blue-400' : isAccessible ? 'group-hover/lesson:text-blue-500 text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'}`}>
-                                      {moduleLesson.title}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => navigate(-1)}
-              className="mt-8 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none w-full font-['Kalam',cursive] text-lg flex-shrink-0"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back to Roadmap
-            </button>
-          </div>
-        </aside>
-      )}
+      <CourseSidebar
+        courseModules={courseModules as any}
+        completedLessonIds={completedLessonIds}
+        orderedLessons={orderedLessons as any}
+        progressPercent={progressPercent}
+        allDone={allDone}
+        activeLessonId={lessonId}
+        courseId={courseId}
+      />
 
       {/* ── Main Content ── */}
       <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-8 md:p-12">
@@ -878,6 +646,13 @@ const Lesson = () => {
                 >
                   Take quiz
                 </button>
+              ) : quizStatus.state === 'failed' ? (
+                <button
+                  onClick={() => void handleStartQuiz()}
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-['Kalam',cursive] text-lg font-bold text-white bg-purple-500 hover:bg-purple-600 border-2 border-purple-700 shadow-[2px_2px_0_#7e22ce] transition-all active:translate-y-0.5 active:shadow-none"
+                >
+                  <Sparkles className="h-5 w-5 fill-current" /> Start quiz
+                </button>
               ) : quizStatus.isGenerating || quizStatus.state === 'queued' ? (
                 <span className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-300 bg-white px-4 py-3 font-bold text-purple-700 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-200">
                   <LoaderCircle className="h-5 w-5 animate-spin" /> Generating quiz…
@@ -955,6 +730,45 @@ const Lesson = () => {
         >
           <Sparkles className="w-8 h-8 fill-purple-200 text-purple-200" />
         </button>
+      )}
+
+      {isQuizGenerationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/20 p-4 backdrop-blur-md dark:bg-gray-900/40" role="dialog" aria-modal="true" aria-labelledby="quiz-generation-title">
+          <div className="relative w-full max-w-xl scale-105 transition-all duration-300">
+            <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-8 w-24 -translate-x-1/2 -translate-y-4 -rotate-2 rounded-sm border border-purple-200/50 bg-purple-400/40 backdrop-blur-md dark:border-purple-700/50 dark:bg-purple-500/40" />
+            <div className="relative overflow-hidden rounded-2xl border-4 border-purple-400 bg-purple-50/90 shadow-[8px_8px_0px_0px_rgba(168,85,247,1)] backdrop-blur-xl dark:border-purple-700 dark:bg-gray-800/90 dark:shadow-[8px_8px_0px_0px_rgba(107,33,168,0.8)]">
+              {quizStatus.state === 'failed' ? (
+                <div className="p-8 text-center md:p-10">
+                  <CircleAlert className="mx-auto h-12 w-12 text-red-500" />
+                  <h2 id="quiz-generation-title" className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-purple-950 dark:text-purple-100">Quiz needs another try</h2>
+                  <p className="mt-3 font-semibold text-purple-800 dark:text-purple-200">{quizStatus.reason || 'We could not finish creating this quiz.'}</p>
+                  <div className="mt-7 flex flex-col-reverse justify-center gap-3 sm:flex-row">
+                    <button onClick={() => setIsQuizGenerationModalOpen(false)} className="rounded-xl border-2 border-purple-300 bg-white px-5 py-3 font-bold text-purple-800 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-100">Close</button>
+                    <button onClick={() => void handleStartQuiz()} className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce] transition-all active:translate-y-0.5 active:shadow-none"><Sparkles className="h-5 w-5 fill-current" /> Start quiz</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative p-8 md:p-10">
+                  <h2 id="quiz-generation-title" className="text-center font-['Kalam',cursive] text-3xl font-bold text-purple-950 dark:text-purple-100">Creating your lesson quiz</h2>
+                  <p className="mt-2 text-center font-semibold text-purple-800 dark:text-purple-200">A few moments while TutorMe prepares your questions.</p>
+                  <div className="mt-9 space-y-5 font-['Nunito',sans-serif] text-lg font-bold text-purple-950 dark:text-purple-100">
+                    {quizGenerationSteps.map((step, index) => {
+                      const isComplete = index < quizGenerationStep;
+                      const isCurrent = index === quizGenerationStep;
+                      return (
+                        <div key={step} className={`flex items-center gap-4 transition-all duration-500 ${isCurrent ? 'translate-x-2 scale-105 text-purple-600 dark:text-purple-300' : isComplete ? 'opacity-80' : 'opacity-40'}`}>
+                          {isComplete ? <CheckCircle2 className="h-7 w-7 flex-none text-green-500" /> : isCurrent ? <LoaderCircle className="h-7 w-7 flex-none animate-spin text-purple-500" /> : <span className="h-6 w-6 flex-none rounded-md border-2 border-purple-300 dark:border-purple-700" />}
+                          <span>{step}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <Sparkles className="pointer-events-none absolute -bottom-8 -right-8 h-40 w-40 animate-pulse fill-purple-500 text-purple-500 opacity-20" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Right Sidebar — AI Assistant ── */}

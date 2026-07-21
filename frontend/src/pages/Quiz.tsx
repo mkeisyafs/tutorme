@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useBlocker, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   CircleAlert,
@@ -8,21 +8,40 @@ import {
   RefreshCw,
   Send,
 } from 'lucide-react';
-import { apiRequest, getApiErrorMessage } from '../lib/api';
-import type { QuizAnswer, QuizAttempt, SubmissionResult } from '../types/assessment';
+import { ApiError, apiRequest, getApiErrorMessage } from '../lib/api';
+import { QuizSubmissionAnalysisModal } from '../components/QuizSubmissionAnalysisModal';
+import { INVALID_QUIZ_ATTEMPT_MESSAGE, emptyQuizFormState, resolveLoadedQuizAttempt } from './quizAttemptRouting';
+import { CourseSidebar } from '../components/CourseSidebar';
+import { useCourseSidebar } from '../hooks/useCourseSidebar';
+import type { ActiveQuizAttempt, QuizAnswer, SubmissionResult } from '../types/assessment';
+
+function assertNever(_value: never): never {
+  throw new Error('Unhandled loaded quiz action: ' + typeof _value);
+}
 
 const Quiz = () => {
   const navigate = useNavigate();
   const { quizId } = useParams<{ quizId: string }>();
-  const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
+  const [attempt, setAttempt] = useState<ActiveQuizAttempt | null>(null);
   const [answers, setAnswers] = useState<Record<string, QuizAnswer>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isBlocked, setIsBlocked] = useState(false);
   const startedAt = useRef<number>(0);
+  const blocker = useBlocker(({ nextLocation }) => (
+    isSubmitting && !nextLocation.pathname.startsWith('/submissions/')
+  ));
+
+  const courseId = attempt?.quiz.courseId || '';
+  const { courseModules, completedLessonIds, orderedLessons, progressPercent, allDone } = useCourseSidebar(courseId);
 
   const loadAttempt = useCallback(async () => {
+    const emptyState = emptyQuizFormState();
+    setAttempt(emptyState.attempt);
+    setAnswers(emptyState.answers);
+    setIsBlocked(emptyState.isBlocked);
+
     if (!quizId) {
       setError('This quiz link is missing its quiz ID.');
       setIsLoading(false);
@@ -30,30 +49,47 @@ const Quiz = () => {
     }
 
     setIsLoading(true);
-    setIsBlocked(false);
     setError('');
     try {
-      const nextAttempt = await apiRequest<QuizAttempt>(
+      const nextAttempt = await apiRequest<unknown>(
         '/generation/quiz/' + encodeURIComponent(quizId) + '/attempt'
       );
-      setAttempt(nextAttempt);
-      setAnswers({});
+      const action = resolveLoadedQuizAttempt(nextAttempt);
+      switch (action.kind) {
+        case 'invalid_payload':
+          setError(INVALID_QUIZ_ATTEMPT_MESSAGE);
+          setIsBlocked(true);
+          return;
+        case 'redirect':
+          navigate(action.route, { replace: true });
+          return;
+        case 'render':
+          setAttempt(action.attempt);
+          break;
+        default:
+          assertNever(action);
+      }
       startedAt.current = Date.now();
     } catch (requestError) {
       const message = getApiErrorMessage(requestError, 'We could not load this quiz.');
       setError(message);
-      const status = requestError instanceof Error && 'status' in requestError
-        ? Number((requestError as { status?: number }).status)
-        : 0;
+      const status = requestError instanceof ApiError ? requestError.status : 0;
       setIsBlocked(status === 401 || status === 403 || status === 409);
     } finally {
       setIsLoading(false);
     }
-  }, [quizId]);
+  }, [navigate, quizId]);
 
   useEffect(() => {
-    void loadAttempt();
+    const timer = window.setTimeout(() => {
+      void loadAttempt();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadAttempt]);
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') blocker.reset();
+  }, [blocker]);
 
   const setAnswer = (questionId: string, answer: string | number) => {
     setAnswers((currentAnswers) => ({ ...currentAnswers, [questionId]: answer }));
@@ -85,13 +121,13 @@ const Quiz = () => {
           },
         }
       );
+      setIsSubmitting(false);
       navigate('/submissions/' + encodeURIComponent(result.submissionId), {
         state: { result },
       });
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError, 'We could not submit your quiz.'));
-    } finally {
+    } catch {
       setIsSubmitting(false);
+      setError('We could not finish grading your submission. Your answers are still here. Please check your connection and try again.');
     }
   };
 
@@ -123,9 +159,18 @@ const Quiz = () => {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-7 font-['Nunito',sans-serif] text-gray-800 dark:bg-gray-900 dark:text-gray-100 sm:px-8">
-      <div className="mx-auto max-w-4xl">
-        <button onClick={() => navigate(-1)} disabled={isSubmitting} className="mb-6 inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 py-2 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0_#9ca3af] disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> Back</button>
+    <div className="h-screen w-full flex bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-['Nunito',sans-serif] overflow-hidden transition-colors duration-300 relative">
+      <CourseSidebar
+        courseId={courseId}
+        courseModules={courseModules}
+        completedLessonIds={completedLessonIds}
+        orderedLessons={orderedLessons}
+        progressPercent={progressPercent}
+        allDone={allDone}
+      />
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-8 md:p-12">
+        <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
+          <button onClick={() => navigate(-1)} disabled={isSubmitting} className="mb-6 self-start inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 py-2 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0_#9ca3af] disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> Back</button>
         <header className="rounded-3xl border-4 border-purple-300 bg-purple-100 p-7 shadow-[8px_8px_0_#a855f7] dark:border-purple-800 dark:bg-purple-950/35">
           <p className="font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">{attempt?.quiz.type === 'FINAL_EXAM' ? 'Final exam' : 'Lesson quiz'}</p>
           <h1 className="mt-2 flex items-center gap-3 font-['Kalam',cursive] text-4xl font-bold text-purple-950 dark:text-purple-100"><ClipboardCheck className="h-9 w-9" /> {attempt?.quiz.title}</h1>
@@ -143,7 +188,7 @@ const Quiz = () => {
                     const isSelected = answers[question.id] === optionIndex;
                     return (
                       <label key={question.id + '-' + optionIndex} className={'flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-4 font-bold transition-colors ' + (isSelected ? 'border-purple-500 bg-purple-100 text-purple-950 dark:border-purple-400 dark:bg-purple-950/45 dark:text-purple-100' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-purple-300 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200')}>
-                        <input type="radio" name={question.id} checked={isSelected} onChange={() => setAnswer(question.id, optionIndex)} className="h-4 w-4 accent-purple-600" />
+                        <input type="radio" name={question.id} checked={isSelected} onChange={() => setAnswer(question.id, optionIndex)} disabled={isSubmitting} className="h-4 w-4 accent-purple-600" />
                         <span>{option}</span>
                       </label>
                     );
@@ -151,7 +196,7 @@ const Quiz = () => {
                 </div>
               ) : (
                 <div className="mt-5">
-                  <textarea value={String(answers[question.id] ?? '')} onChange={(event) => setAnswer(question.id, event.target.value)} rows={6} placeholder="Write your answer…" className="w-full rounded-2xl border-2 border-gray-300 bg-gray-50 p-4 font-semibold text-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:focus:border-purple-400" />
+                  <textarea value={String(answers[question.id] ?? '')} onChange={(event) => setAnswer(question.id, event.target.value)} disabled={isSubmitting} rows={6} placeholder="Write your answer…" className="w-full rounded-2xl border-2 border-gray-300 bg-gray-50 p-4 font-semibold text-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 disabled:cursor-wait disabled:opacity-70 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:focus:border-purple-400" />
                   {question.requiresImage && <p className="mt-3 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">This question requests an image, but a secure upload contract is not configured yet. Save the written answer and ask an instructor before submitting an image.</p>}
                 </div>
               )}
@@ -165,7 +210,9 @@ const Quiz = () => {
           </button>
         </form>
       </div>
-    </main>
+      </main>
+      <QuizSubmissionAnalysisModal isOpen={isSubmitting} attempt={attempt} />
+    </div>
   );
 };
 

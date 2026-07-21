@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { status } from "elysia";
 import prisma from "../../lib/prisma";
 import UserService from "../user/user.service";
@@ -7,8 +8,36 @@ import type {
   UserLessonProgressListQuery,
 } from "./user-lesson-progress.schema";
 
+type EnrollmentProgressSnapshot = {
+  readonly courseId: string;
+  readonly progressPercentage: number;
+  readonly courseCompleted: boolean;
+};
+
+type CompletedLessonProgress = EnrollmentProgressSnapshot & {
+  readonly progressId: string;
+  readonly lessonId: string;
+  readonly status: "COMPLETED";
+  readonly completedAt: Date;
+};
+
+type ExistingLessonProgress = {
+  readonly id: string;
+  readonly status: "LOCKED" | "IN_PROGRESS" | "COMPLETED";
+  readonly completedAt: Date | null;
+};
+
+type CompletedProgressRow = {
+  readonly id: string;
+  readonly lessonId: string;
+  readonly completedAt: Date;
+};
+
 abstract class UserLessonProgressService {
-  private static async refreshEnrollmentProgress(userId: string, lessonId: string) {
+  private static async refreshEnrollmentProgress(
+    userId: string,
+    lessonId: string
+  ): Promise<EnrollmentProgressSnapshot | null> {
     const lesson = await prisma.lesson.findUnique({
       where: { id: lessonId },
       select: {
@@ -18,7 +47,7 @@ abstract class UserLessonProgressService {
       },
     });
 
-    if (!lesson) return;
+    if (!lesson) return null;
 
     const courseId = lesson.module.courseId;
     const [totalLessons, completedLessons] = await Promise.all([
@@ -46,12 +75,91 @@ abstract class UserLessonProgressService {
         lastAccessedAt: new Date(),
       },
     });
+
+    return {
+      courseId,
+      progressPercentage,
+      courseCompleted: totalLessons > 0 && completedLessons === totalLessons,
+    };
+  }
+
+  static async completeLesson(userId: string, lessonId: string): Promise<CompletedLessonProgress | null> {
+    const progress = await this.persistCompletedProgress(userId, lessonId);
+    if (!progress) return null;
+    const enrollment = await this.refreshEnrollmentProgress(userId, lessonId);
+    if (!enrollment) return null;
+
+    return {
+      progressId: progress.id,
+      lessonId: progress.lessonId,
+      status: "COMPLETED",
+      completedAt: progress.completedAt,
+      courseId: enrollment.courseId,
+      progressPercentage: enrollment.progressPercentage,
+      courseCompleted: enrollment.courseCompleted,
+    };
+  }
+
+  private static async persistCompletedProgress(
+    userId: string,
+    lessonId: string
+  ): Promise<CompletedProgressRow | null> {
+    const existing = await this.findProgress(userId, lessonId);
+    if (existing) return this.updateCompletedProgress(existing);
+
+    try {
+      const created = await prisma.userLessonProgress.create({
+        data: { userId, lessonId, status: "COMPLETED", completedAt: new Date() },
+        select: { id: true, lessonId: true, completedAt: true },
+      });
+      if (!created.completedAt) return null;
+      return {
+        id: created.id,
+        lessonId: created.lessonId,
+        completedAt: created.completedAt,
+      };
+    } catch (createError) {
+      if (createError instanceof Prisma.PrismaClientKnownRequestError && createError.code === "P2002") {
+        const winner = await this.findProgress(userId, lessonId);
+        return winner ? this.updateCompletedProgress(winner) : null;
+      }
+      throw createError;
+    }
+  }
+
+  private static async findProgress(
+    userId: string,
+    lessonId: string
+  ): Promise<ExistingLessonProgress | null> {
+    return prisma.userLessonProgress.findUnique({
+      where: { userId_lessonId: { userId, lessonId } },
+      select: { id: true, status: true, completedAt: true },
+    });
+  }
+
+  private static async updateCompletedProgress(
+    progress: ExistingLessonProgress
+  ): Promise<CompletedProgressRow | null> {
+    const completedAt = progress.status === "COMPLETED"
+      ? progress.completedAt ?? new Date()
+      : new Date();
+    const updated = await prisma.userLessonProgress.update({
+      where: { id: progress.id },
+      data: { status: "COMPLETED", completedAt },
+      select: { id: true, lessonId: true, completedAt: true },
+    });
+    if (!updated.completedAt) return null;
+    return {
+      id: updated.id,
+      lessonId: updated.lessonId,
+      completedAt: updated.completedAt,
+    };
   }
 
   static async list(query: UserLessonProgressListQuery) {
     const { skip = 0, take = 20, userId, lessonId, status: progressStatus } = query;
 
-    const where: any = {};
+    const where: Prisma.UserLessonProgressWhereInput = {};
     if (userId) where.userId = userId;
     if (lessonId) where.lessonId = lessonId;
     if (progressStatus) where.status = progressStatus;
@@ -141,7 +249,7 @@ abstract class UserLessonProgressService {
     if (!progress) return status(404, { message: "Progress record not found" });
 
     // Keep completion timestamps in sync with the status so a user can undo completion.
-    const updateData: any = { ...data };
+    const updateData: Prisma.UserLessonProgressUpdateInput = { ...data };
     if (data.status === "COMPLETED") {
       updateData.completedAt = data.completedAt ? new Date(data.completedAt) : new Date();
     } else if (data.status) {

@@ -11,14 +11,20 @@ const MAX_CHARS_PER_LESSON = 4_000;
 const FinalExamQuestionSchema = z.object({
   questions: z
     .array(
-      z.object({
-        type: z.enum(["MULTIPLE_CHOICE", "ESSAY"]),
-        prompt: z.string().min(1),
-        options: z.array(z.string()).optional(),
-        explanations: z.array(z.string()).optional(),
-        correctAnswer: z.number().int().nonnegative().optional(),
-        requiresImage: z.boolean().optional(),
-      })
+      z.discriminatedUnion("type", [
+        z.object({
+          type: z.literal("MULTIPLE_CHOICE"),
+          prompt: z.string().min(1),
+          options: z.array(z.string()),
+          explanations: z.array(z.string()),
+          correctAnswer: z.number().int().nonnegative(),
+        }),
+        z.object({
+          type: z.literal("ESSAY"),
+          prompt: z.string().min(1),
+          requiresImage: z.boolean().optional(),
+        })
+      ])
     )
     .min(1),
 });

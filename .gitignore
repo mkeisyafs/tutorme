@@ -15,6 +15,7 @@ dist-ssr
 .codex
 skills-lock.json
 /graphify-out
+.omo
 .env
 TUTORME.md
 FRONTEND_BACKEND_INTEGRATION_PLAN.md

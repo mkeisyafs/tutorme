@@ -37,4 +37,5 @@ export interface EditorChatResponse {
 
 export interface PublishResponse {
   courseId: string;
+  firstLessonId: string;
 }
