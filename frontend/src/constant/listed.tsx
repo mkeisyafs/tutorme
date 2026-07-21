@@ -1,3 +1,5 @@
+import type { AppRoutes } from '../types/routes';
+
 export const listed = {
     landing: "/",
     home: "/home",
@@ -10,4 +12,4 @@ export const listed = {
     quiz: "/quiz",
     finalExam: "/final-exam",
     analysis: "/analysis"
-}
+} as const satisfies AppRoutes;

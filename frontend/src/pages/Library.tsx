@@ -21,37 +21,9 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-type CourseColor = 'blue' | 'yellow' | 'green' | 'pink' | 'purple';
-
-interface LibraryCourse {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  creator: string;
-  lessons: number;
-  learners: number;
-  color: CourseColor;
-  isMine: boolean;
-  isEnrolled?: boolean;
-  isPublic?: boolean;
-}
-
-interface CourseListResponse {
-  data: LibraryCourse[];
-}
-
-interface CourseDetail {
-  id: string;
-  title: string;
-  description: string;
-  modules: Array<{
-    id: string;
-    title: string;
-    lessons: Array<{ id: string; title: string }>;
-  }>;
-}
+import type { ListResponse } from '../types/api';
+import type { CourseColor } from '../types/course';
+import type { CoursePreviewDetail, LibraryCourse } from '../types/library';
 
 const colorStyles: Record<CourseColor, { card: string; border: string; text: string; tape: string; button: string }> = {
   blue: { card: 'bg-blue-100 dark:bg-blue-900/40', border: 'border-blue-300 dark:border-blue-700/50', text: 'text-blue-950 dark:text-blue-200', tape: 'bg-blue-400/40', button: 'bg-blue-500 hover:bg-blue-600 border-blue-700 shadow-[0_4px_0_#1d4ed8]' },
@@ -93,7 +65,7 @@ const Library = () => {
   const [formError, setFormError] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [previewCourse, setPreviewCourse] = useState<LibraryCourse | null>(null);
-  const [previewDetail, setPreviewDetail] = useState<CourseDetail | null>(null);
+  const [previewDetail, setPreviewDetail] = useState<CoursePreviewDetail | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState('');
 
@@ -102,8 +74,8 @@ const Library = () => {
     setError('');
     try {
       const [library, mine] = await Promise.all([
-        apiRequest<CourseListResponse>('/courses/library?take=100'),
-        apiRequest<CourseListResponse>('/courses/mine'),
+        apiRequest<ListResponse<LibraryCourse>>('/courses/library?take=100'),
+        apiRequest<ListResponse<LibraryCourse>>('/courses/mine'),
       ]);
       setCourses(Array.isArray(library.data) ? library.data.map((course) => ({ ...course, color: normaliseColor(course.color) })) : []);
       setMyCourses(Array.isArray(mine.data) ? mine.data.map((course) => ({ ...course, color: normaliseColor(course.color) })) : []);
@@ -135,7 +107,7 @@ const Library = () => {
     setPreviewError('');
     setIsPreviewLoading(true);
     try {
-      const detail = await apiRequest<CourseDetail>(`/courses/${encodeURIComponent(course.id)}`);
+      const detail = await apiRequest<CoursePreviewDetail>(`/courses/${encodeURIComponent(course.id)}`);
       setPreviewDetail(detail);
     } catch (requestError) {
       setPreviewError(getApiErrorMessage(requestError, 'We could not load this course preview. Please try again.'));

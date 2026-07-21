@@ -9,41 +9,13 @@ import {
   Send,
 } from 'lucide-react';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-type LearnerQuestion = {
-  id: string;
-  type: 'MULTIPLE_CHOICE' | 'ESSAY';
-  prompt: string;
-  options: string[];
-  requiresImage: boolean;
-};
-
-type QuizAttempt = {
-  quiz: {
-    id: string;
-    title: string;
-    type: 'CHAPTER_QUIZ' | 'FINAL_EXAM';
-    passingScore: number;
-  };
-  questions: LearnerQuestion[];
-};
-
-type SubmissionResult = {
-  submissionId: string;
-  score: number;
-  correctCount: number;
-  gradedQuestionCount: number;
-  totalQuestions: number;
-  gradeLetter: string;
-  passed: boolean;
-  essayQuestionCount: number;
-};
+import type { QuizAnswer, QuizAttempt, SubmissionResult } from '../types/assessment';
 
 const Quiz = () => {
   const navigate = useNavigate();
   const { quizId } = useParams<{ quizId: string }>();
   const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string | number | boolean | null>>({});
+  const [answers, setAnswers] = useState<Record<string, QuizAnswer>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');

@@ -1,13 +1,6 @@
-export interface AuthUser {
-  id: string;
-  email: string;
-  fullName: string;
-}
+import type { AuthSession } from '../types/auth';
 
-export interface AuthSession {
-  token: string;
-  user: AuthUser;
-}
+export type { AuthSession, AuthUser } from '../types/auth';
 
 export const AUTH_SESSION_STORAGE_KEY = "tutorme.auth.session";
 

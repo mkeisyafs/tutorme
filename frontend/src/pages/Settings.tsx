@@ -5,12 +5,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../auth/useAuth';
 import { getPasswordValidationMessage } from '../auth/passwordValidation';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-interface AccountSecurityUser {
-  id: string;
-  email: string;
-  fullName: string;
-}
+import type { AccountSecurityUser } from '../types/auth';
 
 const Settings = () => {
   const { isDark, toggleTheme } = useTheme();

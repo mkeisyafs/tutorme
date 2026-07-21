@@ -5,26 +5,8 @@ import GenerateCourseModal from '../components/GenerateCourseModal';
 import { Play, Flame, Clock, Sparkles, LoaderCircle, BookOpen } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-type CourseColor = 'blue' | 'yellow' | 'green' | 'pink' | 'purple';
-
-interface DashboardCourse {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  color: CourseColor;
-  progressPercentage: number;
-  isCompleted: boolean;
-  lastAccessedAt: string;
-}
-
-interface DashboardData {
-  fullName: string;
-  streakCount: number;
-  continueCourse: DashboardCourse | null;
-  recentCourses: DashboardCourse[];
-}
+import type { CourseColor } from '../types/course';
+import type { DashboardData } from '../types/dashboard';
 
 const recentCardStyles: Record<CourseColor, { card: string; border: string; tape: string; title: string; track: string; progress: string; text: string }> = {
   blue: { card: 'bg-blue-100 dark:bg-blue-900/40', border: 'border-blue-300 dark:border-blue-700/50', tape: 'bg-blue-500/30 dark:bg-blue-400/20', title: 'text-blue-900 dark:text-blue-300', track: 'bg-blue-200 dark:bg-blue-800/50', progress: 'bg-blue-500 dark:bg-blue-400', text: 'text-blue-700 dark:text-blue-400/80' },

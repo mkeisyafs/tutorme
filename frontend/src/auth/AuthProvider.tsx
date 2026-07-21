@@ -8,11 +8,7 @@ import {
   type AuthSession,
   type AuthUser,
 } from "./session";
-
-interface AuthResponse {
-  token: string;
-  user: AuthUser;
-}
+import type { AuthCredentials, AuthRegistrationDetails, AuthResponse } from "../types/auth";
 
 function saveSession(response: AuthResponse, setSession: (session: AuthSession | null) => void): AuthUser {
   const session: AuthSession = { token: response.token, user: response.user };
@@ -24,7 +20,7 @@ function saveSession(response: AuthResponse, setSession: (session: AuthSession |
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<AuthSession | null>(() => readStoredSession());
 
-  const login = useCallback(async (credentials: { email: string; password: string }) => {
+  const login = useCallback(async (credentials: AuthCredentials) => {
     const response = await apiRequest<AuthResponse>("/auth/login", {
       method: "POST",
       body: credentials,
@@ -32,7 +28,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return saveSession(response, setSession);
   }, []);
 
-  const register = useCallback(async (details: { fullName: string; email: string; password: string }) => {
+  const register = useCallback(async (details: AuthRegistrationDetails) => {
     const response = await apiRequest<AuthResponse>("/auth/register", {
       method: "POST",
       body: details,

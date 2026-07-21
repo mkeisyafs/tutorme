@@ -3,16 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { User, BookOpen, Clock3, Flame, CalendarDays, Mail, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-interface ProfileData {
-  id: string;
-  email: string;
-  fullName: string;
-  streakCount: number;
-  createdAt: string;
-  coursesJoined: number;
-  lessonsCompleted: number;
-}
+import type { ProfileData } from '../types/auth';
 
 function formatDate(date: string, options: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat(undefined, options).format(new Date(date));

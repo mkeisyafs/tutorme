@@ -1,16 +1,4 @@
-export type CourseColor = 'blue' | 'yellow' | 'green' | 'pink' | 'purple';
-
-export interface MyCourse {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  progress: number;
-  lessons: number;
-  color: CourseColor;
-  rotation: string;
-  creator: string;
-}
+import type { MyCourse } from '../types/course';
 
 // This is the user's course collection. Other features can import this same
 // source so a course selected for sharing is always one shown on My Courses.

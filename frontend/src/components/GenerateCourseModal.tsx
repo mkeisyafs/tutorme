@@ -3,10 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Check, ChevronDown, FileQuestion, Hourglass, ImagePlus, Square } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
 import { useAuth } from '../auth/useAuth';
-
-interface OutlineCreationResponse {
-  draftId: string;
-}
+import type { OutlineCreationResponse } from '../types/course-generation';
 
 interface GenerateCourseModalProps {
   isOpen: boolean;

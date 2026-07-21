@@ -22,72 +22,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-interface LessonRecord {
-  id: string;
-  title: string;
-  content: string | null;
-  videoUrl: string | null;
-  module?: {
-    id: string;
-    title: string;
-    courseId: string;
-  };
-}
-
-interface LessonGenerationStatus {
-  state: 'ready' | 'generating' | 'not_started';
-  isGenerated: boolean;
-  isGenerating: boolean;
-  contentLength: number;
-}
-
-interface QuizGenerationStatus {
-  state: 'blocked' | 'not_started' | 'queued' | 'generating' | 'failed' | 'ready';
-  isGenerated: boolean;
-  isGenerating: boolean;
-  quizId?: string;
-  reason?: string;
-}
-
-interface ListResponse<T> {
-  data: T[];
-  total?: number;
-}
-
-interface LessonProgress {
-  status: 'LOCKED' | 'IN_PROGRESS' | 'COMPLETED';
-  lessonId?: string;
-}
-
-interface CourseLesson {
-  id: string;
-  title: string;
-  orderIndex: number;
-}
-
-interface CourseModule {
-  id: string;
-  title: string;
-  orderIndex: number;
-  lessons: CourseLesson[];
-}
-
-interface CourseDetail {
-  id: string;
-  title: string;
-  modules: CourseModule[];
-}
-
-interface TutorMessage {
-  id: string;
-  role: 'assistant' | 'user';
-  content: string;
-}
-
-interface TutorResponse {
-  reply?: string;
-}
+import type { ListResponse } from '../types/api';
+import type { CourseDetail, CourseLesson, CourseModule, LessonProgress } from '../types/course';
+import type {
+  LessonGenerationStatus,
+  LessonRecord,
+  QuizGenerationStatus,
+  TutorMessage,
+  TutorResponse,
+} from '../types/lesson';
 
 function makeMessage(role: TutorMessage['role'], content: string): TutorMessage {
   return {

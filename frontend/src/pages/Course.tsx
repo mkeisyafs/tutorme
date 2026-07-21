@@ -5,83 +5,16 @@ import GenerateCourseModal from '../components/GenerateCourseModal';
 import { BookOpen, Search, Filter, Sparkles, Pin, CircleAlert, Users, X, Share2, Play, Check, Code, Palette, Terminal, Database, Languages, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-type CourseColor = 'blue' | 'yellow' | 'green' | 'pink' | 'purple';
-type CourseFilter = 'All' | 'In Progress' | 'Completed' | 'Not Started';
-
-interface EnrollmentCourse {
-  id: string;
-  title: string;
-  category: string;
-  color: string;
-  level: string;
-}
-
-interface Enrollment {
-  id: string;
-  courseId: string;
-  progressPercentage: number;
-  isCompleted: boolean;
-  course: EnrollmentCourse;
-}
-
-interface EnrollmentListResponse {
-  data: Enrollment[];
-  total: number;
-  skip: number;
-  take: number;
-}
-
-interface LessonProgress {
-  lessonId: string;
-  status: 'LOCKED' | 'IN_PROGRESS' | 'COMPLETED';
-}
-
-interface LessonProgressListResponse {
-  data: LessonProgress[];
-  total: number;
-  skip: number;
-  take: number;
-}
-
-interface CourseLesson {
-  id: string;
-  title: string;
-  videoUrl: string | null;
-  orderIndex: number;
-}
-
-interface CourseModule {
-  id: string;
-  title: string;
-  description: string | null;
-  orderIndex: number;
-  lessons: CourseLesson[];
-}
-
-interface CourseDetail {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  color: string;
-  level: string;
-  creator?: {
-    fullName: string;
-  };
-  modules: CourseModule[];
-}
-
-interface CourseCard {
-  id: string;
-  title: string;
-  category: string;
-  level: string;
-  progress: number;
-  isCompleted: boolean;
-  color: CourseColor;
-  rotation: string;
-}
+import type { PaginatedResponse } from '../types/api';
+import type {
+  CourseCard,
+  CourseColor,
+  CourseDetail,
+  CourseFilter,
+  CourseLesson,
+  Enrollment,
+  LessonProgress,
+} from '../types/course';
 
 const FILTER_OPTIONS: CourseFilter[] = ['All', 'In Progress', 'Completed', 'Not Started'];
 const COURSE_COLORS: CourseColor[] = ['blue', 'yellow', 'green', 'pink', 'purple'];
@@ -100,7 +33,7 @@ const loadAllLessonProgress = async (userId: string): Promise<LessonProgress[]> 
   let total = 0;
 
   do {
-    const response = await apiRequest<LessonProgressListResponse>(
+    const response = await apiRequest<PaginatedResponse<LessonProgress>>(
       `/lesson-progress?userId=${encodeURIComponent(userId)}&skip=${skip}&take=${LESSON_PROGRESS_PAGE_SIZE}`
     );
     if (!Array.isArray(response.data)) {
@@ -185,7 +118,7 @@ const Course = () => {
     setCoursesError('');
 
     try {
-      const response = await apiRequest<EnrollmentListResponse>(`/enrollments?userId=${encodeURIComponent(user.id)}&take=100`);
+      const response = await apiRequest<PaginatedResponse<Enrollment>>(`/enrollments?userId=${encodeURIComponent(user.id)}&take=100`);
       if (!Array.isArray(response.data)) {
         throw new Error('The server returned an invalid course list.');
       }

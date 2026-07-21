@@ -12,16 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-type FinalExamStatus = {
-  state: 'blocked' | 'queued' | 'generating' | 'ready';
-  quizId?: string;
-  reason?: string;
-  completedLessons: number;
-  totalLessons: number;
-  canGenerate: boolean;
-  retryable?: boolean;
-};
+import type { FinalExamStatus } from '../types/assessment';
 
 const FinalExam = () => {
   const navigate = useNavigate();

@@ -2,45 +2,12 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, MessageCircle, Pencil, Play, RefreshCw, Save, Send, Sidebar, Sparkles, X } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
-
-interface DraftLesson {
-  id: string;
-  title: string;
-  orderIndex: number;
-}
-
-interface DraftModule {
-  id: string;
-  title: string;
-  description: string | null;
-  orderIndex: number;
-  lessons: DraftLesson[];
-}
-
-interface DraftOutline {
-  draftId: string;
-  topic: string;
-  courseTitle: string;
-  courseDescription: string;
-  courseCategory: string;
-  courseLevel: string;
-  modules: DraftModule[];
-}
-
-interface EditorMessage {
-  id: string;
-  role: 'assistant' | 'user';
-  content: string;
-}
-
-interface EditorChatResponse {
-  reply: string;
-  draft: DraftOutline;
-}
-
-interface PublishResponse {
-  courseId: string;
-}
+import type {
+  DraftOutline,
+  EditorChatResponse,
+  EditorMessage,
+  PublishResponse,
+} from '../types/roadmap';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof ApiError || error instanceof Error) {

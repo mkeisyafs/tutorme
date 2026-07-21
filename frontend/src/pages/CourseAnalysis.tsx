@@ -9,22 +9,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
-
-interface SubmissionSummary {
-  submissionId: string;
-  score: number;
-  correctCount: number;
-  totalQuestions: number;
-  gradeLetter: string;
-  submittedAt: string;
-  quiz: {
-    id: string;
-    title: string;
-    type: 'CHAPTER_QUIZ' | 'FINAL_EXAM';
-    courseId: string;
-  };
-  aiFeedback?: string;
-}
+import type { SubmissionSummary } from '../types/assessment';
 
 const CourseAnalysis = () => {
   const navigate = useNavigate();
