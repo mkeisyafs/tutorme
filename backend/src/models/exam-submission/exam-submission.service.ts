@@ -1,5 +1,6 @@
 import { status } from "elysia";
 import prisma from "../../lib/prisma";
+import UserService from "../user/user.service";
 import type {
   CreateExamSubmissionBody,
   UpdateExamSubmissionBody,
@@ -59,7 +60,7 @@ abstract class ExamSubmissionService {
   }
 
   static async create(data: CreateExamSubmissionBody) {
-    return prisma.examSubmission.create({
+    const submission = await prisma.examSubmission.create({
       data: data as any,
       include: {
         quiz: {
@@ -67,6 +68,10 @@ abstract class ExamSubmissionService {
         },
       },
     });
+    if (data.userId) {
+      await UserService.updateStreakOnActivity(data.userId);
+    }
+    return submission;
   }
 
   static async update(id: string, data: UpdateExamSubmissionBody) {

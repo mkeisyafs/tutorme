@@ -1,5 +1,6 @@
 import prisma from "../../../lib/prisma";
 import { FinalExamGeneratorService } from "./final-exam-generator.service";
+import UserService from "../../../models/user/user.service";
 
 type AssessmentFailure = {
   ok: false;
@@ -175,6 +176,8 @@ export class LearnerAssessmentService {
       },
       select: { id: true },
     });
+
+    await UserService.updateStreakOnActivity(userId);
 
     return {
       ok: true,

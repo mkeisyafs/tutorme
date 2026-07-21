@@ -17,6 +17,7 @@ model User {
 
   // Gamification & Stats
   streakCount          Int                  @default(0)
+  streakLastActive     DateTime?
 
   // Settings
   notificationsEnabled Boolean              @default(true)

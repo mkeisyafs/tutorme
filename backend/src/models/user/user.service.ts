@@ -71,6 +71,7 @@ abstract class UserService {
         email: true,
         fullName: true,
         streakCount: true,
+        streakLastActive: true,
         createdAt: true,
         _count: {
           select: {
@@ -83,9 +84,27 @@ abstract class UserService {
 
     if (!user) return null;
 
-    const { _count, ...profile } = user;
+    let currentStreak = user.streakCount;
+    if (user.streakCount > 0 && user.streakLastActive) {
+      const now = new Date();
+      const todayStr = now.toISOString().slice(0, 10);
+      const lastActiveStr = user.streakLastActive.toISOString().slice(0, 10);
+      const diffTime = new Date(todayStr).getTime() - new Date(lastActiveStr).getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 1) {
+        currentStreak = 0;
+        await prisma.user.update({
+          where: { id },
+          data: { streakCount: 0 }
+        });
+      }
+    }
+
+    const { _count, streakLastActive, ...profile } = user;
     return {
       ...profile,
+      streakCount: currentStreak,
       coursesJoined: _count.enrollments,
       lessonsCompleted: _count.lessonProgress,
     };
@@ -97,6 +116,7 @@ abstract class UserService {
       select: {
         fullName: true,
         streakCount: true,
+        streakLastActive: true,
         enrollments: {
           take: 5,
           orderBy: { lastAccessedAt: "desc" },
@@ -120,6 +140,23 @@ abstract class UserService {
 
     if (!user) return null;
 
+    let currentStreak = user.streakCount;
+    if (user.streakCount > 0 && user.streakLastActive) {
+      const now = new Date();
+      const todayStr = now.toISOString().slice(0, 10);
+      const lastActiveStr = user.streakLastActive.toISOString().slice(0, 10);
+      const diffTime = new Date(todayStr).getTime() - new Date(lastActiveStr).getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 1) {
+        currentStreak = 0;
+        await prisma.user.update({
+          where: { id },
+          data: { streakCount: 0 }
+        });
+      }
+    }
+
     const courses = user.enrollments.map((enrollment) => ({
       id: enrollment.courseId,
       title: enrollment.course.title,
@@ -133,7 +170,7 @@ abstract class UserService {
 
     return {
       fullName: user.fullName,
-      streakCount: user.streakCount,
+      streakCount: currentStreak,
       continueCourse: courses.find((course) => !course.isCompleted) ?? courses[0] ?? null,
       recentCourses: courses.slice(0, 2),
     };
@@ -223,6 +260,48 @@ abstract class UserService {
         updatedAt: true,
       },
     });
+  }
+
+  static async updateStreakOnActivity(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { streakCount: true, streakLastActive: true }
+    });
+
+    if (!user) return;
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+
+    if (!user.streakLastActive) {
+      // First activity
+      await prisma.user.update({
+        where: { id: userId },
+        data: { streakCount: 1, streakLastActive: now }
+      });
+      return;
+    }
+
+    const lastActiveStr = user.streakLastActive.toISOString().slice(0, 10);
+    const diffTime = new Date(todayStr).getTime() - new Date(lastActiveStr).getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      // Already studied today
+      return;
+    } else if (diffDays === 1) {
+      // Studied yesterday, increment streak
+      await prisma.user.update({
+        where: { id: userId },
+        data: { streakCount: user.streakCount + 1, streakLastActive: now }
+      });
+    } else {
+      // Missed a day or more, start new streak from 1
+      await prisma.user.update({
+        where: { id: userId },
+        data: { streakCount: 1, streakLastActive: now }
+      });
+    }
   }
 
   static async delete(id: string) {

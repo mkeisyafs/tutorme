@@ -1,5 +1,6 @@
 import { status } from "elysia";
 import prisma from "../../lib/prisma";
+import UserService from "../user/user.service";
 import type {
   CreateUserLessonProgressBody,
   UpdateUserLessonProgressBody,
@@ -109,6 +110,9 @@ abstract class UserLessonProgressService {
         },
       });
       await this.refreshEnrollmentProgress(data.userId, data.lessonId);
+      if (data.status === "COMPLETED") {
+        await UserService.updateStreakOnActivity(data.userId);
+      }
       return progress;
     }
 
@@ -121,6 +125,9 @@ abstract class UserLessonProgressService {
       },
     });
     await this.refreshEnrollmentProgress(data.userId, data.lessonId);
+    if (data.status === "COMPLETED") {
+      await UserService.updateStreakOnActivity(data.userId);
+    }
     return progress;
   }
 
@@ -142,6 +149,9 @@ abstract class UserLessonProgressService {
       data: updateData,
     });
     await this.refreshEnrollmentProgress(progress.userId, progress.lessonId);
+    if (updateData.status === "COMPLETED") {
+      await UserService.updateStreakOnActivity(progress.userId);
+    }
     return updatedProgress;
   }
 
