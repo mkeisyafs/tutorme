@@ -60,14 +60,23 @@ export class LessonGeneratorService {
     const moduleTitle = lesson.module.title;
     const lessonTitle = lesson.title;
 
-    const system = `You are an expert educator writing content for a course on "${courseTitle}". 
-You are writing the content for the module "${moduleTitle}", specifically the lesson titled "${lessonTitle}".
-Output high-quality, engaging educational content in Markdown format.
-Include explanations, examples, and practical exercises.
-Use the webSearch tool if you need up-to-date facts.
-Use the youtubeSearchTool to find a relevant educational video URL if possible.`;
+    const system = `You are an expert educator. Your task is to write the content for a lesson inside a course.
 
-    const prompt = `Write the comprehensive lesson content for "${lessonTitle}".`;
+Course: "${courseTitle}"
+Module: "${moduleTitle}"
+Lesson: "${lessonTitle}"
+
+CRITICAL RULES:
+- Output ONLY the lesson content in Markdown format. Start directly with the lesson material.
+- Do NOT include any preamble, introduction about yourself, or meta-commentary such as "I'll create...", "Let me search...", "Here is the lesson...", etc.
+- Do NOT describe what you are going to do. Just do it.
+- Include clear explanations, real-world examples, and practical exercises.
+- Use headings (##, ###), bullet points, code blocks, and bold/italic for readability.
+- If you use the webSearch tool, incorporate the information naturally into the content without mentioning that you searched.
+- If you use the youtubeSearch tool and find a video, embed the URL naturally in the content (e.g. as a Markdown link).
+- Write in a friendly, encouraging tone suitable for learners.`;
+
+    const prompt = `Write the full lesson content for "${lessonTitle}" in Markdown. Start directly with the material — no preamble.`;
 
     // Tools available to the AI
     const tools = {
@@ -75,12 +84,16 @@ Use the youtubeSearchTool to find a relevant educational video URL if possible.`
       youtubeSearch: youtubeSearchTool,
     };
 
-    const content = await AiService.text(prompt, getPowerfulModel(), system, tools);
+    const rawContent = await AiService.text(prompt, getPowerfulModel(), system, tools);
 
-    // In a real scenario with proper tool calling, we'd extract the video URL from the tool results.
-    // For this MVP architecture, we can parse it from the response or let the tool update a local ref.
-    // Assuming the AI might just embed it or we can run a separate quick extract if needed.
-    // To keep it simple, we'll just save the generated text to content. 
+    // Strip any AI preamble that appears before the actual lesson content.
+    // If the model starts with meta-commentary (e.g. "I'll create..." or
+    // "Here is the lesson...") followed by the real content starting with a
+    // Markdown heading, drop everything before the first heading.
+    const firstHeadingIndex = rawContent.search(/^#{1,6}\s/m);
+    const content = firstHeadingIndex > 0
+      ? rawContent.slice(firstHeadingIndex)
+      : rawContent;
     
     // Video is optional. If the model includes one, accept normal YouTube watch
     // links with or without www plus short youtu.be links, then strip Markdown

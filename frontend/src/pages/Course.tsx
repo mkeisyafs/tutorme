@@ -105,6 +105,7 @@ const Course = () => {
   const [previewError, setPreviewError] = useState('');
   const [previewRequestVersion, setPreviewRequestVersion] = useState(0);
   const [notice, setNotice] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
 
   const loadCourses = useCallback(async () => {
     if (!user?.id) {
@@ -212,9 +213,18 @@ const Course = () => {
     setPreviewRequestVersion((version) => version + 1);
   };
 
-  const handleShareToLibrary = (course: CourseCard) => {
-    closePreview();
-    setNotice(`Sharing “${course.title}” will be available soon.`);
+  const handleShareToLibrary = async (course: CourseCard) => {
+    if (isSharing) return;
+    setIsSharing(true);
+    try {
+      await apiRequest(`/courses/${encodeURIComponent(course.id)}/share`, { method: 'PATCH' });
+      closePreview();
+      setNotice(`"${course.title}" is now shared in the library.`);
+    } catch (error) {
+      setPreviewError(getApiErrorMessage(error, 'We could not share this course. Please try again.'));
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const orderedPreviewLessons = useMemo(
@@ -476,10 +486,11 @@ const Course = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-4 pt-6 border-t-2 border-blue-200 dark:border-blue-800">
               <button
                 type="button"
-                onClick={() => handleShareToLibrary(previewCourse)}
-                className="flex-1 rounded-xl border-2 border-purple-400 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/60 py-3 text-lg font-bold font-['Kalam',cursive] transition-all flex justify-center items-center gap-2 active:translate-y-0.5"
+                disabled={isSharing}
+                onClick={() => void handleShareToLibrary(previewCourse)}
+                className="flex-1 rounded-xl border-2 border-purple-400 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/60 py-3 text-lg font-bold font-['Kalam',cursive] transition-all flex justify-center items-center gap-2 active:translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
               >
-                <Share2 className="w-5 h-5" /> Share to Library
+                {isSharing ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} {isSharing ? 'Sharing…' : 'Share to Library'}
               </button>
               <button
                 type="button"
