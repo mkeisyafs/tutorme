@@ -83,6 +83,15 @@ const CourseAnalysis = () => {
     }
   };
 
+  const currentLessonIndex = useMemo(
+    () => summary?.quiz.lessonId ? orderedLessons.findIndex((l) => l.id === summary.quiz.lessonId) : -1,
+    [orderedLessons, summary?.quiz.lessonId]
+  );
+  const nextLesson: CourseLesson | null =
+    currentLessonIndex >= 0 && currentLessonIndex < orderedLessons.length - 1
+      ? orderedLessons[currentLessonIndex + 1]
+      : null;
+
   if (isLoading && !summary) {
     return (
       <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
@@ -113,15 +122,6 @@ const CourseAnalysis = () => {
   const passed = summary ? summary.score >= 70 : false;
   const submittedAt = summary?.submittedAt ? new Date(summary.submittedAt).toLocaleString() : '';
   const isChapterQuiz = summary?.quiz.type === 'CHAPTER_QUIZ';
-
-  const currentLessonIndex = useMemo(
-    () => summary?.quiz.lessonId ? orderedLessons.findIndex((l) => l.id === summary.quiz.lessonId) : -1,
-    [orderedLessons, summary?.quiz.lessonId]
-  );
-  const nextLesson: CourseLesson | null =
-    currentLessonIndex >= 0 && currentLessonIndex < orderedLessons.length - 1
-      ? orderedLessons[currentLessonIndex + 1]
-      : null;
 
   const handleNextLesson = async () => {
     if (!nextLesson || !courseId || isNavigatingNext) return;
