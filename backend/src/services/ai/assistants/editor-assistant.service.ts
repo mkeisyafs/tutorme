@@ -25,7 +25,7 @@ export class EditorAssistantService {
   /**
    * Modifies an existing draft outline based on user chat instructions.
    */
-  static async chatWithEditor(draftId: string, messages: CoreMessage[]) {
+  static async chatWithEditor(draftId: string, messages: any[]) {
     const draft = outlineCache.get(draftId);
     if (!draft) throw new Error("Draft not found.");
 

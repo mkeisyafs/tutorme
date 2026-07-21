@@ -43,7 +43,8 @@ export const webSearchTool = tool({
   parameters: z.object({
     query: z.string().describe("The search query to look up."),
   }),
-  execute: async (args: any) => performWebSearch(args.query),
+  // @ts-expect-error - AI SDK overload inference sometimes fails here
+  execute: async (args: { query: string }) => performWebSearch(args.query),
 });
 
 export async function performYoutubeSearch(topic: string) {
@@ -91,5 +92,6 @@ export const youtubeSearchTool = tool({
   parameters: z.object({
     topic: z.string().describe("The topic to search for on YouTube."),
   }),
-  execute: async (args: any) => performYoutubeSearch(args.topic),
+  // @ts-expect-error - AI SDK overload inference sometimes fails here
+  execute: async (args: { topic: string }) => performYoutubeSearch(args.topic),
 });

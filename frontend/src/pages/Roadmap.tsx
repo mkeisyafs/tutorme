@@ -1,13 +1,10 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, MessageCircle, Pencil, Play, RefreshCw, Save, Send, Sidebar, Sparkles, X, Check, Hourglass, Square } from 'lucide-react';
+import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, Pencil, Play, RefreshCw, Save, Sidebar, Sparkles, X } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
 import { useCourseGeneration, saveDraftToLocalStorage } from '../context/CourseGenerationContext';
 import type {
   DraftOutline,
-  EditorChatResponse,
-  EditorMessage,
-  PublishResponse,
 } from '../types/roadmap';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
@@ -17,12 +14,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
   return fallback;
 };
-
-const makeMessage = (role: EditorMessage['role'], content: string): EditorMessage => ({
-  id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  role,
-  content,
-});
 
 const Roadmap = () => {
   const navigate = useNavigate();
