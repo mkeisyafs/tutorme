@@ -197,6 +197,7 @@ const CourseAnalysis = () => {
         {error && <p role="alert" className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-center font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">The saved result is shown, but refreshing it failed: {error}</p>}
         {returnError && <p role="alert" aria-live="polite" className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{returnError}</p>}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <button onClick={() => void handleBackToCourse()} disabled={isReturning || isNavigatingNext || !summary} className="inline-flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-wait disabled:opacity-70">{isReturning ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />} {isReturning ? 'Returning…' : 'Back to course'}</button>
           {isChapterQuiz && nextLesson && (
             <button
               onClick={() => void handleNextLesson()}
@@ -217,8 +218,6 @@ const CourseAnalysis = () => {
               )}
             </button>
           )}
-          <button onClick={() => void handleBackToCourse()} disabled={isReturning || isNavigatingNext || !summary} className="inline-flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-wait disabled:opacity-70">{isReturning ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />} {isReturning ? 'Returning…' : 'Back to course'}</button>
-          <button onClick={() => navigate(-1)} disabled={isReturning || isNavigatingNext} className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-100 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-gray-700 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> Previous page</button>
         </div>
       </section>
         </div>
