@@ -20,6 +20,7 @@ import {
   Trash2,
   Video,
   X,
+  Plus,
 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { CourseSidebar } from '../components/CourseSidebar';
@@ -676,15 +677,7 @@ const Lesson = () => {
                 <ChevronLeft className="w-5 h-5" />
                 Prev Lesson
               </button>
-            ) : (
-              <button
-                onClick={() => navigate(-1)}
-                className="px-6 py-4 rounded-2xl font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 shadow-sm transition-all flex items-center gap-3"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                Back
-              </button>
-            )}
+            ) : <div />}
 
             {/* Next / Final Exam */}
             {nextLesson ? (

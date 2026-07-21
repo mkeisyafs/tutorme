@@ -127,6 +127,17 @@ export class FinalExamGeneratorService {
     };
   }
 
+  static async getCourseMaterialForExam(
+    userId: string,
+    courseId: string
+  ): Promise<string> {
+    const readiness = await this.getCourseReadiness(userId, courseId);
+    if (!readiness.material) {
+      throw new Error(readiness.reason ?? "Course material unavailable.");
+    }
+    return this.formatMaterial(readiness.material);
+  }
+
   static async requestGeneration(
     userId: string,
     courseId: string

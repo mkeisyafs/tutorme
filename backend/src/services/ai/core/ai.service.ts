@@ -156,22 +156,32 @@ const KEY_ALIASES: Record<string, string> = {
   moduleDuration: "_ignored",
 
   // Quiz question fields returned by OpenAI-compatible providers
+  questionType: "type",
+  question_type: "type",
   question: "prompt",
+  questionText: "prompt",
+  question_text: "prompt",
+  choices: "options",
   correct_answer: "correctAnswer",
   correct_answer_index: "correctAnswer",
   correct_option_index: "correctAnswer",
   correctAnswerIndex: "correctAnswer",
   explanation: "explanations",
   rubric: "explanations",
+  suggested_answer: "explanations",
+  suggestedAnswer: "explanations",
   requires_image: "requiresImage",
   quiz_title: "_ignored",
   quizTitle: "_ignored",
   answer: "correctAnswer",
   sample_answer: "sampleAnswer",
-  // Essay review fields
   results: "essays",
   reviews: "essays",
-  feedback: "rationale"
+  feedback: "rationale",
+
+  // Block fields
+  correct_index: "correctIndex",
+  expected_output: "expectedOutput",
 };
 
 const LOWERCASE_ALIASES = Object.fromEntries(
@@ -192,10 +202,18 @@ function normalizeModelResponse(value: unknown): unknown {
       // Capitalize enum values for courseLevel (model may return lowercase)
       if (mapped === "courseLevel" && typeof normalized === "string") {
         result[mapped] = normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
-      } else if (mapped === "type" && normalized === "multiple_choice") {
-        result[mapped] = "MULTIPLE_CHOICE";
-      } else if (mapped === "type" && normalized === "essay") {
-        result[mapped] = "ESSAY";
+      } else if (mapped === "type" && typeof normalized === "string") {
+        const lowerNorm = normalized.toLowerCase();
+        if (lowerNorm === "multiple_choice" || lowerNorm === "multiple choice" || lowerNorm === "multiple-choice") {
+          result[mapped] = "MULTIPLE_CHOICE";
+        } else if (lowerNorm === "essay") {
+          result[mapped] = "ESSAY";
+        } else if (normalized === "MULTIPLE_CHOICE" || normalized === "ESSAY") {
+          result[mapped] = normalized;
+        } else {
+          // Normalizes block types like interactive_quiz -> interactive-quiz
+          result[mapped] = normalized.replace(/_/g, "-");
+        }
       } else if (mapped === "explanations" && typeof normalized === "string") {
         result[mapped] = [normalized];
       } else {
@@ -234,8 +252,11 @@ function normalizeModelResponse(value: unknown): unknown {
     }
 
     // Merge separate question arrays from some OpenAI-compatible providers
-    const mcqs = Array.isArray(result.multiple_choice_questions) ? result.multiple_choice_questions : Array.isArray(result.multipleChoiceQuestions) ? result.multipleChoiceQuestions : null;
-    const eqs = Array.isArray(result.essay_questions) ? result.essay_questions : Array.isArray(result.essayQuestions) ? result.essayQuestions : null;
+    const mcqsRaw = result.multiple_choice_questions || result.multipleChoiceQuestions || result.multiple_choice || result.multipleChoice;
+    const mcqs = Array.isArray(mcqsRaw) ? mcqsRaw : (mcqsRaw && typeof mcqsRaw === "object" ? [mcqsRaw] : null);
+
+    const eqsRaw = result.essay_questions || result.essayQuestions || result.essay;
+    const eqs = Array.isArray(eqsRaw) ? eqsRaw : (eqsRaw && typeof eqsRaw === "object" ? [eqsRaw] : null);
 
     if (mcqs || eqs) {
       if (!Array.isArray(result.questions)) {
@@ -250,6 +271,8 @@ function normalizeModelResponse(value: unknown): unknown {
         }
         delete result.multiple_choice_questions;
         delete result.multipleChoiceQuestions;
+        delete result.multiple_choice;
+        delete result.multipleChoice;
       }
       if (eqs) {
         for (const q of eqs) {
@@ -260,6 +283,7 @@ function normalizeModelResponse(value: unknown): unknown {
         }
         delete result.essay_questions;
         delete result.essayQuestions;
+        delete result.essay;
       }
     }
 
@@ -317,11 +341,11 @@ function normalizeModelResponse(value: unknown): unknown {
       for (const essay of result.essays) {
         if (typeof essay === "object" && essay !== null) {
           const e = essay as Record<string, unknown>;
-          if (!Array.isArray(e.strengths) || e.strengths.length === 0) {
-            e.strengths = ["See rationale for details."];
+          if (!Array.isArray(e.strengths)) {
+            e.strengths = [];
           }
-          if (!Array.isArray(e.improvements) || e.improvements.length === 0) {
-            e.improvements = ["See rationale for details."];
+          if (!Array.isArray(e.improvements)) {
+            e.improvements = [];
           }
         }
       }

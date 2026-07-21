@@ -70,9 +70,10 @@ export class CoursePersistenceService {
       }
     });
 
-    // Cleanup the cache
-    outlineCache.delete(draftId);
-
+    // We no longer delete the draft from cache immediately here.
+    // If subsequent steps (like lesson generation) fail, the user can 
+    // click "Start Learning" again to retry without getting a "Draft not found" error.
+    
     return { courseId: course.id, firstLessonId };
   }
 }

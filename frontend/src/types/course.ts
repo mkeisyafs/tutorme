@@ -21,6 +21,7 @@ export interface CourseModule {
 }
 
 export interface CourseCreator {
+  id: string;
   fullName: string;
 }
 

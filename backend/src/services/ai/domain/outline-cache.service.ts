@@ -26,18 +26,55 @@ export interface DraftOutline {
   userId: string;
 }
 
+import fs from "fs";
+import path from "path";
+
 /**
- * In-memory cache for temporary course outlines.
+ * In-memory cache for temporary course outlines, backed by a local file
+ * so it survives server restarts during development.
  * In a production environment, this should be backed by Redis.
  */
 class OutlineCacheService {
   private cache = new Map<string, DraftOutline>();
+  private cacheFilePath = path.join(process.cwd(), ".draft-cache.json");
+
+  constructor() {
+    this.loadCache();
+  }
+
+  private loadCache() {
+    try {
+      if (fs.existsSync(this.cacheFilePath)) {
+        const data = fs.readFileSync(this.cacheFilePath, "utf8");
+        const parsed = JSON.parse(data);
+        for (const [key, value] of Object.entries(parsed)) {
+          const draft = value as DraftOutline;
+          if (typeof draft.createdAt === "string") {
+            draft.createdAt = new Date(draft.createdAt);
+          }
+          this.cache.set(key, draft);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load draft cache from disk", e);
+    }
+  }
+
+  private persistCache() {
+    try {
+      const obj = Object.fromEntries(this.cache.entries());
+      fs.writeFileSync(this.cacheFilePath, JSON.stringify(obj, null, 2), "utf8");
+    } catch (e) {
+      console.error("Failed to write draft cache to disk", e);
+    }
+  }
 
   save(draft: DraftOutline): string {
     if (!draft.draftId) {
       draft.draftId = crypto.randomUUID();
     }
     this.cache.set(draft.draftId, draft);
+    this.persistCache();
     return draft.draftId;
   }
 
@@ -51,11 +88,13 @@ class OutlineCacheService {
     
     const updated = { ...existing, ...updates };
     this.cache.set(draftId, updated);
+    this.persistCache();
     return updated;
   }
 
   delete(draftId: string): void {
     this.cache.delete(draftId);
+    this.persistCache();
   }
 }
 

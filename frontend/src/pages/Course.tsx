@@ -636,14 +636,21 @@ const Course = () => {
             </div>
 
             <div className="mt-2.5 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-4 pt-2.5 sm:pt-4 border-t-2 border-blue-200 dark:border-blue-800 shrink-0 bg-blue-50 dark:bg-gray-800">
-              <button
-                type="button"
-                disabled={isSharing}
-                onClick={() => void handleShareToLibrary(previewCourse)}
-                className="flex-1 rounded-xl border-2 border-purple-400 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/60 py-2 sm:py-3 text-base sm:text-lg font-bold font-['Kalam',cursive] transition-all flex justify-center items-center gap-2 active:translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
-              >
-                {isSharing ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} {isSharing ? 'Sharing…' : 'Share to Library'}
-              </button>
+              {previewDetail?.creator?.id === user?.id && (
+                <button
+                  type="button"
+                  disabled={isSharing || !previewCourse.isCompleted}
+                  onClick={() => void handleShareToLibrary(previewCourse)}
+                  title={!previewCourse.isCompleted ? 'Complete all lessons and the final exam to share' : 'Share course to public library'}
+                  className={`flex-1 rounded-xl border-2 py-2 sm:py-3 text-base sm:text-lg font-bold font-['Kalam',cursive] transition-all flex justify-center items-center gap-2 ${
+                    !previewCourse.isCompleted
+                      ? 'border-gray-300 bg-gray-100 text-gray-400 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-500 cursor-not-allowed opacity-70'
+                      : 'border-purple-400 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/60 active:translate-y-0.5 disabled:cursor-wait disabled:opacity-60'
+                  }`}
+                >
+                  {isSharing ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} {isSharing ? 'Sharing…' : 'Share to Library'}
+                </button>
+              )}
               <button
                 type="button"
                 disabled={isPreviewLoading || Boolean(previewError) || !resumePreviewLesson}

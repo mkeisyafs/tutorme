@@ -40,14 +40,14 @@ export async function getSubmissionSummary(
     };
   }
 
-  const review = submission.quiz.type === "CHAPTER_QUIZ"
+  const review = submission.review
     ? LessonQuizReviewSchema.safeParse(submission.review)
     : null;
   if (review !== null && !review.success) {
     return { ok: false, status: 409, message: "Saved quiz review is unavailable." };
   }
 
-  const parsedUserAnswers = submission.quiz.type === "CHAPTER_QUIZ" && submission.userAnswers != null
+  const parsedUserAnswers = submission.userAnswers != null
     ? (submission.userAnswers as Record<string, unknown>)
     : undefined;
 

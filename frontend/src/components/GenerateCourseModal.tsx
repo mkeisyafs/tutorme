@@ -40,8 +40,8 @@ const GenerateCourseModal: React.FC = () => {
   } = useCourseGeneration();
 
   const [familiarity, setFamiliarity] = useState('Beginner');
-  const [language, setLanguage] = useState('');
-  const [openDropdown, setOpenDropdown] = useState<'familiarity' | null>(null);
+  const [language, setLanguage] = useState('English');
+  const [openDropdown, setOpenDropdown] = useState<'familiarity' | 'language' | null>(null);
   const [enableEssayQuestions, setEnableEssayQuestions] = useState(true);
   const [requireImageSubmission, setRequireImageSubmission] = useState(false);
   const [quizLength, setQuizLength] = useState('Random');
@@ -344,15 +344,30 @@ const GenerateCourseModal: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">
-                      Language <span className="text-xs font-normal text-pink-700 dark:text-pink-400 normal-case">(Optional - Default: English)</span>
+                      Language
                     </label>
-                    <input
-                      type="text"
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      placeholder="e.g. English, Indonesian, Japanese..."
-                      className="w-full px-4 py-3 border border-pink-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                    />
+                    <div className="relative">
+                      <button type="button" aria-haspopup="listbox" aria-expanded={openDropdown === 'language'} onClick={() => setOpenDropdown(openDropdown === 'language' ? null : 'language')} className={`flex w-full items-center justify-between rounded-xl border bg-white/70 px-4 py-3 text-left font-medium text-gray-800 shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-pink-400 dark:border-gray-600 dark:bg-gray-900/70 dark:text-gray-100 dark:focus:ring-pink-500 ${openDropdown === 'language' ? 'border-pink-500' : 'border-pink-300/50'}`}>
+                        {language}<ChevronDown className={`h-5 w-5 text-pink-500 transition-transform ${openDropdown === 'language' ? 'rotate-180' : ''}`} />
+                      </button>
+                      {openDropdown === 'language' && (
+                        <div role="listbox" aria-label="Course language" className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border-2 border-pink-300 bg-white shadow-[4px_4px_0_rgba(236,72,153,.25)] dark:border-pink-700 dark:bg-gray-800">
+                          {['English', 'Indonesia'].map((option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              role="option"
+                              aria-selected={language === option}
+                              onClick={() => { setLanguage(option); setOpenDropdown(null); }}
+                              className={`flex w-full items-center justify-between px-4 py-2.5 text-left font-medium transition-colors ${language === option ? 'bg-pink-500 text-white' : 'text-gray-800 hover:bg-pink-100 dark:text-gray-100 dark:hover:bg-pink-900/40'}`}
+                            >
+                              {option}
+                              {language === option && <Check className="h-4 w-4" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <section className="rounded-2xl border-2 border-pink-300/70 bg-white/50 p-5 dark:border-pink-700 dark:bg-gray-900/30">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

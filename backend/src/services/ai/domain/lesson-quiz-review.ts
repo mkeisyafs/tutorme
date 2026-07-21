@@ -7,8 +7,8 @@ export const EssayReviewSchema = z.object({
       questionId: z.string().min(1),
       score: z.number().min(0).max(100),
       rationale: z.string().min(1),
-      strengths: z.array(z.string().min(1)).min(1),
-      improvements: z.array(z.string().min(1)).min(1),
+      strengths: z.array(z.string().min(1)),
+      improvements: z.array(z.string().min(1)),
     }).strict()
   ),
 }).strict();

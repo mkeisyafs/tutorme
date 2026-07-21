@@ -39,9 +39,6 @@ const Roadmap = () => {
   const [editedDescription, setEditedDescription] = useState('');
   const { isPublishing, isGenerating, startPublish, publishError, resetPublish } = useCourseGeneration();
   const isBackgroundBusy = isGenerating || isPublishing;
-  const [chatMessages, setChatMessages] = useState<EditorMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [isChatting, setIsChatting] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
   const loadDraft = useCallback(async () => {
@@ -68,12 +65,6 @@ const Roadmap = () => {
       setEditedTitle(data.courseTitle);
       setEditedDescription(data.courseDescription);
       setExpandedModule(data.modules[0]?.id ?? null);
-      setChatMessages([
-        makeMessage(
-          'assistant',
-          `Your ${data.courseTitle} outline is ready. Ask me to add, remove, rename, or reorder any module or lesson before you start learning.`
-        ),
-      ]);
     } catch (error) {
       setDraft(null);
       setDraftError(getErrorMessage(error, 'We could not load this course draft. Please try again.'));
@@ -145,47 +136,7 @@ const Roadmap = () => {
     }
   };
 
-  const handleEditorChat = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
 
-    const message = chatInput.trim();
-    if (!message || !draftId || !draft || isChatting) return;
-
-    const userMessage = makeMessage('user', message);
-    const nextMessages = [...chatMessages, userMessage];
-    setChatMessages(nextMessages);
-    setChatInput('');
-    setActionError('');
-    setIsChatting(true);
-
-    try {
-      const result = await apiRequest<EditorChatResponse>(`/generation/outline/${encodeURIComponent(draftId)}/chat`, {
-        method: 'POST',
-        body: {
-          messages: nextMessages.map(({ role, content }) => ({ role, content })),
-        },
-      });
-
-      if (!result.draft || !Array.isArray(result.draft.modules)) {
-        throw new Error('The editor did not return an updated draft.');
-      }
-
-      setDraft(result.draft);
-      saveDraftToLocalStorage(draftId, result.draft.courseTitle, result.draft.topic || result.draft.courseTitle);
-      setEditedTitle(result.draft.courseTitle);
-      setEditedDescription(result.draft.courseDescription);
-      setExpandedModule(result.draft.modules[0]?.id ?? null);
-      setChatMessages([
-        ...nextMessages,
-        makeMessage('assistant', result.reply || 'I updated your draft outline.'),
-      ]);
-      showGuideMessage('Your outline has been updated in this draft.');
-    } catch (error) {
-      setActionError(getErrorMessage(error, 'The outline editor could not update your draft. Please try again.'));
-    } finally {
-      setIsChatting(false);
-    }
-  };
 
   const handlePublish = async () => {
     if (!draftId || !draft || isPublishing) return;
@@ -294,7 +245,7 @@ const Roadmap = () => {
               </button>
               <button
                 onClick={() => void handlePublish()}
-                disabled={isPublishing || isSavingDetails || isChatting}
+                disabled={isPublishing || isSavingDetails}
                 className="flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 hover:bg-green-600 px-4 py-2.5 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(21,128,61,1)] transition-all active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 dark:bg-green-600 dark:hover:bg-green-500"
               >
                 {isPublishing && <LoaderCircle className="h-5 w-5 animate-spin" />}
@@ -318,7 +269,7 @@ const Roadmap = () => {
             </div>
             <div>
               <h3 className="mb-1 font-['Kalam',cursive] text-xl sm:text-2xl font-bold text-purple-950 dark:text-purple-100">Editor Mode</h3>
-              <p className="text-xs sm:text-sm font-bold text-purple-800 dark:text-purple-300">This outline is a draft only. Use the editor assistant to change modules and lessons; it enters your course database only after you click <strong className="text-purple-900 dark:text-purple-200">Start Learning</strong>.</p>
+              <p className="text-xs sm:text-sm font-bold text-purple-800 dark:text-purple-300">This outline is a draft only. It enters your course database only after you click <strong className="text-purple-900 dark:text-purple-200">Start Learning</strong>.</p>
             </div>
           </div>
 
@@ -375,7 +326,7 @@ const Roadmap = () => {
           <div className="space-y-4 sm:space-y-5 pb-12">
             {draft.modules.length === 0 ? (
               <div className="rounded-2xl border-4 border-dashed border-gray-300 bg-white p-8 text-center font-bold text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                This draft has no modules yet. Ask the outline editor to add your first module.
+                This draft has no modules yet.
               </div>
             ) : draft.modules.map((module) => {
               const isExpanded = expandedModule === module.id;
@@ -402,7 +353,7 @@ const Roadmap = () => {
                     <div className="overflow-hidden">
                       <div className="border-t-2 border-dashed border-gray-200 bg-white px-3 sm:px-5 pb-5 pt-3 pl-8 sm:pl-14 dark:border-gray-700 dark:bg-gray-800">
                         {module.lessons.length === 0 ? (
-                          <p className="font-bold text-xs sm:text-sm text-gray-500 dark:text-gray-400">No lessons in this module yet. Ask the editor to add one.</p>
+                          <p className="font-bold text-xs sm:text-sm text-gray-500 dark:text-gray-400">No lessons in this module yet.</p>
                         ) : (
                           <ul className="space-y-2.5 sm:space-y-3">
                             {module.lessons.map((lesson) => (
@@ -435,43 +386,7 @@ const Roadmap = () => {
         </div>
       </main>
 
-      {/* Right Sidebar (Outline Editor Chat) - Drawer on mobile */}
-      <aside className="fixed inset-y-0 right-0 z-40 flex h-full w-80 max-w-[85vw] flex-col border-l-2 border-dashed border-gray-300 bg-purple-50/95 p-4 sm:p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 dark:border-gray-700 dark:bg-gray-800/95 lg:relative lg:z-20 lg:w-80 lg:max-w-none lg:shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
-        <h2 className="mb-1 sm:mb-2 flex -rotate-1 transform items-center gap-2.5 sm:gap-3 font-['Kalam',cursive] text-2xl sm:text-3xl font-bold tracking-wide text-purple-600 dark:text-purple-400">
-          <MessageCircle className="h-7 w-7 sm:h-8 sm:w-8 fill-purple-500 text-purple-500" />
-          Outline Editor
-        </h2>
-        <p className="mb-4 sm:mb-6 text-xs sm:text-sm font-bold text-purple-800 dark:text-purple-300">Assistant 1 edits this draft’s modules and lessons.</p>
 
-        <div className="custom-scrollbar flex flex-1 flex-col gap-3 sm:gap-4 overflow-y-auto pb-4 pr-1 sm:pr-2" aria-live="polite">
-          {chatMessages.map((message) => (
-            <div key={message.id} className={message.role === 'assistant' ? 'mr-3 rounded-2xl sm:rounded-3xl rounded-tl-none border-2 sm:border-4 border-gray-200 bg-white p-3 sm:p-4 text-xs sm:text-md font-bold text-gray-700 shadow-[3px_3px_0px_0px_rgba(229,231,235,1)] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300' : 'ml-3 self-end rounded-2xl sm:rounded-3xl rounded-tr-none border-2 sm:border-4 border-pink-300 bg-pink-100 p-3 sm:p-4 text-xs sm:text-md font-bold text-pink-900 shadow-[3px_3px_0px_0px_rgba(244,114,182,1)] rotate-1 transform dark:border-pink-700 dark:bg-pink-900/40 dark:text-pink-100'}>
-              {message.content}
-            </div>
-          ))}
-          {isChatting && (
-            <div className="mr-3 flex items-center gap-2 rounded-2xl sm:rounded-3xl rounded-tl-none border-2 sm:border-4 border-gray-200 bg-white p-3 sm:p-4 text-xs sm:text-sm font-bold text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-              <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-purple-500" />
-              Updating your outline…
-            </div>
-          )}
-        </div>
-
-        <form onSubmit={handleEditorChat} className="relative mt-3 sm:mt-4">
-          <input
-            type="text"
-            value={chatInput}
-            onChange={(event) => setChatInput(event.target.value)}
-            disabled={isChatting || isBackgroundBusy}
-            placeholder={isBackgroundBusy ? "Generation in progress..." : "Add, remove, or reorder…"}
-            className="w-full rounded-full border-2 sm:border-4 border-purple-200 bg-white/90 py-3 sm:py-4 pl-4 sm:pl-5 pr-12 sm:pr-14 text-sm sm:text-lg font-bold text-gray-700 shadow-inner transition-all placeholder-gray-400 focus:border-purple-400 focus:outline-none focus:ring-4 focus:ring-purple-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-purple-800/50 dark:bg-gray-900/90 dark:text-gray-200 dark:focus:border-purple-500 dark:focus:ring-purple-900/50"
-          />
-          <button type="submit" disabled={!chatInput.trim() || isChatting || isBackgroundBusy} className="absolute right-2 top-1/2 flex -translate-y-1/2 transform rounded-full bg-purple-500 p-2 sm:p-3 text-white shadow-[0_4px_0px_0px_rgba(126,34,206,1)] transition-all active:translate-y-[calc(-50%+4px)] active:shadow-none disabled:cursor-not-allowed disabled:opacity-55 hover:bg-purple-600" aria-label="Send editor request">
-            {isChatting ? <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : <Send className="h-4 w-4 sm:h-5 sm:w-5" />}
-          </button>
-        </form>
-        <p className="mt-2 sm:mt-3 text-center text-[0.65rem] sm:text-xs font-bold text-purple-700 dark:text-purple-300">Your outline remains a draft until Start Learning.</p>
-      </aside>
     </div>
   );
 };

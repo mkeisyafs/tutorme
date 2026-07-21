@@ -87,13 +87,23 @@ abstract class CourseService {
       where: { id: courseId, creatorId: userId },
       select: { id: true },
     });
-    if (!course) return null;
+    if (!course) return { error: "NOT_FOUND" };
 
-    return prisma.course.update({
+    const userCourse = await prisma.userCourse.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+      select: { isCompleted: true },
+    });
+
+    if (!userCourse?.isCompleted) {
+      return { error: "NOT_COMPLETED" };
+    }
+
+    const updated = await prisma.course.update({
       where: { id: courseId },
       data: { isPublic: true },
       select: { id: true, title: true, isPublic: true },
     });
+    return { data: updated };
   }
 
   static async reuse(userId: string, courseId: string) {

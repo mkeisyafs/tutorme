@@ -10,11 +10,14 @@ export class CourseController {
   }
 
   static async share({ params, user, error }: any) {
-    const course = await CourseService.share(user.sub, params.id);
-    if (!course) {
+    const result = await CourseService.share(user.sub, params.id);
+    if (result?.error === "NOT_FOUND") {
       return error(404, { message: "Course not found or you do not own it" });
     }
-    return course;
+    if (result?.error === "NOT_COMPLETED") {
+      return error(400, { message: "You can only share a course after completing it" });
+    }
+    return result.data;
   }
 
   static async reuse({ params, user, error }: any) {

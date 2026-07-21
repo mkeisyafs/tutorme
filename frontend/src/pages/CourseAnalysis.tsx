@@ -195,7 +195,7 @@ const CourseAnalysis = () => {
           </div>
         )}
 
-        {isChapterQuiz && <AssessmentReview review={summary?.review} userAnswers={summary?.userAnswers} />}
+        {summary?.review && <AssessmentReview review={summary.review} userAnswers={summary.userAnswers} />}
 
         {submittedAt && <p className="mt-7 text-center text-sm text-gray-400 dark:text-gray-500">{submittedAt}</p>}
         {error && <p role="alert" className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-center font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">{error}</p>}

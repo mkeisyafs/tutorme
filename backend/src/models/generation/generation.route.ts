@@ -133,7 +133,11 @@ export const generationController = new Elysia({ prefix: "/generation" })
     async ({ params, set }) => {
       try {
         await QuizWorkerService.enqueueQuizGeneration(params.lessonId);
-        return { status: "queued" };
+        return { 
+          state: "queued",
+          isGenerating: true,
+          isGenerated: false
+        };
       } catch (e: any) {
         set.status = 400;
         return { message: e.message };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import {
   Lightbulb,
   CircleAlert,
@@ -147,6 +148,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
+        rehypePlugins={[rehypeRaw]}
         components={{
           p: ({ node, ...props }) => <p className="mb-4 last:mb-0 leading-relaxed" {...props} />,
           strong: ({ node, children, ...props }) => {
@@ -161,17 +163,23 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
             );
           },
           em: ({ node, ...props }) => <em className="italic" {...props} />,
-          code: ({ node, inline, className, children, ...props }: any) => {
-            return inline ? (
-              <code className="bg-gray-100 dark:bg-gray-800 text-pink-500 dark:text-pink-400 px-1.5 py-0.5 rounded font-mono text-sm" {...props}>
+          code: ({ className, children, ...props }: any) => {
+            const isBlock = String(children).includes('\n') || (className && className.includes('language-'));
+            return isBlock ? (
+              <code className={className} {...props}>
                 {children}
               </code>
             ) : (
-              <pre className="bg-gray-900 text-pink-200 p-4 rounded-xl overflow-x-auto mb-4 font-mono text-sm">
-                <code {...props}>{children}</code>
-              </pre>
+              <code className={`bg-gray-100 dark:bg-gray-800 text-pink-500 dark:text-pink-400 px-1.5 py-0.5 rounded font-mono text-sm ${className || ''}`} {...props}>
+                {children}
+              </code>
             );
           },
+          pre: ({ children, ...props }: any) => (
+            <pre className="bg-gray-900 text-pink-200 p-4 rounded-xl overflow-x-auto mb-4 font-mono text-sm" {...props}>
+              {children}
+            </pre>
+          ),
           ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-4 space-y-2" {...props} />,
           ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-4 space-y-2" {...props} />,
           li: ({ node, ...props }) => <li className="" {...props} />,
@@ -190,6 +198,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
           th: ({ node, ...props }) => <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700 last:border-r-0" {...props} />,
           td: ({ node, ...props }) => <td className="px-3 py-2 text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 last:border-r-0" {...props} />,
           blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-pink-400 pl-4 italic my-3 text-gray-600 dark:text-gray-400" {...props} />,
+          details: ({ node, ...props }) => <details className="mb-4 rounded-xl border-2 border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50" {...props} />,
+          summary: ({ node, ...props }) => <summary className="cursor-pointer font-bold text-gray-900 dark:text-gray-100 outline-none hover:text-pink-600 dark:hover:text-pink-400" {...props} />,
         }}
       >
         {content}
