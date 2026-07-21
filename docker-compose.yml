@@ -1,0 +1,66 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: tutorme-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-tutorme}
+      MYSQL_USER: ${DB_USER:-tutorme}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-tutorme_secure_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tutorme-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tutorme-backend
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      DATABASE_URL: mysql://${DB_USER:-tutorme}:${DB_PASSWORD:-tutorme_secure_password}@db:3306/${DB_NAME:-tutorme}
+      JWT_SECRET: ${JWT_SECRET:-change_this_jwt_secret_in_production}
+      FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gpt-4o-mini}
+      AI_POWERFUL_MODEL: ${AI_POWERFUL_MODEL:-gpt-4o}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    networks:
+      - tutorme-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tutorme-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - tutorme-network
+
+volumes:
+  mariadb_data:
+    driver: local
+
+networks:
+  tutorme-network:
+    driver: bridge

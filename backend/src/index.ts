@@ -1,5 +1,6 @@
 import { Elysia, status } from "elysia";
 import { Logestic } from "logestic";
+import { cors } from "@elysiajs/cors";
 
 // --- Route Imports ---
 import userRoute from "./models/user/user.route";
@@ -16,7 +17,22 @@ import authRoute from "./models/auth/auth.route";
 import GenerationController from "./models/generation/generation.route";
 import { swagger } from "@elysiajs/swagger";
 
+const getCorsOrigin = () => {
+  const envOrigin = process.env.CORS_ORIGIN;
+  if (!envOrigin || envOrigin === "*" || envOrigin === "true") return true;
+  if (envOrigin.includes(",")) return envOrigin.split(",").map((o) => o.trim());
+  return envOrigin;
+};
+
 const app = new Elysia({ serve: { idleTimeout: 255 } })
+  .use(
+    cors({
+      origin: getCorsOrigin(),
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    })
+  )
   .use(Logestic.preset("common"))
   .decorate("error", status)
   // Health check at root level (e.g. for external monitoring/pinging)
@@ -61,3 +77,14 @@ const app = new Elysia({ serve: { idleTimeout: 255 } })
 console.log(
   `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`
 );
+
+// --- Graceful Shutdown Handling ---
+const handleShutdown = (signal: string) => {
+  console.log(`\nReceived ${signal}. Shutting down gracefully...`);
+  app.stop();
+  process.exit(0);
+};
+
+process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+process.on("SIGINT", () => handleShutdown("SIGINT"));
+
