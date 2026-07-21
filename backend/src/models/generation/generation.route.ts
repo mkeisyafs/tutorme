@@ -228,7 +228,12 @@ export const generationController = new Elysia({ prefix: "/generation" })
         }
       });
 
-      const workerState = QuizWorkerService.getStatus(params.lessonId);
+      let workerState = QuizWorkerService.getStatus(params.lessonId);
+      // Restore background work for lessons generated before a server restart.
+      if (lesson.content && !quiz && !workerState) {
+        await QuizWorkerService.enqueueQuizGeneration(params.lessonId);
+        workerState = QuizWorkerService.getStatus(params.lessonId);
+      }
       const state = quiz
         ? "ready"
         : workerState ?? (lesson.content ? "not_started" : "blocked");
@@ -238,9 +243,11 @@ export const generationController = new Elysia({ prefix: "/generation" })
         isGenerated: !!quiz,
         isGenerating: workerState === "queued" || workerState === "generating",
         quizId: quiz?.id,
-        reason: lesson.content
-          ? undefined
-          : "Generate the lesson before its quiz can be generated.",
+        reason: !lesson.content
+          ? "Generate the lesson before its quiz can be generated."
+          : workerState === "failed"
+            ? "Quiz generation failed. Please try again later."
+            : undefined,
       };
     }
   )

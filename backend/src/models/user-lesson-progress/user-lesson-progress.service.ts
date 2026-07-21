@@ -102,11 +102,16 @@ abstract class UserLessonProgressService {
     });
 
     if (existing) {
+      const nextStatus = data.status ?? existing.status;
       const progress = await prisma.userLessonProgress.update({
         where: { id: existing.id },
         data: {
-          status: data.status || existing.status,
-          completedAt: data.status === "COMPLETED" ? new Date() : existing.completedAt,
+          status: nextStatus,
+          completedAt: nextStatus === "COMPLETED"
+            ? existing.status === "COMPLETED"
+              ? existing.completedAt ?? new Date()
+              : new Date()
+            : null,
         },
       });
       await this.refreshEnrollmentProgress(data.userId, data.lessonId);
@@ -135,13 +140,14 @@ abstract class UserLessonProgressService {
     const progress = await prisma.userLessonProgress.findUnique({ where: { id } });
     if (!progress) return status(404, { message: "Progress record not found" });
 
-    // Auto-set completedAt when marking as COMPLETED
+    // Keep completion timestamps in sync with the status so a user can undo completion.
     const updateData: any = { ...data };
-    if (data.status === "COMPLETED" && !data.completedAt) {
-      updateData.completedAt = new Date();
-    }
-    if (data.completedAt) {
-      updateData.completedAt = new Date(data.completedAt);
+    if (data.status === "COMPLETED") {
+      updateData.completedAt = data.completedAt ? new Date(data.completedAt) : new Date();
+    } else if (data.status) {
+      updateData.completedAt = null;
+    } else if (data.completedAt !== undefined) {
+      updateData.completedAt = data.completedAt ? new Date(data.completedAt) : null;
     }
 
     const updatedProgress = await prisma.userLessonProgress.update({

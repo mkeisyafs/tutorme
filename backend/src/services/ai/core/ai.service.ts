@@ -47,7 +47,6 @@ export class AiService {
     });
 
     const parsed = extractAndParseJson(response.text);
-    console.log("[AiService] Raw output:", JSON.stringify(parsed, null, 2));
     const normalized = normalizeModelResponse(parsed);
 
     const validationResult = schema.safeParse(normalized);
@@ -148,7 +147,16 @@ const KEY_ALIASES: Record<string, string> = {
   lessonSummary: "_ignored",
   topics: "_ignored",
   duration: "_ignored",
-  moduleDuration: "_ignored"
+  moduleDuration: "_ignored",
+
+  // Quiz question fields returned by OpenAI-compatible providers
+  question: "prompt",
+  correct_answer: "correctAnswer",
+  correct_answer_index: "correctAnswer",
+  correctAnswerIndex: "correctAnswer",
+  requires_image: "requiresImage",
+  quiz_title: "_ignored",
+  quizTitle: "_ignored"
 };
 
 const LOWERCASE_ALIASES = Object.fromEntries(
@@ -169,6 +177,10 @@ function normalizeModelResponse(value: unknown): unknown {
       // Capitalize enum values for courseLevel (model may return lowercase)
       if (mapped === "courseLevel" && typeof normalized === "string") {
         result[mapped] = normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+      } else if (mapped === "type" && normalized === "multiple_choice") {
+        result[mapped] = "MULTIPLE_CHOICE";
+      } else if (mapped === "type" && normalized === "essay") {
+        result[mapped] = "ESSAY";
       } else {
         result[mapped] = normalized;
       }

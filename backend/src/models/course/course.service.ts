@@ -172,6 +172,7 @@ abstract class CourseService {
                 title: true,
                 videoUrl: true,
                 orderIndex: true,
+                content: true,
               },
             },
           },
@@ -192,7 +193,16 @@ abstract class CourseService {
     });
 
     if (!course) return status(404, { message: "Course not found" });
-    return course;
+    return {
+      ...course,
+      modules: course.modules.map((module) => ({
+        ...module,
+        lessons: module.lessons.map(({ content, ...lesson }) => ({
+          ...lesson,
+          isGenerated: Boolean(content?.trim()),
+        })),
+      })),
+    };
   }
 
   static async create(data: CreateCourseBody) {

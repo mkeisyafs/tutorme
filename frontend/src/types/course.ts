@@ -9,6 +9,7 @@ export interface CourseLesson {
   title: string;
   videoUrl: string | null;
   orderIndex: number;
+  isGenerated: boolean;
 }
 
 export interface CourseModule {
