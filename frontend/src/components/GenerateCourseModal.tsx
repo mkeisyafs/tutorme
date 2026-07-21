@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Check, ChevronDown, FileQuestion, Hourglass, ImagePlus, Square } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
 import { useAuth } from '../auth/useAuth';
+import Switch from './Switch';
 import type { OutlineCreationResponse } from '../types/course-generation';
 
 interface GenerateCourseModalProps {
@@ -18,8 +19,8 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [familiarity, setFamiliarity] = useState('Beginner');
-  const [language, setLanguage] = useState('English');
-  const [openDropdown, setOpenDropdown] = useState<'familiarity' | 'language' | null>(null);
+  const [language, setLanguage] = useState('');
+  const [openDropdown, setOpenDropdown] = useState<'familiarity' | null>(null);
   const [enableEssayQuestions, setEnableEssayQuestions] = useState(true);
   const [requireImageSubmission, setRequireImageSubmission] = useState(false);
   const [quizLength, setQuizLength] = useState('Random');
@@ -29,9 +30,11 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
   const [errorMessage, setErrorMessage] = useState('');
   const totalSteps = modalReferenceFile ? 6 : 5;
 
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
       setIsGenerating(false);
       setLoadingStep(0);
       setOpenDropdown(null);
@@ -39,6 +42,12 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
       setIsQuizLengthOpen(false);
       setModalReferenceFile(referenceFile);
       setErrorMessage('');
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -84,7 +93,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
           userId: user.id,
           topic,
           familiarity,
-          language
+          language: language.trim() || 'English'
         }
       });
 
@@ -170,23 +179,67 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
                 </div>
               </div>
               <div>
-                <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">Language</label>
-                <div className="relative">
-                  <button type="button" aria-haspopup="listbox" aria-expanded={openDropdown === 'language'} onClick={() => setOpenDropdown(openDropdown === 'language' ? null : 'language')} className={`flex w-full items-center justify-between rounded-xl border bg-white/70 px-4 py-3 text-left font-medium text-gray-800 shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-pink-400 dark:border-gray-600 dark:bg-gray-900/70 dark:text-gray-100 dark:focus:ring-pink-500 ${openDropdown === 'language' ? 'border-pink-500' : 'border-pink-300/50'}`}>
-                    {language}<ChevronDown className={`h-5 w-5 text-pink-500 transition-transform ${openDropdown === 'language' ? 'rotate-180' : ''}`} />
-                  </button>
-                  {openDropdown === 'language' && <div role="listbox" aria-label="Course language" className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border-2 border-pink-300 bg-white shadow-[4px_4px_0_rgba(236,72,153,.25)] dark:border-pink-700 dark:bg-gray-800">
-                    {['English', 'Indonesian'].map((option) => <button key={option} type="button" role="option" aria-selected={language === option} onClick={() => { setLanguage(option); setOpenDropdown(null); }} className={`flex w-full items-center justify-between px-4 py-2.5 text-left font-medium transition-colors ${language === option ? 'bg-pink-500 text-white' : 'text-gray-800 hover:bg-pink-100 dark:text-gray-100 dark:hover:bg-pink-900/40'}`}>{option}{language === option && <Check className="h-4 w-4" />}</button>)}
-                  </div>}
-                </div>
+                <label className="block text-pink-900 dark:text-gray-300 font-bold mb-2 text-sm tracking-wide uppercase">
+                  Language <span className="text-xs font-normal text-pink-700 dark:text-pink-400 normal-case">(Optional - Default: English)</span>
+                </label>
+                <input
+                  type="text"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  placeholder="e.g. English, Indonesian, Japanese..."
+                  className="w-full px-4 py-3 border border-pink-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                />
               </div>
               <section className="rounded-2xl border-2 border-pink-300/70 bg-white/50 p-5 dark:border-pink-700 dark:bg-gray-900/30">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div><h3 className="flex items-center gap-2 font-['Kalam',cursive] text-2xl font-bold text-pink-900 dark:text-pink-200"><FileQuestion className="h-6 w-6" /> Course quiz settings</h3><p className="mt-1 text-sm font-semibold text-pink-800 dark:text-pink-300">TutorMe automatically generates a fresh quiz for every lesson from these rules.</p></div>
                 </div>
                 <div className="mt-5 space-y-3">
-                  <button type="button" aria-pressed={enableEssayQuestions} onClick={() => { setEnableEssayQuestions((enabled) => !enabled); if (enableEssayQuestions) setRequireImageSubmission(false); }} className={`flex w-full items-center justify-between rounded-xl border-2 p-4 text-left transition-colors ${enableEssayQuestions ? 'border-pink-400 bg-pink-100/70 dark:bg-pink-900/35' : 'border-gray-300 bg-white/70 dark:border-gray-600 dark:bg-gray-800/60'}`}><span><span className="block font-bold text-gray-900 dark:text-gray-100">Enable Essay Questions</span><span className="mt-0.5 block text-sm font-semibold text-gray-600 dark:text-gray-300">Include written-response questions in generated quizzes.</span></span><span className={`rounded-full px-3 py-1 text-sm font-bold ${enableEssayQuestions ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>{enableEssayQuestions ? 'On' : 'Off'}</span></button>
-                  <button type="button" disabled={!enableEssayQuestions} aria-pressed={requireImageSubmission} onClick={() => setRequireImageSubmission((required) => !required)} className={`flex w-full items-center justify-between rounded-xl border-2 p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${requireImageSubmission ? 'border-pink-400 bg-pink-100/70 dark:bg-pink-900/35' : 'border-gray-300 bg-white/70 dark:border-gray-600 dark:bg-gray-800/60'}`}><span><span className="flex items-center gap-2 font-bold text-gray-900 dark:text-gray-100"><ImagePlus className="h-5 w-5 text-pink-500" /> Require Image Submission</span><span className="mt-0.5 block text-sm font-semibold text-gray-600 dark:text-gray-300">Essay answers must include an image. Images stay unavailable when disabled.</span></span><span className={`rounded-full px-3 py-1 text-sm font-bold ${requireImageSubmission ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>{requireImageSubmission ? 'Required' : 'Not required'}</span></button>
+                  <div 
+                    onClick={() => { 
+                      const next = !enableEssayQuestions; 
+                      setEnableEssayQuestions(next); 
+                      if (!next) setRequireImageSubmission(false); 
+                    }} 
+                    className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-4 text-left transition-colors cursor-pointer ${enableEssayQuestions ? 'border-pink-400 bg-pink-100/70 dark:bg-pink-900/35' : 'border-gray-300 bg-white/70 dark:border-gray-600 dark:bg-gray-800/60'}`}
+                  >
+                    <div>
+                      <span className="block font-bold text-gray-900 dark:text-gray-100">Enable Essay Questions</span>
+                      <span className="mt-0.5 block text-sm font-semibold text-gray-600 dark:text-gray-300">Include written-response questions in generated quizzes.</span>
+                    </div>
+                    <Switch 
+                      checked={enableEssayQuestions} 
+                      onChange={(checked) => { 
+                        setEnableEssayQuestions(checked); 
+                        if (!checked) setRequireImageSubmission(false); 
+                      }} 
+                      color="pink"
+                      label="Enable Essay Questions"
+                    />
+                  </div>
+
+                  <div 
+                    onClick={() => { 
+                      if (enableEssayQuestions) { 
+                        setRequireImageSubmission(!requireImageSubmission); 
+                      } 
+                    }} 
+                    className={`flex w-full items-center justify-between gap-4 rounded-xl border-2 p-4 text-left transition-colors ${!enableEssayQuestions ? 'cursor-not-allowed opacity-55 border-gray-300 bg-white/70 dark:border-gray-600 dark:bg-gray-800/60' : requireImageSubmission ? 'cursor-pointer border-pink-400 bg-pink-100/70 dark:bg-pink-900/35' : 'cursor-pointer border-gray-300 bg-white/70 dark:border-gray-600 dark:bg-gray-800/60'}`}
+                  >
+                    <div>
+                      <span className="flex items-center gap-2 font-bold text-gray-900 dark:text-gray-100">
+                        <ImagePlus className="h-5 w-5 text-pink-500" /> Require Image Submission
+                      </span>
+                      <span className="mt-0.5 block text-sm font-semibold text-gray-600 dark:text-gray-300">Essay answers must include an image. Images stay unavailable when disabled.</span>
+                    </div>
+                    <Switch 
+                      checked={requireImageSubmission} 
+                      onChange={(checked) => setRequireImageSubmission(checked)} 
+                      disabled={!enableEssayQuestions} 
+                      color="pink"
+                      label="Require Image Submission"
+                    />
+                  </div>
                   <div className="relative rounded-xl border-2 border-gray-300 bg-white/70 p-4 dark:border-gray-600 dark:bg-gray-800/60"><p className="font-bold text-gray-900 dark:text-gray-100">Quiz Length</p><p className="mt-0.5 text-sm font-semibold text-gray-600 dark:text-gray-300">Choose a fixed number or let TutorMe determine an appropriate length.</p><button type="button" aria-haspopup="listbox" aria-expanded={isQuizLengthOpen} onClick={() => setIsQuizLengthOpen((isOpen) => !isOpen)} className="mt-3 flex w-full items-center justify-between rounded-lg border-2 border-pink-200 bg-white px-3 py-2.5 font-bold text-gray-800 dark:border-pink-700 dark:bg-gray-900 dark:text-gray-100"><span>{quizLength}</span><ChevronDown className={`h-5 w-5 text-pink-500 transition-transform ${isQuizLengthOpen ? 'rotate-180' : ''}`} /></button>{isQuizLengthOpen && <div role="listbox" className="absolute z-40 mt-1 w-[calc(100%-2rem)] overflow-hidden rounded-lg border-2 border-pink-300 bg-white shadow-lg dark:border-pink-700 dark:bg-gray-800">{['3 questions', '5 questions', '8 questions', 'Random'].map((option) => <button key={option} type="button" role="option" aria-selected={quizLength === option} onClick={() => { setQuizLength(option); setIsQuizLengthOpen(false); }} className={`flex w-full items-center justify-between px-3 py-2.5 text-left font-bold ${quizLength === option ? 'bg-pink-500 text-white' : 'text-gray-800 hover:bg-pink-100 dark:text-gray-100 dark:hover:bg-pink-900/40'}`}>{option}{quizLength === option && <Check className="h-4 w-4" />}</button>)}</div>}</div>
                 </div>
               </section>
@@ -219,7 +272,7 @@ const GenerateCourseModal: React.FC<GenerateCourseModalProps> = ({ isOpen, onClo
                   <div key={idx} className={`flex items-center gap-4 transition-all duration-500 ${isCurrent ? 'scale-105 transform translate-x-2 text-pink-600 dark:text-pink-400 origin-left' : isCompleted ? 'opacity-80' : 'opacity-40'}`}>
                     <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
                       {isCompleted && <Check className="w-6 h-6 text-green-500" strokeWidth={3} />}
-                      {isCurrent && <Hourglass className="w-6 h-6 text-pink-500 animate-pulse" strokeWidth={2.5} />}
+                      {isCurrent && <Hourglass className="w-6 h-6 text-pink-500 animate-spin" strokeWidth={2.5} />}
                       {isPending && <Square className="w-5 h-5 text-gray-400" strokeWidth={3} />}
                     </div>
                     <span>{step}</span>

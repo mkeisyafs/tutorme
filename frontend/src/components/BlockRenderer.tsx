@@ -98,13 +98,15 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
+export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
         components={{
           p: ({ node, ...props }) => <p className="mb-4 last:mb-0 leading-relaxed" {...props} />,
-          strong: ({ node, ...props }) => <strong className="font-bold text-gray-900 dark:text-white" {...props} />,
+          strong: ({ node, ...props }) => (
+            <strong className="font-black text-gray-950 dark:text-pink-300 bg-pink-100/60 dark:bg-pink-950/40 px-1 py-0.5 rounded border-b-2 border-pink-400 dark:border-pink-500" {...props} />
+          ),
           em: ({ node, ...props }) => <em className="italic" {...props} />,
           code: ({ node, inline, className, children, ...props }: any) => {
             return inline ? (
@@ -124,6 +126,17 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
           h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4 mt-6 text-gray-900 dark:text-white" {...props} />,
           h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-4 mt-6 text-gray-900 dark:text-white" {...props} />,
           h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-3 mt-5 text-gray-900 dark:text-white" {...props} />,
+          table: ({ node, ...props }) => (
+            <div className="my-4 overflow-x-auto rounded-xl border-2 border-gray-200 dark:border-gray-700">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm" {...props} />
+            </div>
+          ),
+          thead: ({ node, ...props }) => <thead className="bg-gray-100 dark:bg-gray-800" {...props} />,
+          tbody: ({ node, ...props }) => <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900/60" {...props} />,
+          tr: ({ node, ...props }) => <tr className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50" {...props} />,
+          th: ({ node, ...props }) => <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700 last:border-r-0" {...props} />,
+          td: ({ node, ...props }) => <td className="px-3 py-2 text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700 last:border-r-0" {...props} />,
+          blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-pink-400 pl-4 italic my-3 text-gray-600 dark:text-gray-400" {...props} />,
         }}
       >
         {content}

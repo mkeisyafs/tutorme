@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BlockRenderer } from '../components/BlockRenderer';
+import { BlockRenderer, MarkdownRenderer } from '../components/BlockRenderer';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -202,7 +202,17 @@ const Lesson = () => {
       if (nextLesson.module?.id) setSidebarExpandedModule(nextLesson.module.id);
       await loadProgress();
       if (nextLesson.content) {
-        setMessages([makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]);
+        const storageKey = `tutorme_ai_chat_${lessonId}`;
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          try {
+            setMessages(JSON.parse(stored));
+          } catch {
+            setMessages([makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]);
+          }
+        } else {
+          setMessages([makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]);
+        }
       } else {
         setMessages([]);
       }
@@ -296,6 +306,8 @@ const Lesson = () => {
     const userMessage = makeMessage('user', content);
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
+    const storageKey = `tutorme_ai_chat_${lessonId}`;
+    localStorage.setItem(storageKey, JSON.stringify(nextMessages));
     setChatInput('');
     setChatError('');
     setIsChatting(true);
@@ -306,7 +318,12 @@ const Lesson = () => {
       );
       const reply = response.reply?.trim();
       if (!reply) throw new Error('The lesson assistant did not return a response.');
-      setMessages((cur) => [...cur, makeMessage('assistant', reply)]);
+      const assistantMessage = makeMessage('assistant', reply);
+      setMessages((cur) => {
+        const updated = [...cur, assistantMessage];
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        return updated;
+      });
     } catch (requestError) {
       setChatError(getApiErrorMessage(requestError, 'The AI assistant could not answer that question.'));
     } finally {
@@ -728,12 +745,12 @@ const Lesson = () => {
               )}
               {messages.map((message) =>
                 message.role === 'assistant' ? (
-                  <div key={message.id} className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-md font-bold text-gray-700 dark:text-gray-300">
-                    {message.content}
+                  <div key={message.id} className="bg-white dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-700 p-4 rounded-3xl rounded-tl-none shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] mr-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <MarkdownRenderer content={message.content} />
                   </div>
                 ) : (
-                  <div key={message.id} className="bg-pink-100 dark:bg-pink-900/40 border-4 border-pink-300 dark:border-pink-700 p-4 rounded-3xl rounded-tr-none shadow-[4px_4px_0px_0px_rgba(244,114,182,1)] dark:shadow-[4px_4px_0px_0px_rgba(190,24,93,0.8)] ml-4 text-md font-bold text-pink-900 dark:text-pink-100 self-end transform rotate-1">
-                    {message.content}
+                  <div key={message.id} className="bg-pink-100 dark:bg-pink-900/40 border-4 border-pink-300 dark:border-pink-700 p-4 rounded-3xl rounded-tr-none shadow-[4px_4px_0px_0px_rgba(244,114,182,1)] dark:shadow-[4px_4px_0px_0px_rgba(190,24,93,0.8)] ml-4 text-sm font-semibold text-pink-900 dark:text-pink-100 self-end transform rotate-1">
+                    <MarkdownRenderer content={message.content} />
                   </div>
                 )
               )}

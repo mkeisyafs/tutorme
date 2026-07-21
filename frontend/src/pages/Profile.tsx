@@ -125,13 +125,6 @@ const Profile = () => {
                 <h3 className="font-['Kalam',cursive] text-2xl font-bold text-yellow-900 dark:text-yellow-200 mb-4">Account information</h3>
                 <dl className="space-y-4 text-sm">
                   <div className="flex gap-3">
-                    <User className="w-5 h-5 text-yellow-700 shrink-0 mt-0.5" />
-                    <div>
-                      <dt className="font-bold text-yellow-900 dark:text-yellow-100 uppercase tracking-wider text-xs mb-1">Account type</dt>
-                      <dd className="text-yellow-800 dark:text-yellow-300 font-bold text-base">Free learner</dd>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
                     <CalendarDays className="w-5 h-5 text-yellow-700 shrink-0 mt-0.5" />
                     <div>
                       <dt className="font-bold text-yellow-900 dark:text-yellow-100 uppercase tracking-wider text-xs mb-1">Registered</dt>

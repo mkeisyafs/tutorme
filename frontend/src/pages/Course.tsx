@@ -279,35 +279,35 @@ const Course = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto md:mx-0 pb-16 relative">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 sm:mb-10 gap-5 sm:gap-6">
           <div>
-            <h1 className="text-5xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-4">
-              <BookOpen className="w-10 h-10 text-blue-500" />
+            <h1 className="text-3xl sm:text-5xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 flex items-center gap-3 sm:gap-4">
+              <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500 shrink-0" />
               My Courses
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">All your active and completed learning paths.</p>
-            <p className="mt-2 text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2"><Pin className="w-4 h-4" /> Pinned courses: {pinnedCourseIds.length}/3</p>
+            <p className="text-gray-600 dark:text-gray-400 font-bold text-sm sm:text-lg">All your active and completed learning paths.</p>
+            <p className="mt-1.5 text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5"><Pin className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Pinned courses: {pinnedCourseIds.length}/3</p>
           </div>
 
-          <div className="flex flex-wrap gap-4 w-full md:w-auto items-center">
-            <div className="relative flex-grow md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
+          <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full md:w-auto items-center">
+            <div className="relative flex-1 min-w-[140px] md:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search courses..."
-                className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all font-bold text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
+                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 border-2 border-gray-300 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all font-bold text-sm sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
                 className={`border-2 p-2 rounded-xl transition-all shadow-sm flex items-center justify-center ${isFilterOpen ? 'bg-gray-100 dark:bg-gray-700 border-blue-400 dark:border-blue-500 text-blue-600 dark:text-blue-400' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500'}`}
                 aria-label="Filter courses"
                 aria-expanded={isFilterOpen}
               >
-                <Filter className="w-6 h-6" />
+                <Filter className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
 
               {isFilterOpen && (
@@ -327,10 +327,10 @@ const Course = () => {
               )}
             </div>
             <button
-              className="bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-2 px-6 rounded-xl shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_2px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_2px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-0.5 font-['Kalam',cursive] text-lg tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 flex-shrink-0"
+              className="w-full sm:w-auto bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-2 px-5 sm:px-6 rounded-xl shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_2px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_2px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-0.5 font-['Kalam',cursive] text-base sm:text-lg tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 shrink-0"
               onClick={() => setIsModalOpen(true)}
             >
-              <Sparkles className="w-5 h-5" /> Make Course
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" /> Make Course
             </button>
           </div>
         </div>
@@ -424,54 +424,54 @@ const Course = () => {
       </div>
 
       {previewCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-4 backdrop-blur-sm" onMouseDown={closePreview}>
-          <section role="dialog" aria-modal="true" aria-labelledby="course-preview-title" onMouseDown={(event) => event.stopPropagation()} className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border-4 border-blue-400 bg-blue-50 p-7 shadow-[8px_8px_0_rgba(96,165,250,1)] dark:border-blue-700 dark:bg-gray-800 md:p-9 flex flex-col">
-            <button type="button" aria-label="Close course preview" onClick={closePreview} className="absolute right-5 top-5 rounded-lg p-1 text-blue-700 transition-colors hover:bg-blue-200 dark:text-blue-300 dark:hover:bg-gray-700"><X /></button>
-            <div className="pr-10">
-              <span className="rounded-md bg-blue-200 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-blue-900 dark:bg-blue-900 dark:text-blue-100 border-2 border-blue-300 dark:border-blue-800">{previewCourse.category}</span>
-              <h2 id="course-preview-title" className="mt-4 font-['Kalam',cursive] text-4xl font-bold leading-tight text-blue-950 dark:text-blue-100">{previewCourse.title}</h2>
-              <p className="mt-3 font-semibold leading-relaxed text-blue-800 dark:text-blue-200">{previewDetail?.description || 'Loading the course description and outline…'}</p>
-              <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-blue-800 dark:text-blue-200">
-                <span className="flex items-center gap-1.5 bg-white/50 dark:bg-gray-900/50 px-3 py-1 rounded-full"><BookOpen className="h-4 w-4" /> {previewDetail ? `${previewLessonCount} lessons total` : 'Loading lessons…'}</span>
-                <span className="flex items-center gap-1.5 bg-white/50 dark:bg-gray-900/50 px-3 py-1 rounded-full"><Users className="h-4 w-4" /> By {previewDetail?.creator?.fullName || 'TutorMe'}</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-2 sm:p-4 pt-16 sm:pt-4 backdrop-blur-sm" onMouseDown={closePreview}>
+          <section role="dialog" aria-modal="true" aria-labelledby="course-preview-title" onMouseDown={(event) => event.stopPropagation()} className="relative max-h-[80vh] sm:max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border-4 border-blue-400 bg-blue-50 p-4 sm:p-7 shadow-[8px_8px_0_rgba(96,165,250,1)] dark:border-blue-700 dark:bg-gray-800 md:p-9 flex flex-col">
+            <button type="button" aria-label="Close course preview" onClick={closePreview} className="absolute right-3 top-3 sm:right-5 sm:top-5 z-10 rounded-lg p-1 text-blue-700 transition-colors hover:bg-blue-200 dark:text-blue-300 dark:hover:bg-gray-700"><X /></button>
+            <div className="pr-8 sm:pr-10 shrink-0">
+              <span className="rounded-md bg-blue-200 px-2 py-0.5 text-[0.65rem] sm:text-xs font-extrabold uppercase tracking-wide text-blue-900 dark:bg-blue-900 dark:text-blue-100 border-2 border-blue-300 dark:border-blue-800">{previewCourse.category}</span>
+              <h2 id="course-preview-title" className="mt-1.5 sm:mt-4 font-['Kalam',cursive] text-lg sm:text-3xl md:text-4xl font-bold leading-snug sm:leading-tight text-blue-950 dark:text-blue-100">{previewCourse.title}</h2>
+              <p className="mt-1.5 sm:mt-3 text-xs sm:text-base font-semibold leading-normal sm:leading-relaxed text-blue-800 dark:text-blue-200 line-clamp-3 sm:line-clamp-none">{previewDetail?.description || 'Loading the course description and outline…'}</p>
+              <div className="mt-2.5 sm:mt-5 flex flex-wrap gap-x-3 sm:gap-x-5 gap-y-1.5 text-[0.7rem] sm:text-sm font-bold text-blue-800 dark:text-blue-200">
+                <span className="flex items-center gap-1 bg-white/50 dark:bg-gray-900/50 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full"><BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> {previewDetail ? `${previewLessonCount} lessons total` : 'Loading lessons…'}</span>
+                <span className="flex items-center gap-1 bg-white/50 dark:bg-gray-900/50 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full"><Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> By {previewDetail?.creator?.fullName || 'TutorMe'}</span>
               </div>
             </div>
 
-            <div className="mt-8 border-t-2 border-blue-200 pt-6 dark:border-blue-800 flex-grow">
+            <div className="mt-3 sm:mt-6 border-t-2 border-blue-200 pt-3 sm:pt-4 dark:border-blue-800 flex-1 flex flex-col min-h-0">
               {isPreviewLoading ? (
-                <div className="flex min-h-44 flex-col items-center justify-center text-center font-bold text-blue-800 dark:text-blue-200">
-                  <LoaderCircle className="h-9 w-9 animate-spin text-blue-500" />
-                  <p className="mt-3">Loading real modules and lessons…</p>
+                <div className="flex min-h-36 sm:min-h-44 flex-col items-center justify-center text-center font-bold text-blue-800 dark:text-blue-200">
+                  <LoaderCircle className="h-8 w-8 sm:h-9 sm:w-9 animate-spin text-blue-500" />
+                  <p className="mt-3 text-sm sm:text-base">Loading real modules and lessons…</p>
                 </div>
               ) : previewError ? (
-                <div role="alert" className="rounded-2xl border-2 border-red-300 bg-red-50 p-5 text-center font-bold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+                <div role="alert" className="rounded-2xl border-2 border-red-300 bg-red-50 p-4 sm:p-5 text-center font-bold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
                   <CircleAlert className="mx-auto h-7 w-7" />
-                  <p className="mt-2">{previewError}</p>
+                  <p className="mt-2 text-sm sm:text-base">{previewError}</p>
                   <button type="button" onClick={() => openPreview(previewCourse)} className="mt-4 inline-flex items-center gap-2 rounded-xl border-2 border-red-700 bg-red-500 px-4 py-2 font-['Kalam',cursive] text-base text-white"><RefreshCw className="h-4 w-4" /> Retry preview</button>
                 </div>
               ) : previewDetail ? (
                 <>
-                  <div className="flex items-end justify-between gap-3 mb-5">
+                  <div className="flex items-end justify-between gap-3 mb-2.5 sm:mb-4 shrink-0">
                     <div>
-                      <h3 className="font-['Kalam',cursive] text-2xl font-bold text-blue-950 dark:text-blue-100">Course Outline</h3>
-                      <p className="font-semibold text-blue-700 dark:text-blue-300">A look at the real modules and lessons.</p>
+                      <h3 className="font-['Kalam',cursive] text-lg sm:text-2xl font-bold text-blue-950 dark:text-blue-100">Course Outline</h3>
+                      <p className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">A look at the real modules and lessons.</p>
                     </div>
-                    <span className="rounded-full bg-white/70 px-3 py-1 text-sm font-bold text-blue-800 dark:bg-gray-900 dark:text-blue-200">{orderedPreviewModules.length} modules</span>
+                    <span className="rounded-full bg-white/70 px-2.5 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm font-bold text-blue-800 dark:bg-gray-900 dark:text-blue-200">{orderedPreviewModules.length} modules</span>
                   </div>
                   {orderedPreviewModules.length === 0 ? (
-                    <p className="rounded-xl border-2 border-dashed border-blue-300 bg-white/70 p-5 text-center font-bold text-blue-800 dark:border-blue-800 dark:bg-gray-900/50 dark:text-blue-200">This course does not have modules yet.</p>
+                    <p className="rounded-xl border-2 border-dashed border-blue-300 bg-white/70 p-4 sm:p-5 text-center font-bold text-blue-800 dark:border-blue-800 dark:bg-gray-900/50 dark:text-blue-200">This course does not have modules yet.</p>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="flex-1 overflow-y-auto min-h-0 pr-1 sm:pr-2 space-y-3 sm:space-y-4 pb-2 custom-scrollbar">
                       {orderedPreviewModules.map((module, moduleIndex) => (
-                        <article key={module.id} className="rounded-2xl border-2 border-blue-200 bg-white/75 p-4 dark:border-blue-800 dark:bg-gray-900/50 shadow-sm">
-                          <h4 className="font-['Kalam',cursive] text-xl font-bold text-blue-950 dark:text-blue-100">{module.title}</h4>
-                          {module.description && <p className="mt-1 text-sm font-semibold text-blue-700 dark:text-blue-300">{module.description}</p>}
-                          <ol className="mt-3 space-y-2">
+                        <article key={module.id} className="rounded-2xl border-2 border-blue-200 bg-white/75 p-3.5 sm:p-4 dark:border-blue-800 dark:bg-gray-900/50 shadow-sm">
+                          <h4 className="font-['Kalam',cursive] text-lg sm:text-xl font-bold text-blue-950 dark:text-blue-100">{module.title}</h4>
+                          {module.description && <p className="mt-1 text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">{module.description}</p>}
+                          <ol className="mt-2.5 sm:mt-3 space-y-2">
                             {[...module.lessons].sort((first, second) => first.orderIndex - second.orderIndex).map((lesson, lessonIndex) => (
-                              <li key={lesson.id} className="flex items-center gap-3 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-extrabold text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">{moduleIndex + lessonIndex + 1}</span>
+                              <li key={lesson.id} className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                <span className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[0.7rem] sm:text-xs font-extrabold text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">{moduleIndex + lessonIndex + 1}</span>
                                 <span className="flex-1">{lesson.title}</span>
-                                {lesson.videoUrl && <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[0.65rem] font-bold uppercase text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">Video</span>}
+                                {lesson.videoUrl && <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[0.6rem] sm:text-[0.65rem] font-bold uppercase text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">Video</span>}
                               </li>
                             ))}
                           </ol>
@@ -483,12 +483,12 @@ const Course = () => {
               ) : null}
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-4 pt-6 border-t-2 border-blue-200 dark:border-blue-800">
+            <div className="mt-2.5 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-4 pt-2.5 sm:pt-4 border-t-2 border-blue-200 dark:border-blue-800 shrink-0 bg-blue-50 dark:bg-gray-800">
               <button
                 type="button"
                 disabled={isSharing}
                 onClick={() => void handleShareToLibrary(previewCourse)}
-                className="flex-1 rounded-xl border-2 border-purple-400 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/60 py-3 text-lg font-bold font-['Kalam',cursive] transition-all flex justify-center items-center gap-2 active:translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
+                className="flex-1 rounded-xl border-2 border-purple-400 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/60 py-2 sm:py-3 text-base sm:text-lg font-bold font-['Kalam',cursive] transition-all flex justify-center items-center gap-2 active:translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
               >
                 {isSharing ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} {isSharing ? 'Sharing…' : 'Share to Library'}
               </button>
@@ -496,7 +496,7 @@ const Course = () => {
                 type="button"
                 disabled={isPreviewLoading || Boolean(previewError) || !resumePreviewLesson}
                 onClick={openCurrentLesson}
-                className="flex-[2] rounded-xl border-2 border-blue-700 bg-blue-500 py-3 text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_5px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_3px_0_#1d4ed8] active:translate-y-1 active:shadow-none flex justify-center items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="sm:flex-[2] rounded-xl border-2 border-blue-700 bg-blue-500 py-2 sm:py-3 text-lg sm:text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_4px_0_#1d4ed8] sm:shadow-[0_5px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_3px_0_#1d4ed8] active:translate-y-1 active:shadow-none flex justify-center items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Play className="w-5 h-5 fill-current" /> {previewCourse.isCompleted || previewCourse.progress === 100 ? 'Review Course' : previewCourse.progress === 0 ? 'Start Learning' : 'Continue Course'}
               </button>

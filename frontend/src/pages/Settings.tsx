@@ -1,5 +1,6 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import Switch from '../components/Switch';
 import { Settings as SettingsIcon, Bell, Shield, Moon, Sun, Trash2, Clock, KeyRound, Mail, Check } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../auth/useAuth';
@@ -11,7 +12,10 @@ const Settings = () => {
   const { isDark, toggleTheme } = useTheme();
   const { user, updateUser } = useAuth();
   const [notifications, setNotifications] = useState(true);
-  const [pomodoroEnabled, setPomodoroEnabled] = useState(true);
+  const [pomodoroEnabled, setPomodoroEnabled] = useState(() => {
+    const stored = localStorage.getItem('tutorme-pomodoro-enabled');
+    return stored !== null ? stored === 'true' : true;
+  });
 
   // Security States
   const [email, setEmail] = useState(() => user?.email ?? '');
@@ -20,13 +24,6 @@ const Settings = () => {
   const [isSecuritySaved, setIsSecuritySaved] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [isSecuritySaving, setIsSecuritySaving] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('tutorme-pomodoro-enabled');
-    if (stored !== null) {
-      setPomodoroEnabled(stored === 'true');
-    }
-  }, []);
 
   const togglePomodoro = () => {
     const newValue = !pomodoroEnabled;
@@ -150,7 +147,7 @@ const Settings = () => {
               <Shield className="w-8 h-8" /> App Preferences
             </h2>
             <div className="space-y-4">
-              <div className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm">
+              <div onClick={toggleTheme} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
                 <div className="flex items-center gap-4">
                   <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-xl border-2 border-blue-300 dark:border-blue-700">
                     {isDark ? <Moon className="w-6 h-6 text-blue-700 dark:text-blue-300" /> : <Sun className="w-6 h-6 text-blue-700" />}
@@ -160,12 +157,15 @@ const Settings = () => {
                     <p className="text-blue-800 dark:text-blue-300 text-sm font-semibold">Switch between light and dark themes</p>
                   </div>
                 </div>
-                <button onClick={toggleTheme} aria-label="Toggle dark mode" className={`w-16 h-9 rounded-full p-1.5 transition-colors border-2 ${isDark ? 'bg-blue-500 border-blue-700' : 'bg-gray-300 dark:bg-gray-600 border-gray-400'}`}>
-                  <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${isDark ? 'translate-x-7' : 'translate-x-0'}`} />
-                </button>
+                <Switch 
+                  checked={isDark} 
+                  onChange={() => toggleTheme()} 
+                  color="blue"
+                  label="Toggle dark mode"
+                />
               </div>
 
-              <div className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm">
+              <div onClick={() => setNotifications(!notifications)} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
                 <div className="flex items-center gap-4">
                   <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-xl border-2 border-blue-300 dark:border-blue-700">
                     <Bell className="w-6 h-6 text-blue-700 dark:text-blue-300" />
@@ -175,12 +175,15 @@ const Settings = () => {
                     <p className="text-blue-800 dark:text-blue-300 text-sm font-semibold">Get notifications to keep your streak</p>
                   </div>
                 </div>
-                <button onClick={() => setNotifications(!notifications)} aria-label="Toggle study reminders" className={`w-16 h-9 rounded-full p-1.5 transition-colors border-2 ${notifications ? 'bg-blue-500 border-blue-700' : 'bg-gray-300 dark:bg-gray-600 border-gray-400'}`}>
-                  <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${notifications ? 'translate-x-7' : 'translate-x-0'}`} />
-                </button>
+                <Switch 
+                  checked={notifications} 
+                  onChange={(checked) => setNotifications(checked)} 
+                  color="blue"
+                  label="Toggle study reminders"
+                />
               </div>
 
-              <div className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm">
+              <div onClick={togglePomodoro} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
                 <div className="flex items-center gap-4">
                   <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-xl border-2 border-blue-300 dark:border-blue-700">
                     <Clock className="w-6 h-6 text-blue-700 dark:text-blue-300" />
@@ -190,9 +193,12 @@ const Settings = () => {
                     <p className="text-blue-800 dark:text-blue-300 text-sm font-semibold">Enable focus timer across learning sessions</p>
                   </div>
                 </div>
-                <button onClick={togglePomodoro} aria-label="Toggle Pomodoro Timer" className={`w-16 h-9 rounded-full p-1.5 transition-colors border-2 ${pomodoroEnabled ? 'bg-blue-500 border-blue-700' : 'bg-gray-300 dark:bg-gray-600 border-gray-400'}`}>
-                  <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${pomodoroEnabled ? 'translate-x-7' : 'translate-x-0'}`} />
-                </button>
+                <Switch 
+                  checked={pomodoroEnabled} 
+                  onChange={() => togglePomodoro()} 
+                  color="blue"
+                  label="Toggle Pomodoro Timer"
+                />
               </div>
             </div>
           </section>

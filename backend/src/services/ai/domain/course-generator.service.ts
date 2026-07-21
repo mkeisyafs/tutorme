@@ -27,9 +27,10 @@ export class CourseGeneratorService {
    * Generates a course outline and saves it to the temporary cache.
    */
   static async generateOutline(userId: string, topic: string, familiarity: string, language: string = "English"): Promise<string> {
-    const prompt = `Create a comprehensive course outline about "${topic}". The target audience has a "${familiarity}" familiarity level with the topic. Structre the course logically into modules and lessons. The entire outline MUST be generated in ${language}.`;
+    const targetLanguage = language && language.trim() ? language.trim() : "English";
+    const prompt = `Create a comprehensive course outline about "${topic}". The target audience has a "${familiarity}" familiarity level with the topic. Structure the course logically into modules and lessons. The entire outline MUST be generated using ${targetLanguage} language.`;
     
-    const system = `You are an expert instructional designer and educator. Generate well-structured, engaging course outlines. Ensure a logical progression from fundamental to advanced concepts based on the target audience's familiarity. Make sure to explicitly provide the 'courseCategory' field (e.g., Technology, Art, Science). ALWAYS respond in ${language}.`;
+    const system = `You are an expert instructional designer and educator. Generate well-structured, engaging course outlines. Ensure a logical progression from fundamental to advanced concepts based on the target audience's familiarity. Make sure to explicitly provide the 'courseCategory' field (e.g., Technology, Art, Science). ALWAYS respond using ${targetLanguage} language.`;
 
     const result = await AiService.structuredObject<z.infer<typeof OutlineSchema>>(
       prompt,

@@ -69,6 +69,7 @@ Lesson: "${lessonTitle}"
 
 CRITICAL RULES:
 - Output ONLY the lesson content in Markdown format. Start directly with the lesson material.
+- Write the lesson using the exact same language as the course title and lesson title (e.g., if titles are in Indonesian or another language, write using that language).
 - Do NOT include any preamble, introduction about yourself, or meta-commentary such as "I'll create...", "Let me search...", "Here is the lesson...", etc.
 - Do NOT describe what you are going to do. Just do it.
 - Include clear explanations, real-world examples, and practical exercises.
