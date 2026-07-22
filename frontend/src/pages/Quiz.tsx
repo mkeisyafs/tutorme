@@ -168,7 +168,7 @@ const Quiz = () => {
         progressPercent={progressPercent}
         allDone={allDone}
       />
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-8 md:p-12">
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-4 sm:p-8 md:p-12">
         <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
           <button onClick={() => navigate(-1)} disabled={isSubmitting} className="mb-6 self-start inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 py-2 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0_#9ca3af] disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> Back</button>
         <header className="rounded-3xl border-4 border-purple-300 bg-purple-100 p-7 shadow-[8px_8px_0_#a855f7] dark:border-purple-800 dark:bg-purple-950/35">

@@ -49,7 +49,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/20 dark:bg-gray-900/40 backdrop-blur-md transition-opacity" onClick={onClose}>
-      <div className="bg-yellow-50/90 dark:bg-gray-800/90 backdrop-blur-xl p-8 md:p-10 rounded-2xl shadow-[0_20px_50px_-12px_rgba(234,179,8,0.3)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] border border-yellow-200 dark:border-gray-700 max-w-md w-full relative transform rotate-1 hover:rotate-0 transition-transform duration-300" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-yellow-50/90 dark:bg-gray-800/90 backdrop-blur-xl p-6 sm:p-8 md:p-10 rounded-2xl shadow-[0_20px_50px_-12px_rgba(234,179,8,0.3)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] border border-yellow-200 dark:border-gray-700 max-w-md w-[calc(100vw-2rem)] sm:w-full max-h-[90vh] overflow-y-auto relative transform rotate-1 hover:rotate-0 transition-transform duration-300" onClick={(e) => e.stopPropagation()}>
         
         {/* Tape detail */}
         <div className="absolute top-0 left-1/2 w-24 h-8 bg-yellow-400/40 dark:bg-yellow-500/40 -translate-x-1/2 -translate-y-4 rounded-sm transform -rotate-2 backdrop-blur-md border border-yellow-200/50 dark:border-yellow-700/50"></div>

@@ -1,5 +1,22 @@
 import { z } from "zod";
 
+const REQUIRED_GENERATED_BLOCK_TYPES = [
+  "objective",
+  "paragraph",
+  "analogy",
+  "example",
+  "warning",
+  "summary",
+  "interactive-quiz",
+  "flashcard",
+  "interactive-reveal",
+  "code-sandbox",
+] as const;
+const RENDERER_EXECUTABLE_CODE_LANGUAGES = ["python", "py", "javascript", "js"] as const;
+const FENCED_CODE_BLOCK_PATTERN = /```([^\n`]*)\n([\s\S]*?)```/g;
+
+type RequiredGeneratedBlockType = (typeof REQUIRED_GENERATED_BLOCK_TYPES)[number];
+
 export const BlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("objective"),
@@ -62,6 +79,50 @@ export const LessonBlocksSchema = z.object({
 
 export type Block = z.infer<typeof BlockSchema>;
 export type LessonBlocks = z.infer<typeof LessonBlocksSchema>;
+
+function hasBlockType(blocks: readonly Block[], blockType: RequiredGeneratedBlockType): boolean {
+  return blocks.some((block) => block.type === blockType);
+}
+
+function hasRendererExecutableCodeFence(markdownContent: string): boolean {
+  for (const match of markdownContent.matchAll(FENCED_CODE_BLOCK_PATTERN)) {
+    const language = match[1]?.trim().toLowerCase();
+    const code = match[2]?.trim();
+
+    if (language && code && RENDERER_EXECUTABLE_CODE_LANGUAGES.some((candidate) => candidate === language)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function createLessonBlocksSchema(markdownContent: string) {
+  const hasExecutableCode = hasRendererExecutableCodeFence(markdownContent);
+
+  return LessonBlocksSchema.superRefine((lesson, context) => {
+    for (const blockType of REQUIRED_GENERATED_BLOCK_TYPES) {
+      if (blockType === "code-sandbox" && !hasExecutableCode) {
+        continue;
+      }
+      if (!hasBlockType(lesson.blocks, blockType)) {
+        context.addIssue({
+          code: "custom",
+          path: ["blocks"],
+          message: `Generated lesson blocks must include at least one ${blockType} block.`,
+        });
+      }
+    }
+
+    if (!hasExecutableCode && lesson.blocks.some((block) => block.type === "code-sandbox")) {
+      context.addIssue({
+        code: "custom",
+        path: ["blocks"],
+        message: "code-sandbox blocks require a fenced Python or JavaScript source example.",
+      });
+    }
+  });
+}
 
 export function getLessonPlainContent(content: string | null | undefined): string {
   if (!content) return "";

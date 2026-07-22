@@ -41,25 +41,25 @@ const Landing = () => {
       
       {/* Navigation Header (Outside Grid Background) */}
       <div className="bg-white dark:bg-gray-800 relative z-20 border-b-2 border-gray-100 dark:border-gray-700 shadow-sm transition-colors duration-300">
-        <nav className="flex justify-between items-center py-4 px-8 md:px-16 max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:scale-105 transition-transform transform -rotate-2">
-            <RobotLogo className="w-10 h-10 inline-block" />
+        <nav className="flex justify-between items-center py-4 px-4 sm:px-8 md:px-16 max-w-7xl mx-auto">
+          <div className="flex items-center gap-2 text-2xl sm:text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:scale-105 transition-transform transform -rotate-2">
+            <RobotLogo className="w-8 h-8 sm:w-10 sm:h-10 inline-block" />
             <span>TutorMe</span>
           </div>
-          <div className="flex gap-4 md:gap-6 items-center">
+          <div className="flex gap-2 sm:gap-4 md:gap-6 items-center">
             <a href="#how-it-works" className="font-bold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-['Kalam',cursive] text-lg hidden md:block">How It Works</a>
-            <button onClick={toggleTheme} className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors hidden sm:block">
+            <button onClick={toggleTheme} aria-label="Toggle dark mode" className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
             <button 
               onClick={() => setIsLoginOpen(true)}
-              className="bg-yellow-300 dark:bg-yellow-500/20 hover:bg-yellow-400 dark:hover:bg-yellow-500/30 text-yellow-900 dark:text-yellow-300 font-bold py-2 px-4 md:px-6 rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[2px_2px_0px_0px_rgba(253,224,71,0.2)] transform -rotate-2 hover:rotate-0 transition-all font-['Kalam',cursive] text-lg border border-yellow-500 dark:border-yellow-400/50"
+              className="bg-yellow-300 dark:bg-yellow-500/20 hover:bg-yellow-400 dark:hover:bg-yellow-500/30 text-yellow-900 dark:text-yellow-300 font-bold py-2 px-3 sm:px-4 md:px-6 rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[2px_2px_0px_0px_rgba(253,224,71,0.2)] transform -rotate-2 hover:rotate-0 transition-all font-['Kalam',cursive] text-base sm:text-lg border border-yellow-500 dark:border-yellow-400/50"
             >
               Log In
             </button>
             <button 
               onClick={() => setIsSignUpOpen(true)}
-              className="bg-green-300 dark:bg-green-500/20 hover:bg-green-400 dark:hover:bg-green-500/30 text-green-900 dark:text-green-300 font-bold py-2 px-4 md:px-6 rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[2px_2px_0px_0px_rgba(134,239,172,0.2)] transform rotate-2 hover:rotate-0 transition-all font-['Kalam',cursive] text-lg border border-green-500 dark:border-green-400/50 hidden sm:block"
+              className="bg-green-300 dark:bg-green-500/20 hover:bg-green-400 dark:hover:bg-green-500/30 text-green-900 dark:text-green-300 font-bold py-2 px-3 sm:px-4 md:px-6 rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] dark:shadow-[2px_2px_0px_0px_rgba(134,239,172,0.2)] transform rotate-2 hover:rotate-0 transition-all font-['Kalam',cursive] text-base sm:text-lg border border-green-500 dark:border-green-400/50 hidden xs:block"
             >
               Sign Up
             </button>
@@ -162,12 +162,12 @@ const Landing = () => {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto px-12 md:px-24 py-8 md:py-12">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-8 md:px-24 py-6 md:py-12">
           
           {/* Header/Hero Section */}
-        <header className="mb-20 text-center relative mt-6 reveal-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out">
+        <header className="mb-16 md:mb-20 text-center relative mt-4 md:mt-6 reveal-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out">
           <div className="inline-block relative">
-            <h1 className="text-6xl md:text-8xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400 mb-4 transform -rotate-2 drop-shadow-sm">
+            <h1 className="text-5xl sm:text-7xl md:text-8xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400 mb-4 transform -rotate-2 drop-shadow-sm">
               TutorMe
             </h1>
             {/* Fake tape */}
@@ -221,7 +221,7 @@ const Landing = () => {
         </div>
 
         {/* How It Works Section */}
-        <div id="how-it-works" className="bg-[#fffdf7] dark:bg-gray-800/80 p-8 md:p-10 rounded-2xl border-4 border-gray-800 dark:border-gray-700 shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] dark:shadow-[12px_12px_0px_0px_rgba(17,24,39,1)] mb-24 relative reveal-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out delay-200 backdrop-blur-sm">
+        <div id="how-it-works" className="bg-[#fffdf7] dark:bg-gray-800/80 p-5 sm:p-8 md:p-10 rounded-2xl border-4 border-gray-800 dark:border-gray-700 shadow-[12px_12px_0px_0px_rgba(31,41,55,1)] dark:shadow-[12px_12px_0px_0px_rgba(17,24,39,1)] mb-24 relative reveal-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out delay-200 backdrop-blur-sm">
           <div className="absolute -top-6 -left-4 md:left-8 bg-purple-300 dark:bg-purple-900/80 px-6 py-2 font-['Kalam',cursive] font-bold text-2xl border-4 border-gray-800 dark:border-gray-700 transform -rotate-3 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(17,24,39,1)] dark:text-purple-200">
             How It Works 🚀
           </div>
@@ -263,7 +263,7 @@ const Landing = () => {
 
         {/* Footer CTA */}
         <div className="text-center pb-20 reveal-on-scroll opacity-0 translate-y-10 transition-all duration-700 ease-out delay-300">
-          <div className="inline-block bg-pink-200 dark:bg-pink-900/40 p-8 md:p-12 rounded-br-3xl shadow-xl transform rotate-1 relative max-w-2xl mx-auto border border-pink-300 dark:border-pink-700/50">
+          <div className="inline-block bg-pink-200 dark:bg-pink-900/40 p-6 sm:p-8 md:p-12 rounded-br-3xl shadow-xl transform rotate-1 relative max-w-2xl mx-auto border border-pink-300 dark:border-pink-700/50">
             <div className="absolute top-0 left-1/2 w-24 h-6 bg-pink-500/20 dark:bg-pink-400/20 -translate-x-1/2 -translate-y-3 shadow-sm"></div>
             <h2 className="text-4xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-pink-300 mb-4">Ready to stop procrastinating?</h2>
             <p className="mb-8 text-gray-800 dark:text-pink-100/80 text-lg font-medium">Join TutorMe and finally master that new skill you've been putting off.</p>

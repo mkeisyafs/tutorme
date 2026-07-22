@@ -3,7 +3,7 @@ import { AiService } from "../core/ai.service";
 import { performWebSearch, performYoutubeSearch } from "../core/tools/search-tools";
 import { QuizWorkerService } from "../workers/quiz-worker.service";
 import { getPowerfulModel } from "../core/ai-providers";
-import { LessonBlocksSchema, type LessonBlocks } from "./lesson-blocks";
+import { createLessonBlocksSchema, type LessonBlocks } from "./lesson-blocks";
 
 export class LessonGeneratorService {
   private static generationJobs = new Map<string, Promise<any>>();
@@ -73,7 +73,10 @@ CRITICAL RULES:
 - Do NOT include any preamble, introduction about yourself, or meta-commentary such as "I'll create...", "Let me search...", "Here is the lesson...", etc.
 - Do NOT describe what you are going to do. Just do it.
 - Include clear explanations, real-world examples, and practical exercises.
-- Use headings (##, ###), bullet points, code blocks, and bold/italic for readability.
+- Use headings (##, ###), bullet points, and bold/italic for readability.
+- CRITICAL CODE FORMATTING: ALL code examples, scripts, function definitions, variable configurations, and code snippets MUST BE WRAPPED in triple-backtick fenced code blocks with language specifiers (e.g. \`\`\`python\n...\n\`\`\` or \`\`\`javascript\n...\n\`\`\`). NEVER output multiline code or python functions as raw unformatted prose without code fences!
+- PRESERVE ALL NEWLINES AND INDENTATION inside code blocks.
+- Include one complete fenced Python or JavaScript example that prints observable output.
 - If you use the webSearch tool, incorporate the information naturally into the content without mentioning that you searched.
 - If you use the youtubeSearch tool and find a video, embed the URL naturally in the content (e.g. as a Markdown link).
 - Write in a friendly, encouraging tone suitable for learners.`;
@@ -149,7 +152,7 @@ ${contextSection}`;
 Lesson Markdown Content:
 ${markdownContent}`;
 
-    const system = `You are a curriculum developer. Your task is to convert a Markdown lesson into a structured JSON format containing a list of interactive and instructional blocks.
+    const system = `You are an expert curriculum developer. Your task is to convert a Markdown lesson into a structured JSON format containing a list of interactive and instructional blocks.
 
 Return a JSON object matching this schema:
 {
@@ -170,40 +173,123 @@ Every block must have a "type" field. The possible block types and their propert
 9. { "type": "interactive-reveal", "summary": string, "details": string }
 10. { "type": "code-sandbox", "code": string, "language": string, "expectedOutput": string, "instructions": string }
 
-Guidelines:
-- Analyze the Markdown content and map it into these block types.
-- Ensure all important lesson information from the Markdown is preserved.
-- Divide long paragraphs into multiple smaller blocks of relevant types.
-- Inject 2-3 interactive blocks (interactive-quiz, flashcard, interactive-reveal, or code-sandbox) spaced throughout the lesson to test user understanding and engage them.
-- If there is code in the Markdown, represent it as a "code-sandbox" or "example" block.
-- For code-sandbox, make sure the "code" is a complete runnable snippet (e.g. in python or javascript) and "expectedOutput" is what it prints when executed.
+CRITICAL REPETITION & PLACEMENT GUIDELINES:
+- REPEATED BLOCK USAGE ALLOWED & ENCOURAGED: You are NOT limited to using each block type only once. You can and SHOULD use ANY block type MULTIPLE TIMES throughout the lesson whenever helpful for the learner!
+  * Multiple "paragraph" blocks for distinct concepts and sections.
+  * Multiple "analogy" blocks to explain different complex or abstract topics.
+  * Multiple "example" blocks to demonstrate different code patterns or step-by-step walkthroughs.
+  * Multiple "warning" blocks for different common pitfalls or edge cases.
+  * Multiple "flashcard" blocks for distinct key terms, definitions, or key takeaways.
+  * Multiple "interactive-quiz" blocks for quick self-assessment after different topic sections.
+  * Multiple "interactive-reveal" blocks for expanding on different deep-dive details.
+  * Multiple "code-sandbox" blocks for practicing different executable snippets in a coding lesson.
+- PRESERVE ALL CODE FENCES AND NEWLINES: Every code snippet, script, function definition, or configuration variable in the text MUST retain its fenced code block format (\`\`\`python\n...\n\`\`\` or \`\`\`javascript\n...\n\`\`\`) with exact linebreaks and indentation preserved. NEVER collapse multiline code blocks into flat single-line strings.
+- DO NOT stack or group interactive/callout blocks at the bottom of the lesson!
+- Interleave interactive and instructional blocks naturally INLINE throughout the lesson flow right next to the relevant concepts being explained.
+- Structure of the lesson:
+  1. Start with an "objective" block at the top.
+  2. Explain concepts in paragraph blocks, freely inserting analogies, examples, warnings, flashcards, interactive reveals, quizzes, and code sandboxes as many times as needed wherever they fit best in the learning flow.
+  3. Conclude with a "summary" block at the very end.
+- Divide long markdown text into multiple smaller "paragraph" blocks so interactive elements can be inserted between them.
+- Include at least one of every required block type (objective, paragraph, analogy, example, warning, summary, interactive-quiz, flashcard, interactive-reveal). Include "code-sandbox" ONLY if the source markdown contains executable Python or JavaScript code.
 - Ensure the output is strictly valid JSON conforming to the schema. Do not output anything else.`;
 
     try {
       const parsedBlocks = await AiService.structuredObject<LessonBlocks>(
         prompt,
-        LessonBlocksSchema,
+        createLessonBlocksSchema(markdownContent),
         getPowerfulModel(),
         system
       );
       return JSON.stringify(parsedBlocks);
     } catch (error) {
-      console.error("Failed to convert markdown to structured blocks, falling back to raw markdown wrapped in paragraph", error);
-      // Fallback
-      return JSON.stringify({
-        title: lessonTitle,
-        blocks: [
-          {
-            type: "objective",
-            title: "Learning Objectives",
-            content: "Learn about the concepts discussed in this lesson."
-          },
-          {
-            type: "paragraph",
-            content: markdownContent
-          }
-        ]
+      console.error("Failed to convert markdown to structured blocks, falling back to repaired lesson blocks", error);
+      const repairedBlocks = this.buildInterleavedRepairedBlocks(lessonTitle, markdownContent);
+      return JSON.stringify(repairedBlocks);
+    }
+  }
+
+  private static buildInterleavedRepairedBlocks(lessonTitle: string, markdownContent: string): LessonBlocks {
+    const rawParagraphs = markdownContent
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const hasCode = /```(python|py|javascript|js)/i.test(markdownContent);
+
+    const blocks: LessonBlocks["blocks"] = [
+      {
+        type: "objective",
+        title: "Learning Objectives",
+        content: `Master the key concepts and practical applications of ${lessonTitle}.`,
+      },
+    ];
+
+    if (rawParagraphs.length === 0) {
+      blocks.push({ type: "paragraph", content: markdownContent });
+    } else {
+      const totalP = rawParagraphs.length;
+      rawParagraphs.forEach((p, idx) => {
+        blocks.push({ type: "paragraph", content: p });
+
+        if (idx === 0) {
+          blocks.push({
+            type: "analogy",
+            title: "A helpful analogy",
+            content: `Think of ${lessonTitle} like learning a route: the explanation gives you the map, and practice helps you remember each turn.`,
+          });
+        } else if (idx === Math.floor(totalP * 0.3)) {
+          blocks.push({
+            type: "example",
+            title: "Worked example",
+            content: "Apply the main idea step by step, then compare your result with the explanation above.",
+          });
+        } else if (idx === Math.floor(totalP * 0.5)) {
+          blocks.push({
+            type: "warning",
+            title: "Common pitfall",
+            items: ["Do not skip the explanation before attempting the practice."],
+          });
+          blocks.push({
+            type: "flashcard",
+            front: `What is the core takeaway of ${lessonTitle}?`,
+            back: "Review the key explanation and connect it to the practical examples in this lesson.",
+          });
+        } else if (idx === Math.floor(totalP * 0.7)) {
+          blocks.push({
+            type: "interactive-reveal",
+            summary: "Key Concept Deep-Dive",
+            details: "Read the explanation, test your understanding with the quiz, and apply the concept in practice.",
+          });
+          blocks.push({
+            type: "interactive-quiz",
+            question: `What is the main objective of ${lessonTitle}?`,
+            options: ["Understand and apply the core principles", "Memorize definitions without practice", "Skip the lesson examples"],
+            correctIndex: 0,
+            explanation: "Applying the core principles with active practice ensures long-term understanding.",
+          });
+        }
       });
     }
+
+    if (hasCode) {
+      blocks.push({
+        type: "code-sandbox",
+        code: "const lesson = 'practice';\nconsole.log(`Keep going: ${lesson}`);",
+        language: "javascript",
+        expectedOutput: "Keep going: practice",
+        instructions: "Run the sandbox, then edit the code snippet to test your understanding.",
+      });
+    }
+
+    blocks.push({
+      type: "summary",
+      content: "Review the key idea, connect it to the examples, and practice it in your own learning.",
+    });
+
+    return {
+      title: lessonTitle,
+      blocks,
+    };
   }
 }

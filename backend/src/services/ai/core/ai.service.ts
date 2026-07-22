@@ -188,7 +188,7 @@ const LOWERCASE_ALIASES = Object.fromEntries(
   Object.entries(KEY_ALIASES).map(([k, v]) => [k.toLowerCase(), v])
 );
 
-function normalizeModelResponse(value: unknown): unknown {
+export function normalizeModelResponse(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(normalizeModelResponse);
   }
@@ -214,10 +214,45 @@ function normalizeModelResponse(value: unknown): unknown {
           // Normalizes block types like interactive_quiz -> interactive-quiz
           result[mapped] = normalized.replace(/_/g, "-");
         }
-      } else if (mapped === "explanations" && typeof normalized === "string") {
-        result[mapped] = [normalized];
       } else {
         result[mapped] = normalized;
+      }
+    }
+
+    // Post-process quiz question objects
+    if (result.type === "MULTIPLE_CHOICE") {
+      if (Array.isArray(result.options)) {
+        result.options = result.options.map((opt) => String(opt));
+      } else {
+        result.options = [];
+      }
+
+      if (typeof result.correctAnswer === "string") {
+        const trimmedAnswer = result.correctAnswer.trim();
+        const num = parseInt(trimmedAnswer, 10);
+        if (!isNaN(num) && String(num) === trimmedAnswer) {
+          result.correctAnswer = num;
+        } else if (Array.isArray(result.options) && result.options.length > 0) {
+          const matchedIndex = result.options.findIndex(
+            (opt: any) => String(opt).trim().toLowerCase() === trimmedAnswer.toLowerCase()
+          );
+          result.correctAnswer = matchedIndex !== -1 ? matchedIndex : 0;
+        } else {
+          result.correctAnswer = 0;
+        }
+      } else if (typeof result.correctAnswer !== "number" || isNaN(result.correctAnswer)) {
+        result.correctAnswer = 0;
+      }
+
+      if (!Array.isArray(result.explanations) || result.explanations.length === 0) {
+        const fallbackExp = typeof result.explanation === "string"
+          ? result.explanation
+          : "Explanation for option.";
+        result.explanations = (result.options as string[]).map(() => fallbackExp);
+      }
+    } else if (result.type === "ESSAY") {
+      if (typeof result.requiresImage !== "boolean") {
+        result.requiresImage = false;
       }
     }
 

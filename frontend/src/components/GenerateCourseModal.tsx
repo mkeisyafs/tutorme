@@ -231,7 +231,7 @@ const GenerateCourseModal: React.FC = () => {
     return (
       <div
         onClick={maximize}
-        className="fixed bottom-6 right-6 z-50 bg-white/95 dark:bg-gray-800/95 border-2 border-pink-400 dark:border-pink-600 rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] flex items-center gap-4 cursor-pointer hover:-translate-y-1 hover:shadow-pink-400/20 active:translate-y-0 active:scale-95 transition-all duration-300 max-w-xs sm:max-w-sm w-76 font-['Nunito',sans-serif] select-none border-dashed"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 bg-white/95 dark:bg-gray-800/95 border-2 border-pink-400 dark:border-pink-600 rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] flex items-center gap-4 cursor-pointer hover:-translate-y-1 hover:shadow-pink-400/20 active:translate-y-0 active:scale-95 transition-all duration-300 max-w-[calc(100vw-2rem)] sm:max-w-sm w-76 font-['Nunito',sans-serif] select-none border-dashed"
       >
         <div className="relative w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-pink-100 dark:bg-pink-900/40 text-pink-500">
           <Hourglass className="w-5 h-5 text-pink-500 animate-spin" strokeWidth={2.5} />
@@ -267,7 +267,7 @@ const GenerateCourseModal: React.FC = () => {
       onClick={!isGenerating ? closeModal : minimize}
     >
       <div
-        className={`relative max-w-2xl w-full max-h-[90vh] flex flex-col transform ${isGenerating ? 'scale-105' : 'rotate-1 hover:rotate-0'} transition-all duration-300`}
+        className={`relative max-w-2xl w-[calc(100vw-2rem)] sm:w-full max-h-[90vh] flex flex-col transform ${isGenerating ? 'scale-105' : 'rotate-1 hover:rotate-0'} transition-all duration-300`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Tape detail */}

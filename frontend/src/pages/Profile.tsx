@@ -80,7 +80,7 @@ const Profile = () => {
           <p className="text-gray-600 dark:text-gray-400 font-bold text-lg">View your learning progress and account information.</p>
         </div>
         <div className="space-y-10">
-          <section className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md p-6 md:p-8 rounded-3xl border-4 border-gray-200 dark:border-gray-700 shadow-[6px_6px_0px_0px_rgba(209,213,219,1)] dark:shadow-[6px_6px_0px_0px_rgba(75,85,99,1)]">
+          <section className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md p-5 sm:p-8 rounded-3xl border-4 border-gray-200 dark:border-gray-700 shadow-[6px_6px_0px_0px_rgba(209,213,219,1)] dark:shadow-[6px_6px_0px_0px_rgba(75,85,99,1)]">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-7">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-blue-500 border-4 border-blue-700 text-white flex items-center justify-center font-['Kalam',cursive] text-3xl font-bold shadow-sm">{displayName.trim().charAt(0).toUpperCase() || 'A'}</div>
@@ -93,7 +93,7 @@ const Profile = () => {
                 <CheckCircle2 className="w-5 h-5" /> Active learner
               </div>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 {label:'Courses joined',value:profile?.coursesJoined ?? '0',icon:BookOpen,color:'text-blue-600 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700'},
                 {label:'Lessons completed',value:profile?.lessonsCompleted ?? '0',icon:CheckCircle2,color:'text-green-600 bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-700'},
@@ -109,7 +109,7 @@ const Profile = () => {
             </div>
           </section>
           
-          <section className="bg-yellow-100 dark:bg-yellow-900/40 p-8 rounded-3xl border-4 border-yellow-400 dark:border-yellow-700/50 shadow-[8px_8px_0px_0px_rgba(250,204,21,1)] dark:shadow-[8px_8px_0px_0px_rgba(161,98,7,0.8)] transform rotate-1 relative">
+          <section className="bg-yellow-100 dark:bg-yellow-900/40 p-5 sm:p-8 rounded-3xl border-4 border-yellow-400 dark:border-yellow-700/50 shadow-[8px_8px_0px_0px_rgba(250,204,21,1)] dark:shadow-[8px_8px_0px_0px_rgba(161,98,7,0.8)] transform rotate-1 relative">
             <h2 className="text-3xl font-['Kalam',cursive] font-bold text-yellow-900 dark:text-yellow-300 mb-6 flex items-center gap-3"><User className="w-8 h-8" /> Account Profile</h2>
             <div className="grid lg:grid-cols-[1fr_0.7fr] gap-8 items-start">
               <form className="space-y-6" onSubmit={saveProfile}>

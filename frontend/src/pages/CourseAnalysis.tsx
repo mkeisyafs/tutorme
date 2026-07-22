@@ -163,9 +163,9 @@ const CourseAnalysis = () => {
         progressPercent={progressPercent}
         allDone={allDone}
       />
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-8 md:p-12">
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-4 sm:p-8 md:p-12">
         <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
-          <section className="w-full max-w-4xl mx-auto rounded-3xl border-4 border-green-300 bg-white p-8 shadow-[10px_10px_0_#4ade80] dark:border-green-800 dark:bg-gray-800 sm:p-11">
+          <section className="w-full max-w-4xl mx-auto rounded-3xl border-4 border-green-300 bg-white p-5 sm:p-8 shadow-[10px_10px_0_#4ade80] dark:border-green-800 dark:bg-gray-800 md:p-11">
         <div className="text-center">
           <Award className="mx-auto h-14 w-14 text-green-500" />
           <p className="mt-4 font-bold uppercase tracking-wider text-green-700 dark:text-green-300">{summary?.quiz.type === 'FINAL_EXAM' ? 'Final exam' : 'Quiz result'}</p>

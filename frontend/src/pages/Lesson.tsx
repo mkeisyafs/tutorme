@@ -508,11 +508,11 @@ const Lesson = () => {
       />
 
       {/* ── Main Content ── */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-8 md:p-12">
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-4 sm:p-8 md:p-12">
         <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
 
           {/* Breadcrumb & Actions */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
               <span className="hover:text-blue-500 cursor-pointer" onClick={() => navigate(-1)}>
                 {lesson?.module?.title || 'Course'}
@@ -543,9 +543,9 @@ const Lesson = () => {
               <div className="flex flex-col items-center gap-4 z-20 px-6 text-center">
                 {isGenerating ? (
                   <>
-                    <LoaderCircle className="w-16 h-16 animate-spin text-pink-400" />
-                    <h2 className="font-['Kalam',cursive] text-3xl font-bold text-white">Generating this lesson…</h2>
-                    <p className="text-gray-300 font-semibold max-w-sm">Researching materials and preparing content. The quiz will start in the background afterward.</p>
+                    <LoaderCircle className="w-12 h-12 text-pink-500 animate-spin" />
+                    <h2 className="font-['Kalam',cursive] text-3xl font-bold text-white">Generating your lesson...</h2>
+                    <p className="text-gray-300 font-semibold max-w-sm">Crafting explanation, examples, and interactive practice for this sub-chapter.</p>
                   </>
                 ) : (
                   <>
@@ -573,10 +573,10 @@ const Lesson = () => {
                 <div className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 relative overflow-hidden">
                   <iframe
                     src={`https://www.youtube.com/embed/${ytId}?rel=0&showinfo=0`}
-                    title={lesson.title || 'Supporting video'}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    title={lesson.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
-                    className="absolute inset-0 w-full h-full border-none"
+                    className="absolute inset-0 w-full h-full"
                   />
                 </div>
               );
@@ -614,7 +614,7 @@ const Lesson = () => {
 
           {/* Lesson Content */}
           {isLessonReady && (
-            <div className="bg-white dark:bg-gray-800 p-8 md:p-12 rounded-3xl border-4 border-gray-300 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(156,163,175,1)] dark:shadow-[8px_8px_0px_0px_rgba(55,65,81,0.8)] relative">
+            <div className="bg-white dark:bg-gray-800 p-5 sm:p-8 md:p-12 rounded-3xl border-4 border-gray-300 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(156,163,175,1)] dark:shadow-[8px_8px_0px_0px_rgba(55,65,81,0.8)] relative">
               <div className="absolute -top-4 -right-4 w-12 h-6 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600"></div>
               <h1 className="text-4xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-6">{lesson?.title}</h1>
               <BlockRenderer content={lessonContent} />
@@ -643,19 +643,12 @@ const Lesson = () => {
               {isQuizReady ? (
                 <button
                   onClick={handleGoToQuiz}
-                  className="px-5 py-3 rounded-xl font-['Kalam',cursive] text-lg font-bold text-white bg-purple-500 hover:bg-purple-600 border-2 border-purple-700 shadow-[2px_2px_0_#7e22ce] transition-all active:translate-y-0.5 active:shadow-none"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce]"
                 >
                   Take quiz
                 </button>
-              ) : quizStatus.state === 'failed' ? (
-                <button
-                  onClick={() => void handleStartQuiz()}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-['Kalam',cursive] text-lg font-bold text-white bg-purple-500 hover:bg-purple-600 border-2 border-purple-700 shadow-[2px_2px_0_#7e22ce] transition-all active:translate-y-0.5 active:shadow-none"
-                >
-                  <Sparkles className="h-5 w-5 fill-current" /> Start quiz
-                </button>
-              ) : quizStatus.isGenerating || quizStatus.state === 'queued' ? (
-                <span className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-300 bg-white px-4 py-3 font-bold text-purple-700 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-200">
+              ) : quizStatus.isGenerating ? (
+                <span className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-300 bg-purple-100 px-4 py-3 font-bold text-purple-800 dark:border-purple-700 dark:bg-purple-900/40 dark:text-purple-200">
                   <LoaderCircle className="h-5 w-5 animate-spin" /> Generating quiz…
                 </span>
               ) : (
@@ -766,14 +759,16 @@ const Lesson = () => {
 
       {/* ── Right Sidebar — AI Assistant ── */}
       {isAIAssistantOpen && (
-        <aside
-          style={{ width: `${rightSidebarWidth}px` }}
-          className="relative bg-purple-50/50 dark:bg-gray-800/40 backdrop-blur-xl border-l-2 border-dashed border-gray-300 dark:border-gray-700 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-40 flex-shrink-0 transition-all duration-300"
-        >
-          <div
-            onMouseDown={() => setIsDraggingRight(true)}
-            className={`absolute top-0 -left-2 bottom-0 w-4 cursor-col-resize hover:bg-purple-500/20 active:bg-purple-500/40 z-50 transition-colors ${isDraggingRight ? 'bg-purple-500/40' : ''}`}
-          />
+        <>
+          <div className="fixed inset-0 z-40 bg-gray-900/40 backdrop-blur-sm lg:hidden" onClick={() => setIsAIAssistantOpen(false)} />
+          <aside
+            style={{ width: `${rightSidebarWidth}px` }}
+            className="fixed inset-y-0 right-0 z-50 h-full max-w-[90vw] bg-purple-50/95 dark:bg-gray-800/95 shadow-2xl transition-all duration-300 lg:relative lg:z-40 lg:shadow-[-4px_0_24px_rgba(0,0,0,0.02)] lg:bg-purple-50/50 lg:dark:bg-gray-800/40 backdrop-blur-xl border-l-2 border-dashed border-gray-300 dark:border-gray-700 flex-shrink-0 flex flex-col"
+          >
+            <div
+              onMouseDown={() => setIsDraggingRight(true)}
+              className={`absolute top-0 -left-2 bottom-0 w-4 cursor-col-resize hover:bg-purple-500/20 active:bg-purple-500/40 z-50 transition-colors hidden lg:block ${isDraggingRight ? 'bg-purple-500/40' : ''}`}
+            />
           <div className="flex flex-col h-full p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-3xl font-['Kalam',cursive] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-3 tracking-wide transform -rotate-1">
@@ -958,6 +953,7 @@ const Lesson = () => {
             </form>
           </div>
         </aside>
+        </>
       )}
 
     </div>

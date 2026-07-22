@@ -144,7 +144,38 @@ const getHighlightStyle = (children: React.ReactNode) => {
   return highlightStyles[index];
 };
 
+const formatUnfencedCodeContent = (rawContent: string): string => {
+  if (!rawContent) return '';
+  if (rawContent.includes('```')) return rawContent;
+
+  const trimmed = rawContent.trim();
+  const containsCodeKeywords = /\b(def|class|import|from|function|const|let|var)\b/.test(trimmed) || /\b(PAYMENT_GATEWAY_KEY|DATABASE_URL|MOCK_PROJECT_FILES|SECRET_PATTERNS|COPYLEFT_LICENSES)\b/.test(trimmed);
+
+  if (!containsCodeKeywords) return rawContent;
+
+  let formatted = trimmed
+    .replace(/\s+(def\s+[a-zA-Z_]\w*)/g, '\n\n$1')
+    .replace(/\s+(findings\s*=\s*)/g, '\n    $1')
+    .replace(/\s+(for\s+pattern)/g, '\n    $1')
+    .replace(/\s+(if\s+re\.)/g, '\n        $1')
+    .replace(/\s+(findings\.append)/g, '\n            $1')
+    .replace(/\s+(return\s+findings)/g, '\n    $1')
+    .replace(/\s+(PAYMENT_GATEWAY_KEY\s*=)/g, '\n\n$1')
+    .replace(/\s+(DATABASE_URL\s*=)/g, '\n\n$1')
+    .replace(/\s+(MOCK_PROJECT_FILES\s*=)/g, '\n\n$1')
+    .replace(/\s+(SECRET_PATTERNS\s*=)/g, '\n\n$1')
+    .replace(/\s+(COPYLEFT_LICENSES\s*=)/g, '\n\n$1');
+
+  if (/^\s*(def|import|from|class|PAYMENT_GATEWAY_KEY|DATABASE_URL|MOCK_PROJECT_FILES)\b/.test(formatted)) {
+    return `\`\`\`python\n${formatted}\n\`\`\``;
+  }
+
+  return formatted;
+};
+
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
+  const formattedContent = formatUnfencedCodeContent(content);
+
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
@@ -176,7 +207,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
             );
           },
           pre: ({ children, ...props }: any) => (
-            <pre className="bg-gray-900 text-pink-200 p-4 rounded-xl overflow-x-auto mb-4 font-mono text-sm" {...props}>
+            <pre className="bg-gray-900 text-pink-200 p-4 rounded-xl overflow-x-auto mb-4 font-mono text-sm border-2 border-gray-800 shadow-md" {...props}>
               {children}
             </pre>
           ),
@@ -202,7 +233,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
           summary: ({ node, ...props }) => <summary className="cursor-pointer font-bold text-gray-900 dark:text-gray-100 outline-none hover:text-pink-600 dark:hover:text-pink-400" {...props} />,
         }}
       >
-        {content}
+        {formattedContent}
       </ReactMarkdown>
     </div>
   );
@@ -683,7 +714,7 @@ const CodeSandboxComponent: React.FC<CodeSandboxBlock> = ({
       </div>
 
       {/* Editor & Console */}
-      <div className="grid grid-cols-1 md:grid-cols-2 min-h-60 border-b-2 border-gray-200 dark:border-gray-700">
+      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-60 border-b-2 border-gray-200 dark:border-gray-700">
         {/* Editor Area */}
         <div className="flex flex-col bg-gray-900 border-r-2 border-gray-800 md:border-b-0 border-b-2">
           <div className="flex justify-between items-center px-4 py-2 border-b border-gray-800 text-[11px] font-bold tracking-wider text-gray-500">

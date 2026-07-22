@@ -88,7 +88,7 @@ const Settings = () => {
         <div className="space-y-10">
           
           {/* Account Security Section */}
-          <section className="bg-green-100 dark:bg-green-900/40 p-8 rounded-3xl border-4 border-green-400 dark:border-green-700/50 shadow-[8px_8px_0px_0px_rgba(74,222,128,1)] dark:shadow-[8px_8px_0px_0px_rgba(21,128,61,0.8)] transform rotate-1 relative">
+          <section className="bg-green-100 dark:bg-green-900/40 p-5 sm:p-8 rounded-3xl border-4 border-green-400 dark:border-green-700/50 shadow-[8px_8px_0px_0px_rgba(74,222,128,1)] dark:shadow-[8px_8px_0px_0px_rgba(21,128,61,0.8)] transform rotate-1 relative">
             <h2 className="text-3xl font-['Kalam',cursive] font-bold text-green-900 dark:text-green-300 mb-6 flex items-center gap-3">
               <KeyRound className="w-8 h-8" /> Account Security
             </h2>
@@ -142,12 +142,12 @@ const Settings = () => {
           </section>
 
           {/* App Preferences Section */}
-          <section className="bg-blue-100 dark:bg-blue-900/40 p-8 rounded-3xl border-4 border-blue-400 dark:border-blue-700/50 shadow-[8px_8px_0px_0px_rgba(96,165,250,1)] dark:shadow-[8px_8px_0px_0px_rgba(30,58,138,0.8)] transform -rotate-1 relative">
+          <section className="bg-blue-100 dark:bg-blue-900/40 p-5 sm:p-8 rounded-3xl border-4 border-blue-400 dark:border-blue-700/50 shadow-[8px_8px_0px_0px_rgba(96,165,250,1)] dark:shadow-[8px_8px_0px_0px_rgba(30,58,138,0.8)] transform -rotate-1 relative">
             <h2 className="text-3xl font-['Kalam',cursive] font-bold text-blue-900 dark:text-blue-300 mb-6 flex items-center gap-3">
               <Shield className="w-8 h-8" /> App Preferences
             </h2>
             <div className="space-y-4">
-              <div onClick={toggleTheme} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
+              <div onClick={toggleTheme} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-4 sm:p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
                 <div className="flex items-center gap-4">
                   <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-xl border-2 border-blue-300 dark:border-blue-700">
                     {isDark ? <Moon className="w-6 h-6 text-blue-700 dark:text-blue-300" /> : <Sun className="w-6 h-6 text-blue-700" />}
@@ -165,7 +165,7 @@ const Settings = () => {
                 />
               </div>
 
-              <div onClick={() => setNotifications(!notifications)} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
+              <div onClick={() => setNotifications(!notifications)} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-4 sm:p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
                 <div className="flex items-center gap-4">
                   <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-xl border-2 border-blue-300 dark:border-blue-700">
                     <Bell className="w-6 h-6 text-blue-700 dark:text-blue-300" />
@@ -183,7 +183,7 @@ const Settings = () => {
                 />
               </div>
 
-              <div onClick={togglePomodoro} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
+              <div onClick={togglePomodoro} className="flex items-center justify-between bg-white/70 dark:bg-gray-800/70 p-4 sm:p-5 rounded-2xl border-4 border-blue-200 dark:border-blue-800/50 shadow-sm cursor-pointer">
                 <div className="flex items-center gap-4">
                   <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-xl border-2 border-blue-300 dark:border-blue-700">
                     <Clock className="w-6 h-6 text-blue-700 dark:text-blue-300" />
@@ -204,7 +204,7 @@ const Settings = () => {
           </section>
 
           {/* Danger Zone Section */}
-          <section className="bg-red-50 dark:bg-red-900/20 p-8 rounded-3xl border-4 border-red-300 dark:border-red-800/50 shadow-[8px_8px_0px_0px_rgba(252,165,165,1)] dark:shadow-[8px_8px_0px_0px_rgba(153,27,27,0.5)] transform rotate-1 relative">
+          <section className="bg-red-50 dark:bg-red-900/20 p-5 sm:p-8 rounded-3xl border-4 border-red-300 dark:border-red-800/50 shadow-[8px_8px_0px_0px_rgba(252,165,165,1)] dark:shadow-[8px_8px_0px_0px_rgba(153,27,27,0.5)] transform rotate-1 relative">
             <h2 className="text-3xl font-['Kalam',cursive] font-bold text-red-700 dark:text-red-400 mb-2">Danger Zone</h2>
             <p className="text-red-800/80 dark:text-red-300/80 font-bold mb-6">Irreversible actions related to your account.</p>
             
