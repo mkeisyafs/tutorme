@@ -1,5 +1,5 @@
-import React, { useState, type ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, type ReactNode } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun, User, Menu, X } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { listed } from '../constant/listed';
@@ -18,7 +18,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { isDark, toggleTheme } = useTheme();
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -52,9 +57,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </header>
 
       {/* Mobile navigation drawer */}
-      {isMobileMenuOpen && <div className="mobile-dashboard-drawer fixed inset-0 z-50">
-        <button aria-label="Close navigation menu" className="absolute inset-0 bg-gray-900/45 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-        <aside className="absolute top-0 right-0 h-full w-[min(18rem,84vw)] bg-white dark:bg-gray-800 p-5 flex flex-col shadow-[-12px_0_30px_rgba(0,0,0,0.2)]">
+      <div className="mobile-dashboard-drawer fixed inset-0 z-50 pointer-events-none md:hidden">
+        <button
+          aria-label="Close navigation menu"
+          className={`absolute inset-0 bg-gray-900/45 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
+            isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        <aside
+          className={`absolute top-0 right-0 h-full w-[min(18rem,84vw)] bg-white dark:bg-gray-800 p-5 flex flex-col shadow-[-12px_0_30px_rgba(0,0,0,0.2)] transition-all duration-300 ease-in-out ${
+            isMobileMenuOpen ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-full opacity-0 pointer-events-none'
+          }`}
+        >
           <div className="flex items-center justify-between mb-8"><span className="text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400">Menu</span><button onClick={() => setIsMobileMenuOpen(false)} aria-label="Close navigation menu" className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700"><X className="w-6 h-6" /></button></div>
           {navigation(true)}
           <div className="mt-auto pt-6 border-t-2 border-dashed border-gray-200 dark:border-gray-700 space-y-2">
@@ -62,7 +77,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-lg"><LogOut className="w-5 h-5" /> Log Out</button>
           </div>
         </aside>
-      </div>}
+      </div>
 
       {/* Desktop sidebar */}
       <aside className="desktop-dashboard-nav w-64 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border-r-2 border-dashed border-gray-300 dark:border-gray-700 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 flex-shrink-0 flex-col min-h-screen transition-colors duration-300 p-8">

@@ -508,29 +508,29 @@ const Lesson = () => {
       />
 
       {/* ── Main Content ── */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-4 sm:p-8 md:p-12">
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-3.5 sm:p-6 md:p-12">
         <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
 
           {/* Breadcrumb & Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <div className="flex items-center gap-2 text-sm font-bold text-gray-500 dark:text-gray-400">
-              <span className="hover:text-blue-500 cursor-pointer" onClick={() => navigate(-1)}>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8 pt-10 sm:pt-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 flex-wrap pl-10 sm:pl-0">
+              <span className="hover:text-blue-500 cursor-pointer truncate max-w-[140px] sm:max-w-none" onClick={() => navigate(-1)}>
                 {lesson?.module?.title || 'Course'}
               </span>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-gray-800 dark:text-gray-200">{lesson?.title || 'Lesson'}</span>
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="text-gray-800 dark:text-gray-200 truncate max-w-[160px] sm:max-w-none">{lesson?.title || 'Lesson'}</span>
             </div>
             {(isLessonReady || isCompleted) && (
               <button
                 onClick={() => void handleToggleLessonCompletion()}
                 disabled={isCompleting}
                 aria-pressed={isCompleted}
-                className="px-5 py-2 rounded-xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none flex items-center gap-2 disabled:opacity-60 disabled:cursor-default"
+                className="w-full sm:w-auto px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-default"
               >
                 {isCompleting ? (
-                  <LoaderCircle className="w-5 h-5 animate-spin" />
+                  <LoaderCircle className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                 ) : (
-                  <CheckCircle2 className={`w-5 h-5 ${isCompleted ? 'text-green-500' : 'text-gray-400'}`} />
+                  <CheckCircle2 className={`w-4 h-4 sm:w-5 sm:h-5 ${isCompleted ? 'text-green-500' : 'text-gray-400'}`} />
                 )}
                 {isCompleted ? 'Mark incomplete' : 'Mark complete'}
               </button>
@@ -539,26 +539,26 @@ const Lesson = () => {
 
           {/* Video / Generate CTA */}
           {!isLessonReady ? (
-            <div className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 flex items-center justify-center relative overflow-hidden">
-              <div className="flex flex-col items-center gap-4 z-20 px-6 text-center">
+            <div className="w-full min-h-[290px] sm:min-h-0 aspect-auto sm:aspect-video py-6 sm:py-0 bg-gray-900 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-800 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] sm:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] sm:dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-6 sm:mb-8 flex items-center justify-center relative overflow-hidden">
+              <div className="flex flex-col items-center gap-3 sm:gap-4 z-20 px-4 sm:px-6 text-center">
                 {isGenerating ? (
                   <>
-                    <LoaderCircle className="w-12 h-12 text-pink-500 animate-spin" />
-                    <h2 className="font-['Kalam',cursive] text-3xl font-bold text-white">Generating your lesson...</h2>
-                    <p className="text-gray-300 font-semibold max-w-sm">Crafting explanation, examples, and interactive practice for this sub-chapter.</p>
+                    <LoaderCircle className="w-9 h-9 sm:w-12 sm:h-12 text-pink-500 animate-spin" />
+                    <h2 className="font-['Kalam',cursive] text-xl sm:text-3xl font-bold text-white">Generating your lesson...</h2>
+                    <p className="text-gray-300 font-semibold text-xs sm:text-base max-w-xs sm:max-w-sm">Crafting explanation, examples, and interactive practice for this sub-chapter.</p>
                   </>
                 ) : (
                   <>
-                    <div className="w-20 h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(190,24,93,1)]">
-                      <Play className="w-10 h-10 text-white fill-white ml-2" />
+                    <div className="w-12 h-12 sm:w-20 sm:h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(190,24,93,1)] sm:shadow-[4px_4px_0px_0px_rgba(190,24,93,1)]">
+                      <Play className="w-6 h-6 sm:w-10 sm:h-10 text-white fill-white ml-1 sm:ml-2" />
                     </div>
-                    <h2 className="font-['Kalam',cursive] text-3xl font-bold text-white">Ready to generate this lesson?</h2>
-                    <p className="text-gray-300 font-semibold max-w-sm">TutorMe will generate this lesson's content, not the entire remaining course.</p>
+                    <h2 className="font-['Kalam',cursive] text-lg sm:text-3xl font-bold text-white leading-tight">Ready to generate this lesson?</h2>
+                    <p className="text-gray-300 font-semibold text-xs sm:text-base max-w-[260px] sm:max-w-sm">TutorMe will generate this lesson's content, not the entire remaining course.</p>
                     <button
                       onClick={() => void handleGenerateLesson()}
-                      className="mt-2 px-7 py-3 rounded-xl font-bold text-white bg-pink-500 hover:bg-pink-600 border-2 border-pink-700 shadow-[2px_2px_0_#be185d] flex items-center gap-2 font-['Kalam',cursive] text-lg"
+                      className="mt-1 sm:mt-2 px-5 py-2.5 sm:px-7 sm:py-3 rounded-xl font-bold text-white bg-pink-500 hover:bg-pink-600 border-2 border-pink-700 shadow-[2px_2px_0_#be185d] flex items-center gap-2 font-['Kalam',cursive] text-sm sm:text-lg active:translate-y-0.5 active:shadow-none transition-all"
                     >
-                      <Play className="w-5 h-5 fill-current" /> Generate lesson
+                      <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" /> Generate lesson
                     </button>
                   </>
                 )}
@@ -570,7 +570,7 @@ const Lesson = () => {
 
             if (ytId) {
               return (
-                <div className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 relative overflow-hidden">
+                <div className="w-full aspect-video bg-gray-900 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-800 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] sm:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] sm:dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-6 sm:mb-8 relative overflow-hidden">
                   <iframe
                     src={`https://www.youtube.com/embed/${ytId}?rel=0&showinfo=0`}
                     title={lesson.title}
@@ -584,7 +584,7 @@ const Lesson = () => {
 
             if (isDirectVideo) {
               return (
-                <div className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 relative overflow-hidden">
+                <div className="w-full aspect-video bg-gray-900 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-800 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] sm:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] sm:dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-6 sm:mb-8 relative overflow-hidden">
                   <video
                     src={lesson.videoUrl}
                     controls
@@ -599,14 +599,14 @@ const Lesson = () => {
                 href={lesson.videoUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full aspect-video bg-gray-900 rounded-3xl border-4 border-gray-800 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-8 flex items-center justify-center relative overflow-hidden group cursor-pointer no-underline"
+                className="w-full aspect-video bg-gray-900 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-800 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] sm:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] sm:dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-6 sm:mb-8 flex items-center justify-center relative overflow-hidden group cursor-pointer no-underline"
               >
                 <div className="absolute inset-0 bg-blue-900/20 group-hover:bg-transparent transition-colors z-10"></div>
-                <div className="w-20 h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] transform group-hover:scale-110 transition-transform z-20">
-                  <Video className="w-10 h-10 text-white ml-1" />
+                <div className="w-14 h-14 sm:w-20 sm:h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(190,24,93,1)] sm:shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] transform group-hover:scale-110 transition-transform z-20">
+                  <Video className="w-7 h-7 sm:w-10 sm:h-10 text-white ml-1" />
                 </div>
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="font-bold text-sm sm:text-base">{lesson.title} — Supporting video link</div>
+                <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 flex justify-between items-center text-white z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="font-bold text-xs sm:text-base">{lesson.title} — Supporting video link</div>
                 </div>
               </a>
             );
@@ -614,45 +614,45 @@ const Lesson = () => {
 
           {/* Lesson Content */}
           {isLessonReady && (
-            <div className="bg-white dark:bg-gray-800 p-5 sm:p-8 md:p-12 rounded-3xl border-4 border-gray-300 dark:border-gray-700 shadow-[8px_8px_0px_0px_rgba(156,163,175,1)] dark:shadow-[8px_8px_0px_0px_rgba(55,65,81,0.8)] relative">
-              <div className="absolute -top-4 -right-4 w-12 h-6 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600"></div>
-              <h1 className="text-4xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-6">{lesson?.title}</h1>
+            <div className="bg-white dark:bg-gray-800 p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-300 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] sm:shadow-[8px_8px_0px_0px_rgba(156,163,175,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] sm:dark:shadow-[8px_8px_0px_0px_rgba(55,65,81,0.8)] relative">
+              <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-10 sm:w-12 h-5 sm:h-6 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600"></div>
+              <h1 className="text-2xl sm:text-4xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 leading-tight">{lesson?.title}</h1>
               <BlockRenderer content={lessonContent} />
             </div>
           )}
 
           {/* Error banner */}
           {error && (
-            <p role="alert" className="mt-5 rounded-xl border-2 border-red-300 bg-red-50 p-4 font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
+            <p role="alert" className="mt-4 sm:mt-5 rounded-xl border-2 border-red-300 bg-red-50 p-3 sm:p-4 font-bold text-xs sm:text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
               {error}
             </p>
           )}
 
           {/* Quiz Section */}
-          <div className="mt-8 bg-purple-50 dark:bg-purple-950/30 p-6 rounded-3xl border-4 border-purple-300 dark:border-purple-800 shadow-[6px_6px_0_#c084fc] dark:shadow-[6px_6px_0_rgba(88,28,135,0.6)] relative">
-            <div className="absolute -top-3 -right-3 w-10 h-5 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600"></div>
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="mt-6 sm:mt-8 bg-purple-50 dark:bg-purple-950/30 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-purple-300 dark:border-purple-800 shadow-[4px_4px_0_#c084fc] sm:shadow-[6px_6px_0_#c084fc] dark:shadow-[4px_4px_0_rgba(88,28,135,0.6)] sm:dark:shadow-[6px_6px_0_rgba(88,28,135,0.6)] relative">
+            <div className="absolute -top-2.5 right-4 sm:right-6 w-8 sm:w-10 h-4 sm:h-5 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600 rounded-sm"></div>
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
-                <h2 className="flex items-center gap-2 font-['Kalam',cursive] text-2xl font-bold text-purple-950 dark:text-purple-100">
-                  <ClipboardCheck className="h-6 w-6" /> Lesson Quiz
+                <h2 className="flex items-center gap-2 font-['Kalam',cursive] text-xl sm:text-2xl font-bold text-purple-950 dark:text-purple-100">
+                  <ClipboardCheck className="h-5 w-5 sm:h-6 sm:w-6" /> Lesson Quiz
                 </h2>
-                <p className="mt-1 font-semibold text-purple-800 dark:text-purple-200">
+                <p className="mt-1 font-semibold text-xs sm:text-base text-purple-800 dark:text-purple-200">
                   {quizStatus.reason || (isQuizReady ? 'Your quiz is ready. You can take it without marking this lesson complete.' : 'Quiz status will appear after lesson generation.')}
                 </p>
               </div>
               {isQuizReady ? (
                 <button
                   onClick={handleGoToQuiz}
-                  className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-4 py-2.5 sm:px-5 sm:py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce] shrink-0"
                 >
                   Take quiz
                 </button>
               ) : quizStatus.isGenerating ? (
-                <span className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-300 bg-purple-100 px-4 py-3 font-bold text-purple-800 dark:border-purple-700 dark:bg-purple-900/40 dark:text-purple-200">
-                  <LoaderCircle className="h-5 w-5 animate-spin" /> Generating quiz…
+                <span className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-300 bg-purple-100 px-4 py-2.5 sm:py-3 font-bold text-xs sm:text-base text-purple-800 dark:border-purple-700 dark:bg-purple-900/40 dark:text-purple-200 shrink-0">
+                  <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> Generating quiz…
                 </span>
               ) : (
-                <span className="rounded-xl border-2 border-purple-200 bg-white px-4 py-3 font-bold text-purple-700 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-200">
+                <span className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border-2 border-purple-200 bg-white px-4 py-2.5 sm:py-3 font-bold text-xs sm:text-base text-purple-700 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-200 shrink-0">
                   Waiting for lesson
                 </span>
               )}
@@ -660,47 +660,47 @@ const Lesson = () => {
           </div>
 
           {/* Prev / Next Navigation */}
-          <div className="flex justify-between items-center mt-12 pb-12 gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mt-8 sm:mt-12 pb-24 sm:pb-12 gap-3 sm:gap-4">
             {/* Previous */}
             {prevLesson ? (
               <button
                 onClick={handlePrevLesson}
-                className="px-6 py-4 rounded-2xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] hover:translate-y-0.5 hover:shadow-sm transition-all flex items-center gap-3 font-['Kalam',cursive] text-lg"
+                className="w-full sm:w-auto px-5 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 shadow-[3px_3px_0px_0px_rgba(156,163,175,1)] sm:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] hover:translate-y-0.5 hover:shadow-sm transition-all flex items-center justify-center gap-2 sm:gap-3 font-['Kalam',cursive] text-base sm:text-lg"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 Prev Lesson
               </button>
             ) : <div />}
 
             {/* Next / Final Exam */}
             {nextLesson ? (
-              <div className="flex flex-col items-end gap-1">
+              <div className="flex flex-col items-stretch sm:items-end gap-1.5 w-full sm:w-auto">
                 {!isNextLessonAccessible && (
-                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <Lock className="w-3 h-3" /> Mark this lesson complete or generate the next lesson to unlock
+                  <p className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center sm:justify-end gap-1 text-center sm:text-right">
+                    <Lock className="w-3 h-3 shrink-0" /> Mark complete or generate next to unlock
                   </p>
                 )}
                 <button
                   onClick={handleNextLesson}
                   disabled={!isNextLessonAccessible}
-                  className={`px-8 py-4 rounded-2xl font-bold border-2 transition-all flex items-center gap-3 font-['Kalam',cursive] text-xl ${
+                  className={`w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl font-bold border-2 transition-all flex items-center justify-center gap-2 sm:gap-3 font-['Kalam',cursive] text-lg sm:text-xl ${
                     isNextLessonAccessible
-                      ? 'text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-900 border-blue-400 dark:border-blue-700 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(96,165,250,1)]'
+                      ? 'text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-900 border-blue-400 dark:border-blue-700 shadow-[3px_3px_0px_0px_rgba(96,165,250,1)] sm:shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(96,165,250,1)]'
                       : 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 opacity-60 cursor-not-allowed'
                   }`}
                 >
                   Next Lesson
-                  <ChevronRight className="w-6 h-6" />
+                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
             ) : (allDone || isCompleted) && courseId ? (
               <button
                 onClick={() => navigate('/courses/' + encodeURIComponent(courseId) + '/final-exam')}
-                className="px-8 py-4 rounded-2xl font-bold text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-900 border-2 border-blue-400 dark:border-blue-700 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(96,165,250,1)] transition-all flex items-center gap-3 font-['Kalam',cursive] text-xl"
+                className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-900 border-2 border-blue-400 dark:border-blue-700 shadow-[3px_3px_0px_0px_rgba(96,165,250,1)] sm:shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(96,165,250,1)] transition-all flex items-center justify-center gap-2 sm:gap-3 font-['Kalam',cursive] text-lg sm:text-xl"
               >
-                <MessageCircle className="w-6 h-6" />
+                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                 Final Exam
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             ) : null}
           </div>
@@ -709,47 +709,47 @@ const Lesson = () => {
       </main>
 
       {/* Floating AI button */}
-      {!isAIAssistantOpen && (
-        <button
-          onClick={() => setIsAIAssistantOpen(true)}
-          className="absolute bottom-8 right-8 z-30 bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-full shadow-[4px_4px_0px_0px_rgba(126,34,206,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(126,34,206,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center"
-        >
-          <Sparkles className="w-8 h-8 fill-purple-200 text-purple-200" />
-        </button>
-      )}
+      <button
+        onClick={() => setIsAIAssistantOpen(true)}
+        className={`fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-30 bg-purple-500 hover:bg-purple-600 text-white p-3 sm:p-4 rounded-full shadow-[3px_3px_0px_0px_rgba(126,34,206,1)] sm:shadow-[4px_4px_0px_0px_rgba(126,34,206,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(126,34,206,1)] active:translate-y-1 active:shadow-none transition-all duration-300 transform flex items-center justify-center ${
+          !isAIAssistantOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'
+        }`}
+      >
+        <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 fill-purple-200 text-purple-200" />
+      </button>
 
       {isQuizGenerationModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/20 p-4 backdrop-blur-md dark:bg-gray-900/40" role="dialog" aria-modal="true" aria-labelledby="quiz-generation-title">
-          <div className="relative w-full max-w-xl scale-105 transition-all duration-300">
-            <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-8 w-24 -translate-x-1/2 -translate-y-4 -rotate-2 rounded-sm border border-purple-200/50 bg-purple-400/40 backdrop-blur-md dark:border-purple-700/50 dark:bg-purple-500/40" />
-            <div className="relative overflow-hidden rounded-2xl border-4 border-purple-400 bg-purple-50/90 shadow-[8px_8px_0px_0px_rgba(168,85,247,1)] backdrop-blur-xl dark:border-purple-700 dark:bg-gray-800/90 dark:shadow-[8px_8px_0px_0px_rgba(107,33,168,0.8)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/20 p-2.5 sm:p-4 backdrop-blur-md dark:bg-gray-900/40" role="dialog" aria-modal="true" aria-labelledby="quiz-generation-title">
+          <div className="relative w-full max-w-xl scale-100 sm:scale-105 transition-all duration-300">
+            <div className="pointer-events-none absolute left-1/2 top-0 z-20 h-6 sm:h-8 w-20 sm:w-24 -translate-x-1/2 -translate-y-3 sm:-translate-y-4 -rotate-2 rounded-sm border border-purple-200/50 bg-purple-400/40 backdrop-blur-md dark:border-purple-700/50 dark:bg-purple-500/40" />
+            <div className="relative overflow-hidden rounded-2xl border-3 sm:border-4 border-purple-400 bg-purple-50/90 shadow-[4px_4px_0px_0px_rgba(168,85,247,1)] sm:shadow-[8px_8px_0px_0px_rgba(168,85,247,1)] backdrop-blur-xl dark:border-purple-700 dark:bg-gray-800/90 dark:shadow-[4px_4px_0px_0px_rgba(107,33,168,0.8)] sm:dark:shadow-[8px_8px_0px_0px_rgba(107,33,168,0.8)]">
               {quizStatus.state === 'failed' ? (
-                <div className="p-8 text-center md:p-10">
-                  <CircleAlert className="mx-auto h-12 w-12 text-red-500" />
-                  <h2 id="quiz-generation-title" className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-purple-950 dark:text-purple-100">Quiz needs another try</h2>
-                  <p className="mt-3 font-semibold text-purple-800 dark:text-purple-200">{quizStatus.reason || 'We could not finish creating this quiz.'}</p>
-                  <div className="mt-7 flex flex-col-reverse justify-center gap-3 sm:flex-row">
-                    <button onClick={() => setIsQuizGenerationModalOpen(false)} className="rounded-xl border-2 border-purple-300 bg-white px-5 py-3 font-bold text-purple-800 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-100">Close</button>
-                    <button onClick={() => void handleStartQuiz()} className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce] transition-all active:translate-y-0.5 active:shadow-none"><Sparkles className="h-5 w-5 fill-current" /> Start quiz</button>
+                <div className="p-5 sm:p-8 md:p-10 text-center">
+                  <CircleAlert className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-red-500" />
+                  <h2 id="quiz-generation-title" className="mt-3 font-['Kalam',cursive] text-2xl sm:text-3xl font-bold text-purple-950 dark:text-purple-100">Quiz needs another try</h2>
+                  <p className="mt-2 font-semibold text-xs sm:text-base text-purple-800 dark:text-purple-200">{quizStatus.reason || 'We could not finish creating this quiz.'}</p>
+                  <div className="mt-6 flex flex-col-reverse justify-center gap-2.5 sm:gap-3 sm:flex-row">
+                    <button onClick={() => setIsQuizGenerationModalOpen(false)} className="rounded-xl border-2 border-purple-300 bg-white px-4 py-2.5 sm:px-5 sm:py-3 font-bold text-xs sm:text-base text-purple-800 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-100">Close</button>
+                    <button onClick={() => void handleStartQuiz()} className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-4 py-2.5 sm:px-5 sm:py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce] transition-all active:translate-y-0.5 active:shadow-none"><Sparkles className="h-4 w-4 sm:h-5 sm:w-5 fill-current" /> Start quiz</button>
                   </div>
                 </div>
               ) : (
-                <div className="relative p-8 md:p-10">
-                  <h2 id="quiz-generation-title" className="text-center font-['Kalam',cursive] text-3xl font-bold text-purple-950 dark:text-purple-100">Creating your lesson quiz</h2>
-                  <p className="mt-2 text-center font-semibold text-purple-800 dark:text-purple-200">A few moments while TutorMe prepares your questions.</p>
-                  <div className="mt-9 space-y-5 font-['Nunito',sans-serif] text-lg font-bold text-purple-950 dark:text-purple-100">
+                <div className="relative p-5 sm:p-8 md:p-10">
+                  <h2 id="quiz-generation-title" className="text-center font-['Kalam',cursive] text-2xl sm:text-3xl font-bold text-purple-950 dark:text-purple-100">Creating your lesson quiz</h2>
+                  <p className="mt-1.5 text-center font-semibold text-xs sm:text-base text-purple-800 dark:text-purple-200">A few moments while TutorMe prepares your questions.</p>
+                  <div className="mt-6 sm:mt-9 space-y-3 sm:space-y-5 font-['Nunito',sans-serif] text-sm sm:text-lg font-bold text-purple-950 dark:text-purple-100">
                     {quizGenerationSteps.map((step, index) => {
                       const isComplete = index < quizGenerationStep;
                       const isCurrent = index === quizGenerationStep;
                       return (
-                        <div key={step} className={`flex items-center gap-4 transition-all duration-500 ${isCurrent ? 'translate-x-2 scale-105 text-purple-600 dark:text-purple-300' : isComplete ? 'opacity-80' : 'opacity-40'}`}>
-                          {isComplete ? <CheckCircle2 className="h-7 w-7 flex-none text-green-500" /> : isCurrent ? <LoaderCircle className="h-7 w-7 flex-none animate-spin text-purple-500" /> : <span className="h-6 w-6 flex-none rounded-md border-2 border-purple-300 dark:border-purple-700" />}
+                        <div key={step} className={`flex items-center gap-3 sm:gap-4 transition-all duration-500 ${isCurrent ? 'translate-x-1 sm:translate-x-2 scale-105 text-purple-600 dark:text-purple-300' : isComplete ? 'opacity-80' : 'opacity-40'}`}>
+                          {isComplete ? <CheckCircle2 className="h-5 w-5 sm:h-7 sm:w-7 flex-none text-green-500" /> : isCurrent ? <LoaderCircle className="h-5 w-5 sm:h-7 sm:w-7 flex-none animate-spin text-purple-500" /> : <span className="h-5 w-5 sm:h-6 sm:w-6 flex-none rounded-md border-2 border-purple-300 dark:border-purple-700" />}
                           <span>{step}</span>
                         </div>
                       );
                     })}
                   </div>
-                  <Sparkles className="pointer-events-none absolute -bottom-8 -right-8 h-40 w-40 animate-pulse fill-purple-500 text-purple-500 opacity-20" />
+                  <Sparkles className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 sm:h-40 sm:w-40 animate-pulse fill-purple-500 text-purple-500 opacity-20 hidden sm:block" />
                 </div>
               )}
             </div>
@@ -758,39 +758,46 @@ const Lesson = () => {
       )}
 
       {/* ── Right Sidebar — AI Assistant ── */}
-      {isAIAssistantOpen && (
-        <>
-          <div className="fixed inset-0 z-40 bg-gray-900/40 backdrop-blur-sm lg:hidden" onClick={() => setIsAIAssistantOpen(false)} />
-          <aside
-            style={{ width: `${rightSidebarWidth}px` }}
-            className="fixed inset-y-0 right-0 z-50 h-full max-w-[90vw] bg-purple-50/95 dark:bg-gray-800/95 shadow-2xl transition-all duration-300 lg:relative lg:z-40 lg:shadow-[-4px_0_24px_rgba(0,0,0,0.02)] lg:bg-purple-50/50 lg:dark:bg-gray-800/40 backdrop-blur-xl border-l-2 border-dashed border-gray-300 dark:border-gray-700 flex-shrink-0 flex flex-col"
-          >
-            <div
-              onMouseDown={() => setIsDraggingRight(true)}
-              className={`absolute top-0 -left-2 bottom-0 w-4 cursor-col-resize hover:bg-purple-500/20 active:bg-purple-500/40 z-50 transition-colors hidden lg:block ${isDraggingRight ? 'bg-purple-500/40' : ''}`}
-            />
-          <div className="flex flex-col h-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-['Kalam',cursive] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-3 tracking-wide transform -rotate-1">
-                <Sparkles className="w-8 h-8 fill-purple-500 text-purple-500" />
+      <div
+        onClick={() => setIsAIAssistantOpen(false)}
+        className={`fixed inset-0 z-40 bg-gray-900/40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-in-out ${
+          isAIAssistantOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
+      <aside
+        style={{ width: isAIAssistantOpen ? `${rightSidebarWidth}px` : undefined }}
+        className={`fixed inset-y-0 right-0 z-50 h-full max-w-[92vw] sm:max-w-[90vw] bg-purple-50/95 dark:bg-gray-800/95 shadow-2xl transition-all duration-300 ease-in-out lg:relative lg:z-40 lg:shadow-[-4px_0_24px_rgba(0,0,0,0.02)] lg:bg-purple-50/50 lg:dark:bg-gray-800/40 backdrop-blur-xl border-dashed border-gray-300 dark:border-gray-700 flex-shrink-0 flex flex-col ${
+          isAIAssistantOpen
+            ? 'translate-x-0 opacity-100 pointer-events-auto border-l-2 lg:w-[340px]'
+            : 'translate-x-full opacity-0 pointer-events-none lg:translate-x-0 lg:w-0 lg:max-w-0 lg:overflow-hidden lg:border-l-0'
+        }`}
+      >
+        <div
+          onMouseDown={() => setIsDraggingRight(true)}
+          className={`absolute top-0 -left-2 bottom-0 w-4 cursor-col-resize hover:bg-purple-500/20 active:bg-purple-500/40 z-50 transition-colors hidden lg:block ${isDraggingRight ? 'bg-purple-500/40' : ''}`}
+        />
+        <div className="flex flex-col h-full p-4 sm:p-6 min-w-[280px] sm:min-w-[320px]">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+              <h2 className="text-2xl sm:text-3xl font-['Kalam',cursive] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-2 sm:gap-3 tracking-wide transform -rotate-1">
+                <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 fill-purple-500 text-purple-500 shrink-0" />
                 AI Assistant
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {courseId && (
                   <>
                     <button
                       onClick={handleCreateNewThread}
                       title="New Chat"
-                      className="text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 bg-white/50 dark:bg-gray-800/50 rounded-full p-2 border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:scale-105"
+                      className="text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 bg-white/50 dark:bg-gray-800/50 rounded-full p-1.5 sm:p-2 border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:scale-105"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                     <button
                       onClick={() => setIsHistoryOpen(!isHistoryOpen)}
                       title="Chat History"
-                      className={`text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 bg-white/50 dark:bg-gray-800/50 rounded-full p-2 border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:scale-105 ${isHistoryOpen ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400' : ''}`}
+                      className={`text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 bg-white/50 dark:bg-gray-800/50 rounded-full p-1.5 sm:p-2 border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:scale-105 ${isHistoryOpen ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400' : ''}`}
                     >
-                      <History className="w-4 h-4" />
+                      <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                   </>
                 )}
@@ -798,7 +805,7 @@ const Lesson = () => {
                   onClick={() => setIsAIAssistantOpen(false)}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-white/50 dark:bg-gray-800/50 rounded-full p-1"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
             </div>
@@ -932,29 +939,27 @@ const Lesson = () => {
               </p>
             )}
 
-            <form onSubmit={handleTutorMessage} className="mt-4 relative">
+            <form onSubmit={handleTutorMessage} className="mt-3 sm:mt-4 relative">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 disabled={!isLessonReady || isChatting}
                 placeholder={isLessonReady ? 'Ask me anything…' : 'Generate lesson first…'}
-                className="w-full pl-5 pr-14 py-4 border-4 border-purple-200 dark:border-purple-800/50 rounded-full bg-white/90 dark:bg-gray-900/90 focus:outline-none focus:border-purple-400 dark:focus:border-purple-500 focus:ring-4 focus:ring-purple-200 dark:focus:ring-purple-900/50 font-bold text-gray-700 dark:text-gray-200 placeholder-gray-400 transition-all shadow-inner text-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full pl-3.5 sm:pl-5 pr-11 sm:pr-14 py-2.5 sm:py-3.5 border-3 sm:border-4 border-purple-200 dark:border-purple-800/50 rounded-full bg-white/90 dark:bg-gray-900/90 focus:outline-none focus:border-purple-400 dark:focus:border-purple-500 focus:ring-4 focus:ring-purple-200 dark:focus:ring-purple-900/50 font-bold text-gray-700 dark:text-gray-200 text-xs sm:text-base placeholder-gray-400 transition-all shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
               />
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex">
+              <div className="absolute right-1.5 sm:right-2 top-1/2 transform -translate-y-1/2 flex">
                 <button
                   type="submit"
                   disabled={!chatInput.trim() || !isLessonReady || isChatting}
-                  className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-full shadow-[0_4px_0px_0px_rgba(126,34,206,1)] active:translate-y-1 active:shadow-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="bg-purple-500 hover:bg-purple-600 text-white p-2 sm:p-2.5 rounded-full shadow-[0_3px_0px_0px_rgba(126,34,206,1)] sm:shadow-[0_4px_0px_0px_rgba(126,34,206,1)] active:translate-y-1 active:shadow-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Send className="w-5 h-5" />
+                  <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </form>
           </div>
-        </aside>
-        </>
-      )}
+      </aside>
 
     </div>
   );

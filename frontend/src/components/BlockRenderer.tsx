@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import {
   Lightbulb,
   CircleAlert,
@@ -173,13 +176,23 @@ const formatUnfencedCodeContent = (rawContent: string): string => {
   return formatted;
 };
 
+const preprocessMath = (rawContent: string): string => {
+  if (!rawContent) return '';
+  // Normalize \( ... \) to $ ... $
+  let processed = rawContent.replace(/\\\(([\s\S]*?)\\\)/g, '$$1$');
+  // Normalize \[ ... \] to $$ ... $$
+  processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, '$$$$1$$');
+  return processed;
+};
+
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
-  const formattedContent = formatUnfencedCodeContent(content);
+  const formattedContent = formatUnfencedCodeContent(preprocessMath(content));
 
   return (
     <div className={`markdown-content ${className}`}>
       <ReactMarkdown
-        rehypePlugins={[rehypeRaw]}
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeRaw, rehypeKatex]}
         components={{
           p: ({ node, ...props }) => <p className="mb-4 last:mb-0 leading-relaxed" {...props} />,
           strong: ({ node, children, ...props }) => {

@@ -330,18 +330,18 @@ const Course = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto md:mx-0 pb-16 relative">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 sm:mb-10 gap-5 sm:gap-6">
+      <div className="max-w-6xl mx-auto md:mx-0 pb-12 sm:pb-16 relative">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 sm:mb-10 gap-4 sm:gap-6">
           <div>
-            <h1 className="text-3xl sm:text-5xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 flex items-center gap-3 sm:gap-4">
-              <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500 shrink-0" />
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-1 sm:mb-2 flex items-center gap-2.5 sm:gap-4 leading-tight">
+              <BookOpen className="w-7 h-7 sm:w-10 sm:h-10 text-blue-500 shrink-0" />
               My Courses
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 font-bold text-sm sm:text-lg">All your active and completed learning paths.</p>
-            <p className="mt-1.5 text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5"><Pin className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Pinned courses: {pinnedCourseIds.length}/3</p>
+            <p className="text-gray-600 dark:text-gray-400 font-bold text-xs sm:text-lg">All your active and completed learning paths.</p>
+            <p className="mt-1 sm:mt-1.5 text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5"><Pin className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Pinned courses: {pinnedCourseIds.length}/3</p>
           </div>
 
-          <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full md:w-auto items-center">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2.5 sm:gap-3 w-full md:w-auto items-center">
             <div className="relative flex-1 min-w-[140px] md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none" />
               <input
@@ -349,7 +349,7 @@ const Course = () => {
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search courses..."
-                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 border-2 border-gray-300 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all font-bold text-sm sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
+                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 border-2 border-gray-300 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all font-bold text-xs sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
             <div className="relative shrink-0">
@@ -359,17 +359,17 @@ const Course = () => {
                 aria-label="Filter courses"
                 aria-expanded={isFilterOpen}
               >
-                <Filter className="w-5 h-5 sm:w-6 sm:h-6" />
+                <Filter className="w-4 h-4 sm:w-6 sm:h-6" />
               </button>
 
               {isFilterOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[4px_4px_0px_0px_rgba(75,85,99,1)] border-4 border-gray-300 dark:border-gray-600 z-50 overflow-hidden font-bold text-gray-700 dark:text-gray-300 flex flex-col">
+                <div className="absolute right-0 top-full mt-2 w-44 sm:w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[4px_4px_0px_0px_rgba(75,85,99,1)] border-3 sm:border-4 border-gray-300 dark:border-gray-600 z-50 overflow-hidden font-bold text-xs sm:text-base text-gray-700 dark:text-gray-300 flex flex-col">
                   {FILTER_OPTIONS.map((filterType) => (
                     <button
                       key={filterType}
                       type="button"
                       onClick={() => { setActiveFilter(filterType); setIsFilterOpen(false); }}
-                      className={`p-3 border-b-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center justify-between text-left ${activeFilter === filterType ? 'text-blue-600 dark:text-blue-400' : ''} last:border-b-0`}
+                      className={`p-2.5 sm:p-3 border-b-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center justify-between text-left ${activeFilter === filterType ? 'text-blue-600 dark:text-blue-400' : ''} last:border-b-0`}
                     >
                       {filterType}
                       {activeFilter === filterType && <span className="w-2 h-2 rounded-full bg-blue-500" />}
@@ -382,18 +382,18 @@ const Course = () => {
             {drafts.length > 0 && (
               <button
                 onClick={() => setShowDraftsOnly(!showDraftsOnly)}
-                className={`border-2 p-2 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 font-bold text-sm shrink-0 ${showDraftsOnly ? 'bg-pink-100 dark:bg-pink-950/40 border-pink-400 dark:border-pink-500 text-pink-600 dark:text-pink-400 shadow-[2px_2px_0px_0px_rgba(244,114,182,1)] dark:shadow-[2px_2px_0px_0px_rgba(157,23,77,0.8)]' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-pink-400 dark:hover:border-pink-500 hover:text-pink-650 dark:hover:text-pink-400'}`}
+                className={`border-2 p-2 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 font-bold text-xs sm:text-sm shrink-0 ${showDraftsOnly ? 'bg-pink-100 dark:bg-pink-950/40 border-pink-400 dark:border-pink-500 text-pink-600 dark:text-pink-400 shadow-[2px_2px_0px_0px_rgba(244,114,182,1)] dark:shadow-[2px_2px_0px_0px_rgba(157,23,77,0.8)]' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-pink-400 dark:hover:border-pink-500 hover:text-pink-650 dark:hover:text-pink-400'}`}
                 aria-label="Toggle drafts view"
               >
-                <Sparkles className="w-5 h-5 shrink-0 text-pink-500" />
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-pink-500" />
                 <span className="hidden sm:inline">Drafts</span>
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-pulse">
+                <span className="flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-pulse">
                   {drafts.length}
                 </span>
               </button>
             )}
             <button
-              className="w-full sm:w-auto bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-2 px-5 sm:px-6 rounded-xl shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_2px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_2px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-0.5 font-['Kalam',cursive] text-base sm:text-lg tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 shrink-0"
+              className="w-full sm:w-auto bg-pink-500 dark:bg-pink-600 hover:bg-pink-600 dark:hover:bg-pink-500 text-white font-bold py-2 px-4 sm:px-6 rounded-xl shadow-[0_3px_0px_0px_rgba(190,24,93,1)] sm:shadow-[0_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[0_3px_0px_0px_rgba(157,23,77,1)] sm:dark:shadow-[0_4px_0px_0px_rgba(157,23,77,1)] hover:shadow-[0_2px_0px_0px_rgba(190,24,93,1)] dark:hover:shadow-[0_2px_0px_0px_rgba(157,23,77,1)] transform transition hover:translate-y-0.5 font-['Kalam',cursive] text-sm sm:text-lg tracking-wide border-2 border-pink-700 dark:border-pink-800 flex items-center justify-center gap-2 shrink-0"
               onClick={handleMakeCourseClick}
             >
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" /> Make Course
@@ -402,15 +402,15 @@ const Course = () => {
         </div>
 
         {notice && (
-          <div className="mb-7 flex items-center justify-between gap-4 rounded-xl border-2 border-green-300 bg-green-100 dark:border-green-700 dark:bg-green-900/35 p-4 text-green-900 dark:text-green-200 font-bold shadow-[2px_2px_0px_0px_rgba(134,239,172,1)] dark:shadow-[2px_2px_0px_0px_rgba(21,128,61,0.8)]">
-            <span className="flex gap-2 items-center"><Check className="w-5 h-5" /> {notice}</span>
-            <button aria-label="Dismiss message" onClick={() => setNotice('')} className="hover:bg-green-200 dark:hover:bg-green-800 p-1 rounded-md transition-colors"><X className="w-5 h-5" /></button>
+          <div className="mb-6 sm:mb-7 flex items-center justify-between gap-3 rounded-xl border-2 border-green-300 bg-green-100 dark:border-green-700 dark:bg-green-900/35 p-3.5 sm:p-4 text-sm sm:text-base text-green-900 dark:text-green-200 font-bold shadow-[2px_2px_0px_0px_rgba(134,239,172,1)] dark:shadow-[2px_2px_0px_0px_rgba(21,128,61,0.8)]">
+            <span className="flex gap-2 items-center"><Check className="w-4 h-4 sm:w-5 sm:h-5" /> {notice}</span>
+            <button aria-label="Dismiss message" onClick={() => setNotice('')} className="hover:bg-green-200 dark:hover:bg-green-800 p-1 rounded-md transition-colors"><X className="w-4 h-4 sm:w-5 sm:h-5" /></button>
           </div>
         )}
 
         {pinLimitReached && (
-          <div className="mb-6 flex items-center gap-2 rounded-xl border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/30 px-4 py-3 font-bold text-orange-800 dark:text-orange-200">
-            <CircleAlert className="w-5 h-5 shrink-0" /> You can pin up to 3 courses. Unpin one to add another.
+          <div className="mb-6 flex items-center gap-2 rounded-xl border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/30 px-3.5 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-bold text-orange-800 dark:text-orange-200">
+            <CircleAlert className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" /> You can pin up to 3 courses. Unpin one to add another.
           </div>
         )}
 
@@ -418,59 +418,59 @@ const Course = () => {
           <div>
             <div className="mb-6 flex items-center justify-between border-b-2 border-dashed border-gray-250 dark:border-gray-700 pb-4">
               <div>
-                <h2 className="text-2xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2.5">
-                  <Sparkles className="w-6 h-6 text-pink-500 animate-pulse" />
+                <h2 className="text-xl sm:text-2xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-pink-500 animate-pulse" />
                   Course Drafts Shelf ({filteredDrafts.length})
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-bold mt-1">These outlines are generated and saved locally, waiting to be published.</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-bold mt-1">These outlines are generated and saved locally, waiting to be published.</p>
               </div>
               <button
                 onClick={() => setShowDraftsOnly(false)}
-                className="text-sm font-bold text-blue-650 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1.5 transition-colors bg-blue-50 dark:bg-blue-950/20 px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800"
+                className="text-xs sm:text-sm font-bold text-blue-650 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 transition-colors bg-blue-50 dark:bg-blue-950/20 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 shrink-0"
               >
                 &larr; Back to All Courses
               </button>
             </div>
 
             {filteredDrafts.length === 0 ? (
-              <div className="rounded-2xl border-4 border-dashed border-gray-300 bg-white p-10 text-center font-bold text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+              <div className="rounded-2xl border-4 border-dashed border-gray-300 bg-white p-6 sm:p-10 text-center text-sm sm:text-base font-bold text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
                 {searchTerm ? 'No drafts match your search query.' : 'No drafts currently saved.'}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
                 {filteredDrafts.map((draft) => (
                   <div
                     key={draft.id}
                     onClick={() => navigate(`/drafts/${encodeURIComponent(draft.id)}`)}
-                    className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-[4px_4px_0px_0px_rgba(148,163,184,1)] dark:shadow-[4px_4px_0px_0px_rgba(71,85,105,0.8)] transform rotate-1 hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2 group focus:outline-none focus:ring-4 focus:ring-blue-300"
+                    className="bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-[3px_3px_0px_0px_rgba(148,163,184,1)] sm:shadow-[4px_4px_0px_0px_rgba(148,163,184,1)] dark:shadow-[3px_3px_0px_0px_rgba(71,85,105,0.8)] sm:dark:shadow-[4px_4px_0px_0px_rgba(71,85,105,0.8)] transform rotate-0.5 sm:rotate-1 hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2 group focus:outline-none focus:ring-4 focus:ring-blue-300"
                   >
                     {/* Tape overlay */}
-                    <div className="absolute top-0 left-1/2 w-16 h-5 bg-pink-400/80 dark:bg-pink-500/40 -translate-x-1/2 -translate-y-2.5 transform -rotate-3 backdrop-blur-sm shadow-sm" />
+                    <div className="absolute top-0 left-1/2 w-12 sm:w-16 h-4 sm:h-5 bg-pink-400/80 dark:bg-pink-500/40 -translate-x-1/2 -translate-y-2 transform -rotate-3 backdrop-blur-sm shadow-sm" />
                     
                     <button
                       type="button"
                       onClick={(event) => handleDeleteDraft(draft, event)}
                       aria-label="Delete draft"
-                      className="absolute right-4 top-4 z-10 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-gray-800/80 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-2 transition-colors md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
+                      className="absolute right-3 top-3 sm:right-4 sm:top-4 z-10 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-gray-800/80 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-1.5 sm:p-2 transition-colors md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
                     >
                       <X className="w-4 h-4" />
                     </button>
                     
-                    <span className="text-[10px] font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 px-2.5 py-1 bg-pink-100 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 rounded-md w-fit">
+                    <span className="text-[10px] font-bold uppercase tracking-wider mb-2 sm:mb-3 flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-pink-100 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 rounded-md w-fit">
                       <Sparkles className="w-3 h-3" /> Draft
                     </span>
 
-                    <h3 className="text-xl sm:text-2xl font-bold font-['Kalam',cursive] text-slate-800 dark:text-slate-100 mb-4 pr-8 flex-grow">
+                    <h3 className="text-lg sm:text-2xl font-bold font-['Kalam',cursive] text-slate-800 dark:text-slate-100 mb-3 sm:mb-4 pr-6 sm:pr-8 flex-grow">
                       {draft.title}
                     </h3>
 
                     <div className="mt-auto">
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 font-bold truncate">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 sm:mb-4 font-bold truncate">
                         Topic: {draft.topic}
                       </p>
                       <button
                         type="button"
-                        className="w-full py-2.5 rounded-xl font-bold font-['Kalam',cursive] text-lg border-2 border-transparent bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(29,78,216,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)]"
+                        className="w-full py-2 sm:py-2.5 rounded-xl font-bold font-['Kalam',cursive] text-base sm:text-lg border-2 border-transparent bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_rgba(29,78,216,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)]"
                       >
                         <Play className="w-4 h-4 fill-current" />
                         Resume Outline Editing
@@ -484,13 +484,13 @@ const Course = () => {
         ) : (
           <>
             {drafts.length > 0 && (
-              <div className="mb-8 flex items-center justify-between gap-4 rounded-xl border-2 border-pink-200 bg-pink-50/50 dark:border-pink-900/30 dark:bg-pink-950/20 p-4 text-pink-900 dark:text-pink-200 font-bold shadow-[2px_2px_0px_0px_rgba(244,114,182,0.4)]">
+              <div className="mb-6 sm:mb-8 flex items-center justify-between gap-3 rounded-xl border-2 border-pink-200 bg-pink-50/50 dark:border-pink-900/30 dark:bg-pink-950/20 p-3 sm:p-4 text-pink-900 dark:text-pink-200 font-bold shadow-[2px_2px_0px_0px_rgba(244,114,182,0.4)]">
                 <span className="flex gap-2 items-center text-xs sm:text-sm">
-                  <Sparkles className="w-4 h-4 text-pink-500" /> You have {drafts.length} in-progress course {drafts.length === 1 ? 'draft' : 'drafts'} saved.
+                  <Sparkles className="w-4 h-4 text-pink-500 shrink-0" /> You have {drafts.length} in-progress course {drafts.length === 1 ? 'draft' : 'drafts'} saved.
                 </span>
                 <button
                   onClick={() => setShowDraftsOnly(true)}
-                  className="text-xs bg-pink-500 text-white px-3 py-1.5 rounded-lg border border-pink-600 shadow-[1px_1px_0px_rgba(190,24,93,1)] font-bold transition-all hover:bg-pink-600 active:translate-y-0.5 active:shadow-none"
+                  className="text-xs bg-pink-500 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-pink-600 shadow-[1px_1px_0px_rgba(190,24,93,1)] font-bold transition-all hover:bg-pink-600 active:translate-y-0.5 active:shadow-none shrink-0"
                 >
                   View Drafts
                 </button>
@@ -498,68 +498,68 @@ const Course = () => {
             )}
 
             {isCoursesLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" aria-live="polite" aria-label="Loading courses">
-                {[0, 1, 2].map((index) => <div key={index} className="h-64 animate-pulse rounded-2xl border-2 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-gray-800" />)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8" aria-live="polite" aria-label="Loading courses">
+                {[0, 1, 2].map((index) => <div key={index} className="h-56 sm:h-64 animate-pulse rounded-2xl border-2 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-gray-800" />)}
               </div>
             ) : coursesError ? (
-              <div role="alert" className="rounded-2xl border-4 border-red-300 bg-red-50 p-7 text-center shadow-[4px_4px_0px_0px_rgba(248,113,113,1)] dark:border-red-800 dark:bg-red-950/40">
-                <CircleAlert className="mx-auto h-9 w-9 text-red-500" />
-                <p className="mt-3 font-bold text-red-700 dark:text-red-300">{coursesError}</p>
-                <button type="button" onClick={() => void loadCourses()} className="mt-5 inline-flex items-center gap-2 rounded-xl border-2 border-red-700 bg-red-500 px-5 py-2.5 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(185,28,28,1)] transition-all active:translate-y-0.5 active:shadow-none">
-                  <RefreshCw className="h-5 w-5" /> Try again
+              <div role="alert" className="rounded-2xl border-4 border-red-300 bg-red-50 p-5 sm:p-7 text-center shadow-[4px_4px_0px_0px_rgba(248,113,113,1)] dark:border-red-800 dark:bg-red-950/40">
+                <CircleAlert className="mx-auto h-8 w-8 text-red-500" />
+                <p className="mt-2.5 font-bold text-sm sm:text-base text-red-700 dark:text-red-300">{coursesError}</p>
+                <button type="button" onClick={() => void loadCourses()} className="mt-4 inline-flex items-center gap-2 rounded-xl border-2 border-red-700 bg-red-500 px-4 py-2 font-['Kalam',cursive] text-base font-bold text-white shadow-[2px_2px_0px_0px_rgba(185,28,28,1)] transition-all active:translate-y-0.5 active:shadow-none">
+                  <RefreshCw className="h-4 w-4" /> Try again
                 </button>
               </div>
             ) : courses.length === 0 ? (
-              <div className="rounded-2xl border-4 border-dashed border-blue-300 bg-blue-50 p-10 text-center dark:border-blue-800 dark:bg-gray-800">
-                <BookOpen className="mx-auto h-10 w-10 text-blue-500" />
-                <h2 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-blue-950 dark:text-blue-100">Your course shelf is empty</h2>
-                <p className="mt-2 font-bold text-blue-800 dark:text-blue-300">Create your first learning path to see it here.</p>
-                <button type="button" onClick={handleMakeCourseClick} className="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-pink-700 bg-pink-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(190,24,93,1)] transition-all active:translate-y-0.5 active:shadow-none">
-                  <Sparkles className="h-5 w-5" /> Make Course
+              <div className="rounded-2xl border-4 border-dashed border-blue-300 bg-blue-50 p-6 sm:p-10 text-center dark:border-blue-800 dark:bg-gray-800">
+                <BookOpen className="mx-auto h-8 w-8 sm:h-10 sm:w-10 text-blue-500" />
+                <h2 className="mt-3 font-['Kalam',cursive] text-2xl sm:text-3xl font-bold text-blue-950 dark:text-blue-100">Your course shelf is empty</h2>
+                <p className="mt-1.5 font-bold text-xs sm:text-base text-blue-800 dark:text-blue-300">Create your first learning path to see it here.</p>
+                <button type="button" onClick={handleMakeCourseClick} className="mt-5 inline-flex items-center gap-2 rounded-xl border-2 border-pink-700 bg-pink-500 px-4 py-2.5 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(190,24,93,1)] transition-all active:translate-y-0.5 active:shadow-none">
+                  <Sparkles className="h-4 h-4 sm:h-5 sm:w-5" /> Make Course
                 </button>
               </div>
             ) : filteredCourses.length === 0 ? (
-              <div className="rounded-2xl border-4 border-dashed border-gray-300 bg-white p-10 text-center font-bold text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+              <div className="rounded-2xl border-4 border-dashed border-gray-300 bg-white p-6 sm:p-10 text-center text-sm sm:text-base font-bold text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
                 No courses match your current search and filters.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
                 {filteredCourses.map((course) => {
                   const styles = getColorClasses(course.color);
                   const isPinned = pinnedCourseIds.includes(course.id);
                   return (
-                    <div key={course.id} onClick={() => openPreview(course)} className={`${styles.bg} p-6 rounded-2xl border-2 ${styles.border} ${styles.shadow} transform ${course.rotation} hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2 focus:outline-none focus:ring-4 focus:ring-blue-300`}>
-                      <div className={`absolute top-0 left-1/2 w-16 h-5 ${styles.tape} -translate-x-1/2 -translate-y-2.5 transform ${course.id.length % 2 === 0 ? 'rotate-2' : '-rotate-3'} backdrop-blur-sm shadow-sm`} />
+                    <div key={course.id} onClick={() => openPreview(course)} className={`${styles.bg} p-4 sm:p-6 rounded-2xl border-2 ${styles.border} ${styles.shadow} transform ${course.rotation} hover:rotate-0 transition-transform cursor-pointer relative flex flex-col h-full mt-2 focus:outline-none focus:ring-4 focus:ring-blue-300`}>
+                      <div className={`absolute top-0 left-1/2 w-12 sm:w-16 h-4 sm:h-5 ${styles.tape} -translate-x-1/2 -translate-y-2 transform ${course.id.length % 2 === 0 ? 'rotate-2' : '-rotate-3'} backdrop-blur-sm shadow-sm`} />
                       <button
                         type="button"
                         onClick={(event) => togglePin(course.id, event)}
                         aria-label={isPinned ? `Unpin ${course.title}` : `Pin ${course.title}`}
                         aria-pressed={isPinned}
-                        className={`absolute right-4 top-4 z-10 rounded-xl border-2 p-2 transition-all ${isPinned ? 'border-yellow-500 bg-yellow-300 text-yellow-900 shadow-[2px_2px_0px_0px_rgba(202,138,4,0.55)]' : 'border-white/60 dark:border-gray-600 bg-white/60 dark:bg-gray-800/70 text-gray-500 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'}`}
+                        className={`absolute right-3 top-3 sm:right-4 sm:top-4 z-10 rounded-xl border-2 p-1.5 sm:p-2 transition-all ${isPinned ? 'border-yellow-500 bg-yellow-300 text-yellow-900 shadow-[2px_2px_0px_0px_rgba(202,138,4,0.55)]' : 'border-white/60 dark:border-gray-600 bg-white/60 dark:bg-gray-800/70 text-gray-500 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'}`}
                       >
-                        <Pin className="w-5 h-5" fill={isPinned ? 'currentColor' : 'none'} />
+                        <Pin className="w-4 h-4 sm:w-5 sm:h-5" fill={isPinned ? 'currentColor' : 'none'} />
                       </button>
 
-                      <span className={`text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 px-2.5 py-1 bg-white/50 dark:bg-gray-900/30 rounded-md ${styles.text} w-fit max-w-[calc(100%-2.5rem)]`}>
+                      <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2.5 sm:mb-3 flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-white/50 dark:bg-gray-900/30 rounded-md ${styles.text} w-fit max-w-[calc(100%-2.5rem)]`}>
                         <div className="shrink-0">{getCategoryIcon(course.category)}</div>
                         <span className="truncate">{course.category}</span>
                       </span>
 
-                      <h3 className={`text-2xl font-bold font-['Kalam',cursive] ${styles.text} mb-4 flex-grow pr-8`}>{course.title}</h3>
+                      <h3 className={`text-xl sm:text-2xl font-bold font-['Kalam',cursive] ${styles.text} mb-3 sm:mb-4 flex-grow pr-6 sm:pr-8`}>{course.title}</h3>
 
                       <div className="mt-auto">
-                        <div className="flex justify-between items-end mb-2">
-                          <span className={`${styles.text} font-bold text-sm`}>Progress</span>
-                          <span className={`${styles.text} font-bold text-sm`}>{course.progress}%</span>
+                        <div className="flex justify-between items-end mb-1.5 sm:mb-2">
+                          <span className={`${styles.text} font-bold text-xs sm:text-sm`}>Progress</span>
+                          <span className={`${styles.text} font-bold text-xs sm:text-sm`}>{course.progress}%</span>
                         </div>
-                        <div className={`w-full ${styles.barBg} rounded-full h-2.5 mb-4 border border-white/40 dark:border-black/20 overflow-hidden`}>
+                        <div className={`w-full ${styles.barBg} rounded-full h-2 sm:h-2.5 mb-3 sm:mb-4 border border-white/40 dark:border-black/20 overflow-hidden`}>
                           <div className={`${styles.barFill} h-full rounded-full transition-all duration-1000`} style={{ width: `${course.progress}%` }} />
                         </div>
 
                         <button
                           type="button"
                           onClick={(event) => { event.stopPropagation(); openPreview(course); }}
-                          className={`w-full py-2.5 rounded-xl text-white border-2 font-bold font-['Kalam',cursive] text-lg transition-all hover:translate-y-0.5 hover:shadow-none flex items-center justify-center gap-2 ${styles.button}`}
+                          className={`w-full py-2 sm:py-2.5 rounded-xl text-white border-2 font-bold font-['Kalam',cursive] text-base sm:text-lg transition-all hover:translate-y-0.5 hover:shadow-none flex items-center justify-center gap-2 ${styles.button}`}
                         >
                           <BookOpen className="w-4 h-4" />
                           {course.isCompleted || course.progress === 100 ? 'Review Course' : course.progress === 0 ? 'Start Learning' : 'Continue'}
@@ -576,8 +576,8 @@ const Course = () => {
       </div>
 
       {previewCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-2 sm:p-4 pt-16 sm:pt-4 backdrop-blur-sm" onMouseDown={closePreview}>
-          <section role="dialog" aria-modal="true" aria-labelledby="course-preview-title" onMouseDown={(event) => event.stopPropagation()} className="relative max-h-[80vh] sm:max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border-4 border-blue-400 bg-blue-50 p-4 sm:p-7 shadow-[8px_8px_0_rgba(96,165,250,1)] dark:border-blue-700 dark:bg-gray-800 md:p-9 flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-3 sm:p-4 backdrop-blur-sm" onMouseDown={closePreview}>
+          <section role="dialog" aria-modal="true" aria-labelledby="course-preview-title" onMouseDown={(event) => event.stopPropagation()} className="relative max-h-[85vh] sm:max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-blue-400 bg-blue-50 p-4 sm:p-7 shadow-[4px_4px_0_rgba(96,165,250,1)] sm:shadow-[8px_8px_0_rgba(96,165,250,1)] dark:border-blue-700 dark:bg-gray-800 md:p-9 flex flex-col">
             <button type="button" aria-label="Close course preview" onClick={closePreview} className="absolute right-3 top-3 sm:right-5 sm:top-5 z-10 rounded-lg p-1 text-blue-700 transition-colors hover:bg-blue-200 dark:text-blue-300 dark:hover:bg-gray-700"><X /></button>
             <div className="pr-8 sm:pr-10 shrink-0">
               <span className="rounded-md bg-blue-200 px-2 py-0.5 text-[0.65rem] sm:text-xs font-extrabold uppercase tracking-wide text-blue-900 dark:bg-blue-900 dark:text-blue-100 border-2 border-blue-300 dark:border-blue-800">{previewCourse.category}</span>

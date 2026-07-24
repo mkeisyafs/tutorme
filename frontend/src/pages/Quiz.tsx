@@ -168,44 +168,44 @@ const Quiz = () => {
         progressPercent={progressPercent}
         allDone={allDone}
       />
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-4 sm:p-8 md:p-12">
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-3 sm:p-8 md:p-12 pt-14 sm:pt-8 md:pt-12">
         <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
-          <button onClick={() => navigate(-1)} disabled={isSubmitting} className="mb-6 self-start inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 py-2 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0_#9ca3af] disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> Back</button>
-        <header className="rounded-3xl border-4 border-purple-300 bg-purple-100 p-7 shadow-[8px_8px_0_#a855f7] dark:border-purple-800 dark:bg-purple-950/35">
-          <p className="font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">{attempt?.quiz.type === 'FINAL_EXAM' ? 'Final exam' : 'Lesson quiz'}</p>
-          <h1 className="mt-2 flex items-center gap-3 font-['Kalam',cursive] text-4xl font-bold text-purple-950 dark:text-purple-100"><ClipboardCheck className="h-9 w-9" /> {attempt?.quiz.title}</h1>
-          <p className="mt-3 font-semibold text-purple-800 dark:text-purple-200">Your answers are graded on the server after submission. Correct answers stay hidden until the result flow.</p>
+          <button onClick={() => navigate(-1)} disabled={isSubmitting} className="mb-4 sm:mb-6 self-start inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-3.5 py-1.5 sm:px-4 sm:py-2 font-['Kalam',cursive] text-base sm:text-lg font-bold text-gray-700 shadow-[2px_2px_0_#9ca3af] disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"><ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" /> Back</button>
+        <header className="rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-purple-300 bg-purple-100 p-4 sm:p-7 shadow-[4px_4px_0_#a855f7] sm:shadow-[8px_8px_0_#a855f7] dark:border-purple-800 dark:bg-purple-950/35">
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">{attempt?.quiz.type === 'FINAL_EXAM' ? 'Final exam' : 'Lesson quiz'}</p>
+          <h1 className="mt-1.5 sm:mt-2 flex items-center gap-2 sm:gap-3 font-['Kalam',cursive] text-2xl sm:text-4xl font-bold text-purple-950 dark:text-purple-100 leading-tight"><ClipboardCheck className="h-6 w-6 sm:h-9 sm:w-9 shrink-0 text-purple-600 dark:text-purple-400" /> {attempt?.quiz.title}</h1>
+          <p className="mt-2 sm:mt-3 text-xs sm:text-base font-semibold text-purple-800 dark:text-purple-200">Your answers are graded on the server after submission. Correct answers stay hidden until the result flow.</p>
         </header>
 
-        <form onSubmit={handleSubmit} className="mt-7 space-y-6">
+        <form onSubmit={handleSubmit} className="mt-5 sm:mt-7 space-y-4 sm:space-y-6">
           {attempt?.questions.map((question, index) => (
-            <article key={question.id} className="rounded-3xl border-4 border-gray-300 bg-white p-6 shadow-[6px_6px_0_#d1d5db] dark:border-gray-700 dark:bg-gray-800">
-              <p className="font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Question {index + 1}</p>
-              <h2 className="mt-2 text-xl font-bold leading-relaxed text-gray-900 dark:text-white">{question.prompt}</h2>
+            <article key={question.id} className="rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-300 bg-white p-4 sm:p-6 shadow-[4px_4px_0_#d1d5db] sm:shadow-[6px_6px_0_#d1d5db] dark:border-gray-700 dark:bg-gray-800">
+              <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Question {index + 1}</p>
+              <h2 className="mt-1.5 sm:mt-2 text-base sm:text-xl font-bold leading-relaxed text-gray-900 dark:text-white">{question.prompt}</h2>
               {question.type === 'MULTIPLE_CHOICE' ? (
-                <div className="mt-5 space-y-3">
+                <div className="mt-3 sm:mt-5 space-y-2.5 sm:space-y-3">
                   {question.options.map((option, optionIndex) => {
                     const isSelected = answers[question.id] === optionIndex;
                     return (
-                      <label key={question.id + '-' + optionIndex} className={'flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-4 font-bold transition-colors ' + (isSelected ? 'border-purple-500 bg-purple-100 text-purple-950 dark:border-purple-400 dark:bg-purple-950/45 dark:text-purple-100' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-purple-300 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200')}>
-                        <input type="radio" name={question.id} checked={isSelected} onChange={() => setAnswer(question.id, optionIndex)} disabled={isSubmitting} className="h-4 w-4 accent-purple-600" />
+                      <label key={question.id + '-' + optionIndex} className={'flex cursor-pointer items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl border-2 p-3 sm:p-4 text-xs sm:text-base font-bold transition-colors ' + (isSelected ? 'border-purple-500 bg-purple-100 text-purple-950 dark:border-purple-400 dark:bg-purple-950/45 dark:text-purple-100' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-purple-300 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200')}>
+                        <input type="radio" name={question.id} checked={isSelected} onChange={() => setAnswer(question.id, optionIndex)} disabled={isSubmitting} className="h-4 w-4 shrink-0 accent-purple-600" />
                         <span>{option}</span>
                       </label>
                     );
                   })}
                 </div>
               ) : (
-                <div className="mt-5">
-                  <textarea value={String(answers[question.id] ?? '')} onChange={(event) => setAnswer(question.id, event.target.value)} disabled={isSubmitting} rows={6} placeholder="Write your answer…" className="w-full rounded-2xl border-2 border-gray-300 bg-gray-50 p-4 font-semibold text-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 disabled:cursor-wait disabled:opacity-70 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:focus:border-purple-400" />
-                  {question.requiresImage && <p className="mt-3 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">This question requests an image, but a secure upload contract is not configured yet. Save the written answer and ask an instructor before submitting an image.</p>}
+                <div className="mt-3 sm:mt-5">
+                  <textarea value={String(answers[question.id] ?? '')} onChange={(event) => setAnswer(question.id, event.target.value)} disabled={isSubmitting} rows={5} placeholder="Write your answer…" className="w-full rounded-xl sm:rounded-2xl border-2 border-gray-300 bg-gray-50 p-3 sm:p-4 font-semibold text-xs sm:text-base text-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 disabled:cursor-wait disabled:opacity-70 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:focus:border-purple-400" />
+                  {question.requiresImage && <p className="mt-2.5 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-xs sm:text-sm font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">This question requests an image, but a secure upload contract is not configured yet. Save the written answer and ask an instructor before submitting an image.</p>}
                 </div>
               )}
             </article>
           ))}
 
-          {error && <p role="alert" className="rounded-xl border-2 border-red-300 bg-red-50 p-4 font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{error}</p>}
-          <button disabled={isSubmitting || !attempt} type="submit" className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-purple-800 bg-purple-600 py-4 font-['Kalam',cursive] text-2xl font-bold text-white shadow-[0_6px_0_#6b21a8] disabled:cursor-wait disabled:opacity-70">
-            {isSubmitting ? <LoaderCircle className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
+          {error && <p role="alert" className="rounded-xl border-2 border-red-300 bg-red-50 p-3.5 font-bold text-xs sm:text-base text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{error}</p>}
+          <button disabled={isSubmitting || !attempt} type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl sm:rounded-2xl border-2 border-purple-800 bg-purple-600 py-3 sm:py-4 font-['Kalam',cursive] text-lg sm:text-2xl font-bold text-white shadow-[0_4px_0_#6b21a8] sm:shadow-[0_6px_0_#6b21a8] active:translate-y-1 active:shadow-none transition-all disabled:cursor-wait disabled:opacity-70">
+            {isSubmitting ? <LoaderCircle className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" /> : <Send className="h-5 w-5 sm:h-6 sm:w-6" />}
             {isSubmitting ? 'Submitting answers…' : 'Submit for server grading'}
           </button>
         </form>

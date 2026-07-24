@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar, Plus, Minus, CheckCircle2, Play, Lock, ArrowLeft } from 'lucide-react';
 import type { CourseModule } from '../types/course';
 
@@ -23,9 +23,24 @@ export function CourseSidebar({
   courseId,
 }: CourseSidebarProps) {
   const navigate = useNavigate();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const location = useLocation();
+
+  // On mobile viewports (<1024px), default sidebar to closed when opening a lesson
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      return false;
+    }
+    return true;
+  });
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(320);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
+
+  // Close sidebar on mobile whenever route or active lesson changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  }, [location.pathname, activeLessonId]);
 
   // Initialize expanded module based on active lesson
   const [sidebarExpandedModule, setSidebarExpandedModule] = useState<string | null>(null);
@@ -63,27 +78,35 @@ export function CourseSidebar({
 
   return (
     <>
-      {!isSidebarOpen && (
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="absolute top-6 left-6 z-30 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
-        >
-          <Sidebar className="w-6 h-6" />
-        </button>
-      )}
+      <button
+        onClick={() => setIsSidebarOpen(true)}
+        className={`absolute top-3 left-3 sm:top-6 sm:left-6 z-30 bg-white dark:bg-gray-800 p-2 sm:p-3 rounded-xl shadow-[3px_3px_0px_0px_rgba(229,231,235,1)] sm:shadow-[4px_4px_0px_0px_rgba(229,231,235,1)] dark:shadow-[3px_3px_0px_0px_rgba(55,65,81,0.8)] sm:dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 ${
+          !isSidebarOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-0 opacity-0 pointer-events-none'
+        }`}
+      >
+        <Sidebar className="w-5 h-5 sm:w-6 sm:h-6" />
+      </button>
 
-      {isSidebarOpen && (
-        <>
-          <div className="fixed inset-0 z-40 bg-gray-900/40 backdrop-blur-sm lg:hidden" onClick={() => setIsSidebarOpen(false)} />
-          <aside
-            style={{ width: `${leftSidebarWidth}px` }}
-            className="fixed inset-y-0 left-0 z-50 h-full max-w-[85vw] bg-white/95 dark:bg-gray-800/95 shadow-2xl transition-all duration-300 lg:relative lg:z-20 lg:shadow-[4px_0_24px_rgba(0,0,0,0.02)] lg:bg-white/70 lg:dark:bg-gray-800/70 backdrop-blur-xl border-r-2 border-dashed border-gray-300 dark:border-gray-700 flex-shrink-0 flex flex-col"
-          >
-            <div
-              onMouseDown={() => setIsDraggingLeft(true)}
-              className={`absolute top-0 -right-2 bottom-0 w-4 cursor-col-resize hover:bg-blue-500/20 active:bg-blue-500/40 z-30 transition-colors hidden lg:block ${isDraggingLeft ? 'bg-blue-500/40' : ''}`}
-            />
-            <div className="flex flex-col justify-between h-full p-6 overflow-y-auto custom-scrollbar">
+      <div
+        className={`fixed inset-0 z-40 bg-gray-900/40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-in-out ${
+          isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsSidebarOpen(false)}
+      />
+
+      <aside
+        style={{ width: isSidebarOpen ? `${leftSidebarWidth}px` : undefined }}
+        className={`fixed inset-y-0 left-0 z-50 h-full max-w-[88vw] sm:max-w-[85vw] bg-white/95 dark:bg-gray-800/95 shadow-2xl transition-all duration-300 ease-in-out lg:relative lg:z-20 lg:shadow-[4px_0_24px_rgba(0,0,0,0.02)] lg:bg-white/70 lg:dark:bg-gray-800/70 backdrop-blur-xl border-dashed border-gray-300 dark:border-gray-700 flex-shrink-0 flex flex-col ${
+          isSidebarOpen
+            ? 'translate-x-0 opacity-100 pointer-events-auto border-r-2 lg:w-[320px]'
+            : '-translate-x-full opacity-0 pointer-events-none lg:translate-x-0 lg:w-0 lg:max-w-0 lg:overflow-hidden lg:border-r-0'
+        }`}
+      >
+        <div
+          onMouseDown={() => setIsDraggingLeft(true)}
+          className={`absolute top-0 -right-2 bottom-0 w-4 cursor-col-resize hover:bg-blue-500/20 active:bg-blue-500/40 z-30 transition-colors hidden lg:block ${isDraggingLeft ? 'bg-blue-500/40' : ''}`}
+        />
+        <div className="flex flex-col justify-between h-full p-4 sm:p-6 min-w-[280px] sm:min-w-[300px] overflow-y-auto custom-scrollbar">
               <div className="flex flex-col gap-6">
                 <div className="flex justify-between items-center mt-2">
                   <div
@@ -194,8 +217,6 @@ export function CourseSidebar({
               </button>
             </div>
           </aside>
-        </>
-      )}
     </>
   );
 }
