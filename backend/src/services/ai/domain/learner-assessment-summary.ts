@@ -40,7 +40,7 @@ export async function getSubmissionSummary(
     };
   }
 
-  const review = submission.review
+  const review = submission.review && submission.quiz.type === "CHAPTER_QUIZ"
     ? LessonQuizReviewSchema.safeParse(submission.review)
     : null;
   if (review !== null && !review.success) {

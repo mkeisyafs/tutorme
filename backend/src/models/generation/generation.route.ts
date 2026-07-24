@@ -178,14 +178,27 @@ export const generationController = new Elysia({ prefix: "/generation" })
         return { message: "Lesson not found" };
       }
       
-      const quiz = await prisma.quiz.findFirst({
+      const sameTitleLessonCount = await prisma.lesson.count({
+        where: {
+          title: lesson.title,
+          module: { courseId: lesson.module.courseId },
+        },
+      });
+
+      const candidateQuizzes = await prisma.quiz.findMany({
         where: {
           courseId: lesson.module.courseId,
-          title: `Quiz for Lesson: ${lesson.title}`,
           type: "CHAPTER_QUIZ",
           questions: { some: {} },
-        }
+          OR: [
+            { lessonId: params.lessonId },
+            ...(sameTitleLessonCount === 1
+              ? [{ title: `Quiz for Lesson: ${lesson.title}` }]
+              : []),
+          ],
+        },
       });
+      const quiz = candidateQuizzes.find((q) => q.lessonId === params.lessonId) ?? candidateQuizzes[0];
 
       let workerState = QuizWorkerService.getStatus(params.lessonId);
       // Restore background work for lessons generated before a server restart.

@@ -22,6 +22,7 @@ export async function submitFinalExamQuiz(
   }
 
   try {
+    const multipleChoiceQuestions = quiz.questions.filter((q) => q.type === "MULTIPLE_CHOICE");
     const essayReview = await requestEssayReview({
       lessonContent: courseMaterial,
       questions: quiz.questions,
