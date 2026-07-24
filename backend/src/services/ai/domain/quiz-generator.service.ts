@@ -23,9 +23,65 @@ const QuestionSchema = z.object({
   ),
 });
 
+type QuizSettings = {
+  enableEssayQuestions: boolean;
+  requireImageSubmission: boolean;
+  quizLength: string;
+};
+
+/**
+ * Parse the quizLength setting into concrete MC/essay counts.
+ */
+function resolveQuestionCounts(settings: QuizSettings): { mcCount: number; essayCount: number } {
+  const { enableEssayQuestions, quizLength } = settings;
+
+  let totalCount: number;
+  switch (quizLength) {
+    case "3 questions": totalCount = 3; break;
+    case "5 questions": totalCount = 5; break;
+    case "8 questions": totalCount = 8; break;
+    default: {
+      // Random: pick between 3 and 5
+      const options = [3, 4, 5];
+      totalCount = options[Math.floor(Math.random() * options.length)];
+    }
+  }
+
+  if (!enableEssayQuestions) {
+    return { mcCount: totalCount, essayCount: 0 };
+  }
+
+  // Always reserve 1 essay slot unless total is 3 (then 1 essay, rest MC)
+  const essayCount = 1;
+  const mcCount = Math.max(1, totalCount - essayCount);
+  return { mcCount, essayCount };
+}
+
+/**
+ * Build the AI prompt for quiz generation based on settings.
+ */
+function buildQuizPrompt(lessonContent: string, settings: QuizSettings): string {
+  const { mcCount, essayCount } = resolveQuestionCounts(settings);
+
+  const questionSpec = essayCount === 0
+    ? `Generate exactly ${mcCount} multiple-choice questions. Do NOT include any essay questions.`
+    : `Generate exactly ${mcCount} multiple-choice questions and exactly ${essayCount} essay question.${
+        settings.requireImageSubmission
+          ? " For the essay question, set requiresImage to true — learners must upload an image with their answer."
+          : ""
+      }`;
+
+  return `Generate a short quiz for the following educational content.
+${questionSpec}
+
+Lesson Content:
+${lessonContent}`;
+}
+
 export class QuizGeneratorService {
   /**
    * Generates a chapter quiz based on lesson content.
+   * Reads quiz settings from the CourseGeneration record linked to the course.
    */
   static async generateQuizForLesson(lessonId: string) {
     const lesson = await prisma.lesson.findUnique({
@@ -38,6 +94,23 @@ export class QuizGeneratorService {
     if (!lesson || !lesson.content) {
       throw new Error("Lesson content not found to generate quiz.");
     }
+
+    // Fetch quiz settings from the most recent CourseGeneration for this course
+    const courseGeneration = await prisma.courseGeneration.findFirst({
+      where: { resultCourseId: lesson.module.courseId, status: "COMPLETED" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        enableEssayQuestions: true,
+        requireImageSubmission: true,
+        quizLength: true,
+      },
+    });
+
+    const settings: QuizSettings = courseGeneration ?? {
+      enableEssayQuestions: true,
+      requireImageSubmission: false,
+      quizLength: "Random",
+    };
 
     const quizTitle = `Quiz for Lesson: ${lesson.title}`;
     const sameTitleLessonCount = await prisma.lesson.count({
@@ -87,11 +160,7 @@ export class QuizGeneratorService {
       return existingLegacyQuizzes[0].id;
     }
 
-    const prompt = `Generate a short quiz for the following educational content. 
-Include 3 multiple choice questions and 1 essay question.
-Lesson Content:
-${getLessonPlainContent(lesson.content)}`;
-
+    const prompt = buildQuizPrompt(getLessonPlainContent(lesson.content), settings);
     const system = "You are an expert curriculum designer creating assessments.";
 
     const result = await AiService.structuredObject<z.infer<typeof QuestionSchema>>(

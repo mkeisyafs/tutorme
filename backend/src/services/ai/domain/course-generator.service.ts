@@ -26,7 +26,17 @@ export class CourseGeneratorService {
   /**
    * Generates a course outline and saves it to the temporary cache.
    */
-  static async generateOutline(userId: string, topic: string, familiarity: string, language: string = "English"): Promise<string> {
+  static async generateOutline(
+    userId: string,
+    topic: string,
+    familiarity: string,
+    language: string = "English",
+    quizSettings?: {
+      enableEssayQuestions: boolean;
+      requireImageSubmission: boolean;
+      quizLength: string;
+    }
+  ): Promise<string> {
     const targetLanguage = language && language.trim() ? language.trim() : "English";
     const prompt = `Create a comprehensive course outline about "${topic}". The target audience has a "${familiarity}" familiarity level with the topic. Structure the course logically into modules and lessons. The entire outline MUST be generated using ${targetLanguage} language.`;
     
@@ -60,6 +70,11 @@ export class CourseGeneratorService {
           orderIndex: lIndex,
         })),
       })),
+      quizSettings: quizSettings ?? {
+        enableEssayQuestions: true,
+        requireImageSubmission: false,
+        quizLength: "Random",
+      },
     };
 
     // Store in memory (does NOT write to DB yet)

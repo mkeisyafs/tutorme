@@ -17,6 +17,7 @@ export type ReviewedSubmissionInput = {
   readonly answers: Record<string, string | number | boolean | null>;
   readonly timeSpentSec?: number;
   readonly essayImageUrl?: string | null;
+  readonly imageBase64?: string | null;
 };
 
 export type ReviewedSubmissionResult =
@@ -33,13 +34,25 @@ export type ReviewedSubmissionResult =
         readonly essayQuestionCount: number;
       };
     }
-  | { readonly ok: false; readonly status: 409 | 502; readonly message: string };
+  | { readonly ok: false; readonly status: 409 | 400 | 502; readonly message: string };
 
 export async function submitReviewedChapterQuiz(
   input: ReviewedSubmissionInput
 ): Promise<ReviewedSubmissionResult> {
   if (input.quiz.lessonId === null) {
     return { ok: false, status: 409, message: "This lesson quiz is not linked to a lesson yet." };
+  }
+
+  // Validate image requirement: if any essay question requires an image, the image must be provided.
+  const imageRequiredQuestions = input.quiz.questions.filter(
+    (q) => q.type === "ESSAY" && (q as ReviewQuestion & { requiresImage?: boolean }).requiresImage
+  );
+  if (imageRequiredQuestions.length > 0 && !input.imageBase64) {
+    return {
+      ok: false,
+      status: 400,
+      message: "This quiz requires an image upload for the essay question. Please attach an image and resubmit.",
+    };
   }
 
   const canonicalKey = canonicalAttemptKey(input.userId, input.quiz.id);
@@ -59,6 +72,7 @@ export async function submitReviewedChapterQuiz(
       lessonContent: getLessonPlainContent(lesson.content),
       questions: input.quiz.questions,
       answers: input.answers,
+      imageBase64: input.imageBase64 ?? undefined,
     });
     const review = buildLessonQuizReview({
       questions: input.quiz.questions,
@@ -76,7 +90,8 @@ export async function submitReviewedChapterQuiz(
         timeSpentSec: Math.max(0, Math.floor(input.timeSpentSec ?? 0)),
         gradeLetter,
         userAnswers: input.answers,
-        essayImageUrl: input.essayImageUrl ?? null,
+        // Store a note that image was provided (full base64 is too large for DB storage)
+        essayImageUrl: input.imageBase64 ? `base64:image_provided` : (input.essayImageUrl ?? null),
         aiFeedback: review.aggregateFeedback,
         review,
         canonicalAttemptKey: canonicalKey,

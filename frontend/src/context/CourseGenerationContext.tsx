@@ -73,7 +73,12 @@ interface CourseGenerationContextType {
     topic: string,
     familiarity: string,
     language: string,
-    referenceFile: File | null
+    referenceFile: File | null,
+    quizSettings?: {
+      enableEssayQuestions: boolean;
+      requireImageSubmission: boolean;
+      quizLength: string;
+    }
   ) => Promise<void>;
 
   // Course Publishing / Preparing States
@@ -202,7 +207,12 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
     topicName: string,
     familiarity: string,
     language: string,
-    refFile: File | null
+    refFile: File | null,
+    quizSettings?: {
+      enableEssayQuestions: boolean;
+      requireImageSubmission: boolean;
+      quizLength: string;
+    }
   ) => {
     if (isGenerating || isPublishing) {
       setErrorMessage('Another generation or publishing process is already active. Please wait or cancel it first.');
@@ -229,7 +239,10 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
           userId,
           topic: topicName,
           familiarity,
-          language: language.trim() || 'English'
+          language: language.trim() || 'English',
+          enableEssayQuestions: quizSettings?.enableEssayQuestions ?? true,
+          requireImageSubmission: quizSettings?.requireImageSubmission ?? false,
+          quizLength: quizSettings?.quizLength ?? 'Random',
         },
         signal: controller.signal
       });

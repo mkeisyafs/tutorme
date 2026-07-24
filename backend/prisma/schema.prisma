@@ -156,6 +156,7 @@ model CourseGeneration {
   familiarity            String
   enableEssayQuestions   Boolean          @default(true)
   requireImageSubmission Boolean          @default(false)
+  quizLength             String           @default("Random")
 
   status                 GenerationStatus @default(PENDING)
   resultCourseId         String?

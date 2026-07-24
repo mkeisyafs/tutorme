@@ -24,6 +24,11 @@ export interface DraftOutline {
   modules: DraftModule[];
   createdAt: Date;
   userId: string;
+  quizSettings?: {
+    enableEssayQuestions: boolean;
+    requireImageSubmission: boolean;
+    quizLength: string; // "3 questions" | "5 questions" | "8 questions" | "Random"
+  };
 }
 
 import fs from "fs";

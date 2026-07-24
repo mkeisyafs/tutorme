@@ -4,9 +4,11 @@ import {
   ArrowLeft,
   CircleAlert,
   ClipboardCheck,
+  ImagePlus,
   LoaderCircle,
   RefreshCw,
   Send,
+  X,
 } from 'lucide-react';
 import { ApiError, apiRequest, getApiErrorMessage } from '../lib/api';
 import { QuizSubmissionAnalysisModal } from '../components/QuizSubmissionAnalysisModal';
@@ -19,6 +21,16 @@ function assertNever(_value: never): never {
   throw new Error('Unhandled loaded quiz action: ' + typeof _value);
 }
 
+/** Convert a File to a base64 data URL string. */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 const Quiz = () => {
   const navigate = useNavigate();
   const { quizId } = useParams<{ quizId: string }>();
@@ -28,6 +40,8 @@ const Quiz = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isBlocked, setIsBlocked] = useState(false);
+  // Map of questionId → uploaded File
+  const [imageFiles, setImageFiles] = useState<Record<string, File>>({});
   const startedAt = useRef<number>(0);
   const blocker = useBlocker(({ nextLocation }) => (
     isSubmitting && !nextLocation.pathname.startsWith('/submissions/')
@@ -41,6 +55,7 @@ const Quiz = () => {
     setAttempt(emptyState.attempt);
     setAnswers(emptyState.answers);
     setIsBlocked(emptyState.isBlocked);
+    setImageFiles({});
 
     if (!quizId) {
       setError('This quiz link is missing its quiz ID.');
@@ -95,11 +110,24 @@ const Quiz = () => {
     setAnswers((currentAnswers) => ({ ...currentAnswers, [questionId]: answer }));
   };
 
+  const handleImageChange = (questionId: string, file: File | null) => {
+    setImageFiles((prev) => {
+      if (!file) {
+        const next = { ...prev };
+        delete next[questionId];
+        return next;
+      }
+      return { ...prev, [questionId]: file };
+    });
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!quizId || !attempt || isSubmitting) return;
 
     const unanswered = attempt.questions.some((question) => {
+      // Image-only essay questions don't need a text answer
+      if (question.type === 'ESSAY' && question.requiresImage) return false;
       const answer = answers[question.id];
       return answer === undefined || answer === null || answer === '';
     });
@@ -108,9 +136,27 @@ const Quiz = () => {
       return;
     }
 
+    // Validate image requirement for image-only essay questions
+    const imageMissing = attempt.questions.some(
+      (question) => question.type === 'ESSAY' && question.requiresImage && !imageFiles[question.id]
+    );
+    if (imageMissing) {
+      setError('Please attach an image for the essay question before submitting.');
+      return;
+    }
+
     setError('');
     setIsSubmitting(true);
     try {
+      // Convert the first required image to base64 (one image per quiz submission)
+      let imageBase64: string | null = null;
+      const imageQuestion = attempt.questions.find(
+        (q) => q.type === 'ESSAY' && q.requiresImage && imageFiles[q.id]
+      );
+      if (imageQuestion && imageFiles[imageQuestion.id]) {
+        imageBase64 = await fileToBase64(imageFiles[imageQuestion.id]);
+      }
+
       const result = await apiRequest<SubmissionResult>(
         '/generation/quiz/' + encodeURIComponent(quizId) + '/submit',
         {
@@ -118,6 +164,7 @@ const Quiz = () => {
           body: {
             answers,
             timeSpentSec: Math.floor((Date.now() - startedAt.current) / 1000),
+            imageBase64,
           },
         }
       );
@@ -194,10 +241,62 @@ const Quiz = () => {
                     );
                   })}
                 </div>
+              ) : question.requiresImage ? (
+                /* Image-only essay — no textarea, just the upload zone */
+                <div className="mt-3 sm:mt-5">
+                  <div className="rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 p-4 dark:border-orange-700 dark:bg-orange-950/20">
+                    <p className="mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-orange-800 dark:text-orange-200">
+                      <ImagePlus className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-orange-500" />
+                      Upload an image as your answer
+                    </p>
+
+                    {imageFiles[question.id] ? (
+                      <div className="space-y-3">
+                        <img
+                          src={URL.createObjectURL(imageFiles[question.id])}
+                          alt="Your answer"
+                          className="w-full max-h-64 rounded-xl object-contain border-2 border-orange-200 bg-white dark:border-orange-700 dark:bg-gray-800"
+                        />
+                        <div className="flex items-center justify-between gap-3 rounded-lg border-2 border-orange-200 bg-white px-3 py-2 dark:border-orange-700 dark:bg-gray-800">
+                          <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">
+                            {imageFiles[question.id].name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleImageChange(question.id, null)}
+                            disabled={isSubmitting}
+                            className="shrink-0 rounded-lg p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                            aria-label="Remove image"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label
+                        className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-orange-200 bg-white px-4 py-8 text-center transition-colors hover:border-orange-400 hover:bg-orange-50 dark:border-orange-700 dark:bg-gray-800 dark:hover:border-orange-500 ${isSubmitting ? 'pointer-events-none opacity-60' : ''}`}
+                      >
+                        <ImagePlus className="h-8 w-8 text-orange-400" />
+                        <span className="text-sm sm:text-base font-bold text-orange-700 dark:text-orange-300">Click to upload your image</span>
+                        <span className="text-xs text-orange-500 dark:text-orange-400">JPG, PNG, WEBP accepted</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          className="sr-only"
+                          disabled={isSubmitting}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] ?? null;
+                            handleImageChange(question.id, file);
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
               ) : (
+                /* Regular essay — text answer only */
                 <div className="mt-3 sm:mt-5">
                   <textarea value={String(answers[question.id] ?? '')} onChange={(event) => setAnswer(question.id, event.target.value)} disabled={isSubmitting} rows={5} placeholder="Write your answer…" className="w-full rounded-xl sm:rounded-2xl border-2 border-gray-300 bg-gray-50 p-3 sm:p-4 font-semibold text-xs sm:text-base text-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 disabled:cursor-wait disabled:opacity-70 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:focus:border-purple-400" />
-                  {question.requiresImage && <p className="mt-2.5 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-xs sm:text-sm font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">This question requests an image, but a secure upload contract is not configured yet. Save the written answer and ask an instructor before submitting an image.</p>}
                 </div>
               )}
             </article>

@@ -70,6 +70,25 @@ export class CoursePersistenceService {
       }
     });
 
+    // Persist the quiz settings to CourseGeneration so quiz generator can read them later.
+    const quizSettings = draft.quizSettings ?? {
+      enableEssayQuestions: true,
+      requireImageSubmission: false,
+      quizLength: "Random",
+    };
+    await prisma.courseGeneration.create({
+      data: {
+        userId: draft.userId,
+        promptTopic: draft.topic,
+        familiarity: "Beginner",
+        enableEssayQuestions: quizSettings.enableEssayQuestions,
+        requireImageSubmission: quizSettings.requireImageSubmission,
+        quizLength: quizSettings.quizLength,
+        status: "COMPLETED",
+        resultCourseId: course.id,
+      },
+    });
+
     // We no longer delete the draft from cache immediately here.
     // If subsequent steps (like lesson generation) fail, the user can 
     // click "Start Learning" again to retry without getting a "Draft not found" error.

@@ -29,7 +29,12 @@ export const generationController = new Elysia({ prefix: "/generation" })
           body.userId,
           body.topic,
           body.familiarity,
-          body.language
+          body.language,
+          {
+            enableEssayQuestions: body.enableEssayQuestions ?? true,
+            requireImageSubmission: body.requireImageSubmission ?? false,
+            quizLength: body.quizLength ?? "Random",
+          }
         );
         return { draftId };
       } catch (generationError) {
@@ -50,6 +55,9 @@ export const generationController = new Elysia({ prefix: "/generation" })
         topic: t.String(),
         familiarity: t.String(),
         language: t.String(),
+        enableEssayQuestions: t.Optional(t.Boolean()),
+        requireImageSubmission: t.Optional(t.Boolean()),
+        quizLength: t.Optional(t.String()),
       }),
     }
   )

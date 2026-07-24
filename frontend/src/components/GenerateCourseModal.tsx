@@ -107,17 +107,18 @@ const GenerateCourseModal: React.FC = () => {
       return;
     }
 
-    // Save preferences
-    localStorage.setItem(
-      'tutorme-course-quiz-settings',
-      JSON.stringify({
+    await startGeneration(
+      user.id,
+      topicName,
+      familiarity,
+      language,
+      modalReferenceFile,
+      {
         enableEssayQuestions,
         requireImageSubmission: enableEssayQuestions && requireImageSubmission,
-        quizLength
-      })
+        quizLength,
+      }
     );
-
-    await startGeneration(user.id, topicName, familiarity, language, modalReferenceFile);
   };
 
   // Rendering for Publishing minimized state

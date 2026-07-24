@@ -8,12 +8,14 @@ const submitBodySchema = t.Object({
   answers: t.Record(t.String(), t.Any()),
   timeSpentSec: t.Optional(t.Number({ minimum: 0 })),
   essayImageUrl: t.Optional(t.Nullable(t.String())),
+  imageBase64: t.Optional(t.Nullable(t.String())),
 });
 
 const SubmitAssessmentInputSchema = z.object({
   answers: z.record(z.string(), z.unknown()),
   timeSpentSec: z.number().min(0).optional(),
   essayImageUrl: z.string().nullable().optional(),
+  imageBase64: z.string().nullable().optional(),
 });
 
 type VerifiedUser = {

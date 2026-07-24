@@ -127,6 +127,7 @@ export class LearnerAssessmentService {
         answers,
         timeSpentSec: input.timeSpentSec,
         essayImageUrl: input.essayImageUrl,
+        imageBase64: input.imageBase64 ?? undefined,
       });
     }
 

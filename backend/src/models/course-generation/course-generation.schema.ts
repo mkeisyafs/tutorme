@@ -13,6 +13,7 @@ export const CreateCourseGenerationBody = t.Object({
   familiarity: t.String(),
   enableEssayQuestions: t.Optional(t.Boolean({ default: true })),
   requireImageSubmission: t.Optional(t.Boolean({ default: false })),
+  quizLength: t.Optional(t.String({ default: "Random" })),
 });
 
 export const UpdateCourseGenerationBody = t.Object({

@@ -8,7 +8,7 @@ type AttemptQuestion = ReviewQuestion & {
 
 export type AssessmentFailure = {
   readonly ok: false;
-  readonly status: 403 | 404 | 409 | 502;
+  readonly status: 400 | 403 | 404 | 409 | 502;
   readonly message: string;
 };
 
@@ -154,4 +154,5 @@ export type SubmitAssessmentInput = {
   readonly answers: Record<string, unknown>;
   readonly timeSpentSec?: number;
   readonly essayImageUrl?: string | null;
+  readonly imageBase64?: string | null;
 };
