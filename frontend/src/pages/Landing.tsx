@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Search, ArrowRight, Moon, Sun } from 'lucide-react';
 import LoginModal from '../components/LoginModal';
 import SignUpModal from '../components/SignUpModal';
 import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../auth/useAuth';
 
 import RobotLogo from '../components/RobotLogo';
 
 const Landing = () => {
+  const { isAuthenticated } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const { isDark, toggleTheme } = useTheme();
+
+  if (isAuthenticated) {
+    return <Navigate to="/home" replace />;
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
