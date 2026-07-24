@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HelpCircle, Check, X, Sparkles } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import type { InteractiveQuizBlock } from './types';
@@ -9,7 +10,27 @@ export const InteractiveQuizCard: React.FC<InteractiveQuizBlock> = ({
   correctIndex,
   explanation,
 }) => {
+  const { t, i18n } = useTranslation();
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+
+  let displayQuestion = question;
+  if (i18n.language === 'id' && question.includes('What is the main objective of ')) {
+    displayQuestion = question.replace(/What is the main objective of (.*)\?/i, 'Apa tujuan utama dari $1?');
+  }
+
+  let displayOptions = options;
+  if (i18n.language === 'id' && options.length === 3 && options[0] === 'Understand and apply the core principles') {
+    displayOptions = [
+      'Memahami dan menerapkan prinsip-prinsip utama',
+      'Menghafal definisi tanpa latihan',
+      'Melewati contoh pelajaran',
+    ];
+  }
+
+  let displayExplanation = explanation;
+  if (i18n.language === 'id' && explanation.includes('Applying the core principles with active practice ensures long-term understanding.')) {
+    displayExplanation = 'Menerapkan prinsip utama dengan latihan aktif memastikan pemahaman jangka panjang.';
+  }
 
   return (
     <div className="p-6 sm:p-8 rounded-3xl border-4 border-purple-400 dark:border-purple-700 bg-white dark:bg-gray-800/90 shadow-[6px_6px_0px_0px_#a855f7] dark:shadow-[6px_6px_0px_0px_rgba(126,34,206,0.6)] relative overflow-hidden">
@@ -20,10 +41,10 @@ export const InteractiveQuizCard: React.FC<InteractiveQuizBlock> = ({
           </div>
           <div>
             <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest block font-sans">
-              Test Your Knowledge
+              {t('blocks.interactiveQuiz.badge')}
             </span>
             <span className="font-['Kalam',cursive] font-bold text-purple-950 dark:text-purple-100 text-xl sm:text-2xl leading-tight block">
-              Quick Concept Check
+              {t('blocks.interactiveQuiz.subtitle')}
             </span>
           </div>
         </div>
@@ -35,17 +56,17 @@ export const InteractiveQuizCard: React.FC<InteractiveQuizBlock> = ({
                 : 'bg-red-100 text-red-800 border-red-400 dark:bg-red-950 dark:text-red-200 dark:border-red-700'
             }`}
           >
-            {selectedIdx === correctIndex ? '✓ Correct!' : '✗ Try again'}
+            {selectedIdx === correctIndex ? t('blocks.interactiveQuiz.badgeCorrect') : t('blocks.interactiveQuiz.badgeTryAgain')}
           </span>
         )}
       </div>
 
       <h4 className="text-[17px] sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-6 leading-relaxed">
-        {question}
+        {displayQuestion}
       </h4>
 
       <div className="flex flex-col gap-3.5">
-        {options.map((option, idx) => {
+        {displayOptions.map((option, idx) => {
           const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
           const letter = optionLetters[idx] || String(idx + 1);
           const isSelected = selectedIdx === idx;
@@ -89,12 +110,12 @@ export const InteractiveQuizCard: React.FC<InteractiveQuizBlock> = ({
               </div>
               {isAnswered && isCorrect && (
                 <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-bold text-xs sm:text-sm shrink-0">
-                  <Check className="w-5 h-5" /> Correct
+                  <Check className="w-5 h-5" /> {t('blocks.interactiveQuiz.correctLabel')}
                 </span>
               )}
               {isAnswered && isSelected && !isCorrect && (
                 <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-bold text-xs sm:text-sm shrink-0">
-                  <X className="w-5 h-5" /> Incorrect
+                  <X className="w-5 h-5" /> {t('blocks.interactiveQuiz.incorrectLabel')}
                 </span>
               )}
             </button>
@@ -105,9 +126,9 @@ export const InteractiveQuizCard: React.FC<InteractiveQuizBlock> = ({
       {selectedIdx !== null && (
         <div className="mt-6 p-5 rounded-2xl border-3 border-purple-300 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-950/20 text-gray-800 dark:text-gray-200 font-medium leading-relaxed animate-fadeIn shadow-[3px_3px_0px_0px_#d8b4fe] dark:shadow-[3px_3px_0px_0px_rgba(107,33,168,0.5)]">
           <div className="text-purple-950 dark:text-purple-200 font-['Kalam',cursive] text-lg font-bold mb-2 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" /> Explanation
+            <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" /> {t('blocks.interactiveQuiz.explanationTitle')}
           </div>
-          <MarkdownRenderer content={explanation} />
+          <MarkdownRenderer content={displayExplanation} />
         </div>
       )}
     </div>

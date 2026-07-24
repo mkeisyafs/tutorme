@@ -1,6 +1,8 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BlockRenderer, MarkdownRenderer } from '../components/BlockRenderer';
+import { useTranslation } from 'react-i18next';
+import { BlockRenderer } from '../components/BlockRenderer';
+import { MarkdownRenderer } from '../components/blocks';
 import {
   CheckCircle2,
   ChevronLeft,
@@ -13,16 +15,12 @@ import {
   Check,
   MessageCircle,
   Pencil,
-  Play,
-  RefreshCw,
   Send,
   Sparkles,
   Trash2,
-  Video,
   X,
   Plus,
 } from 'lucide-react';
-import { useAuth } from '../auth/useAuth';
 import { CourseSidebar } from '../components/CourseSidebar';
 import { useCourseSidebar } from '../hooks/useCourseSidebar';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
@@ -64,17 +62,10 @@ const initialQuizStatus: QuizGenerationStatus = {
   reason: 'Generate this lesson before its quiz can be created.',
 };
 
-const quizGenerationSteps = [
-  'Reviewing this lesson',
-  'Writing thoughtful questions',
-  'Preparing answer guidance',
-  'Getting your quiz ready',
-];
-
 const Lesson = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { courseId: routeCourseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
-  const { user } = useAuth();
 
   const [lesson, setLesson] = useState<LessonRecord | null>(null);
   const [generationStatus, setGenerationStatus] = useState<LessonGenerationStatus | null>(null);
@@ -95,6 +86,13 @@ const Lesson = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+
+  const quizGenerationSteps = useMemo(() => [
+    'Reviewing this lesson',
+    'Writing thoughtful questions',
+    'Preparing answer guidance',
+    'Getting your quiz ready',
+  ], []);
 
   const courseId = routeCourseId || lesson?.module?.courseId || '';
   const { courseModules, completedLessonIds, setCompletedLessonIds, orderedLessons, progressPercent, allDone, refreshProgress } = useCourseSidebar(courseId);
@@ -146,13 +144,13 @@ const Lesson = () => {
   const refreshStatuses = useCallback(async () => {
     if (!lessonId) return;
     const [nextLessonStatus, nextQuizStatus] = await Promise.all([
-      apiRequest<LessonGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId) + '/status'),
-      apiRequest<QuizGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId) + '/quiz-status'),
+      apiRequest<LessonGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId!) + '/status'),
+      apiRequest<QuizGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId!) + '/quiz-status'),
     ]);
     setGenerationStatus(nextLessonStatus);
     setQuizStatus(nextQuizStatus);
     if (nextLessonStatus.state === 'ready') {
-      const nextLesson = await apiRequest<LessonRecord>('/lessons/' + encodeURIComponent(lessonId));
+      const nextLesson = await apiRequest<LessonRecord>('/lessons/' + encodeURIComponent(lessonId!));
       setLesson(nextLesson);
     }
   }, [lessonId]);
@@ -167,9 +165,9 @@ const Lesson = () => {
     setError('');
     try {
       const [nextLesson, nextLessonStatus, nextQuizStatus] = await Promise.all([
-        apiRequest<LessonRecord>('/lessons/' + encodeURIComponent(lessonId)),
-        apiRequest<LessonGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId) + '/status'),
-        apiRequest<QuizGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId) + '/quiz-status'),
+        apiRequest<LessonRecord>('/lessons/' + encodeURIComponent(lessonId!)),
+        apiRequest<LessonGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId!) + '/status'),
+        apiRequest<QuizGenerationStatus>('/generation/lesson/' + encodeURIComponent(lessonId!) + '/quiz-status'),
       ]);
       setLesson(nextLesson);
       setGenerationStatus(nextLessonStatus);
@@ -199,424 +197,288 @@ const Lesson = () => {
 
   useEffect(() => { void loadLesson(); }, [loadLesson]);
 
-  // Course sidebar handles fetching course detail
-
+  // Load chat threads from local storage or server
   useEffect(() => {
-    if (!lessonId || (!isGenerating && !quizStatus.isGenerating && quizStatus.state !== 'queued')) return;
-    const interval = window.setInterval(() => { void refreshStatuses().catch(() => undefined); }, 2500);
-    return () => window.clearInterval(interval);
-  }, [isGenerating, lessonId, quizStatus.isGenerating, quizStatus.state, refreshStatuses]);
-
-  useEffect(() => {
-    if (!isQuizGenerationModalOpen || quizStatus.state === 'failed' || isQuizReady) return;
-    const timer = window.setTimeout(() => {
-      setQuizGenerationStep((step) => Math.min(step + 1, 3));
-    }, 900);
-    return () => window.clearTimeout(timer);
-  }, [isQuizGenerationModalOpen, isQuizReady, quizGenerationStep, quizStatus.state]);
-
-  useEffect(() => {
-    if (!isQuizGenerationModalOpen || !isQuizReady || !courseId || !quizStatus.quizId) return;
-    navigate('/courses/' + encodeURIComponent(courseId) + '/quizzes/' + encodeURIComponent(quizStatus.quizId));
-  }, [courseId, isQuizGenerationModalOpen, isQuizReady, navigate, quizStatus.quizId]);
-
-  const handleGenerateLesson = async () => {
-    if (!lessonId || isGenerating) return;
-    setError('');
-    setIsGenerating(true);
-    try {
-      const generatedLesson = await apiRequest<LessonRecord>(
-        '/generation/lesson/' + encodeURIComponent(lessonId) + '/generate',
-        { method: 'POST' }
-      );
-      setLesson(generatedLesson);
-      setMessages([makeMessage('assistant', 'Your lesson is ready! I can help explain the material, examples, and exercises on this page.')]);
-      await refreshStatuses();
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError, 'The lesson could not be generated. Please try again.'));
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleToggleLessonCompletion = async () => {
-    if (!lessonId || !user?.id || isCompleting || (!isLessonReady && !isCompleted)) return;
-    const nextIsCompleted = !isCompleted;
-    setError('');
-    setIsCompleting(true);
-    try {
-      await apiRequest('/lesson-progress', {
-        method: 'POST',
-        body: { userId: user.id, lessonId, status: nextIsCompleted ? 'COMPLETED' : 'IN_PROGRESS' },
-      });
-      setIsCompleted(nextIsCompleted);
-      setCompletedLessonIds((previous) => {
-        const next = new Set(previous);
-        if (nextIsCompleted) {
-          next.add(lessonId);
-        } else {
-          next.delete(lessonId);
-        }
-        return next;
-      });
-    } catch (requestError) {
-      setError(getApiErrorMessage(
-        requestError,
-        nextIsCompleted ? 'We could not save your lesson completion.' : 'We could not mark this lesson as incomplete.'
-      ));
-    } finally {
-      setIsCompleting(false);
-    }
-  };
-
-  const handleGoToQuiz = () => {
-    if (!courseId || !quizStatus.quizId) return;
-    navigate('/courses/' + encodeURIComponent(courseId) + '/quizzes/' + encodeURIComponent(quizStatus.quizId));
-  };
-
-  const handleStartQuiz = async () => {
     if (!lessonId) return;
-    setError('');
-    setQuizGenerationStep(0);
-    setIsQuizGenerationModalOpen(true);
-    try {
-      const nextQuizStatus = await apiRequest<QuizGenerationStatus>(
-        '/generation/lesson/' + encodeURIComponent(lessonId) + '/quiz/generate',
-        { method: 'POST' }
-      );
-      setQuizStatus(nextQuizStatus);
-    } catch (requestError) {
-      setIsQuizGenerationModalOpen(false);
-      setError(getApiErrorMessage(requestError, 'The quiz could not be started. Please try again.'));
-    }
-  };
-
-  const handleNextLesson = () => {
-    if (!nextLesson || !isNextLessonAccessible) return;
-    const cid = routeCourseId || lesson?.module?.courseId || '';
-    navigate(`/courses/${encodeURIComponent(cid)}/lessons/${encodeURIComponent(nextLesson.id)}`);
-  };
-
-  const handlePrevLesson = () => {
-    if (!prevLesson) return;
-    const cid = routeCourseId || lesson?.module?.courseId || '';
-    navigate(`/courses/${encodeURIComponent(cid)}/lessons/${encodeURIComponent(prevLesson.id)}`);
-  };
-
-  const updateThreadMessages = (activeCourseId: string, threadId: string, nextMessages: TutorMessage[]) => {
-    setThreads((prevThreads) => {
-      const nextThreads = prevThreads.map((thread) => {
-        if (thread.id !== threadId) return thread;
-        
-        let title = thread.title;
-        if (title === 'New Chat' || title === 'Chat Session 1') {
-          const userMsg = nextMessages.find(m => m.role === 'user');
-          if (userMsg) {
-            title = userMsg.content.slice(0, 30) + (userMsg.content.length > 30 ? '...' : '');
-          }
+    const storageKey = `tutorme_ai_threads_${lessonId}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try {
+        const parsed: ChatThread[] = JSON.parse(stored);
+        setThreads(parsed);
+        if (parsed.length > 0 && !activeThreadId) {
+          setActiveThreadId(parsed[0].id);
+          setMessages(parsed[0].messages);
         }
-        
-        return { ...thread, messages: nextMessages, title };
-      });
-      localStorage.setItem(`tutorme_ai_chats_${activeCourseId}`, JSON.stringify(nextThreads));
-      return nextThreads;
-    });
+      } catch {}
+    }
+  }, [lessonId, activeThreadId]);
+
+  // Save chat threads to local storage
+  const saveThreads = (updatedThreads: ChatThread[]) => {
+    const targetLessonId = lessonId;
+    if (!targetLessonId) return;
+    setThreads(updatedThreads);
+    localStorage.setItem(`tutorme_ai_threads_${targetLessonId}`, JSON.stringify(updatedThreads));
   };
 
-  const handleTutorMessage = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const content = chatInput.trim();
-    if (!lessonId || !content || !isLessonReady || isChatting) return;
-    const userMessage = makeMessage('user', content);
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
-    
-    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
-    if (activeCourseId && activeThreadId) {
-      updateThreadMessages(activeCourseId, activeThreadId, nextMessages);
-    } else {
-      const storageKey = `tutorme_ai_chat_${lessonId}`;
-      localStorage.setItem(storageKey, JSON.stringify(nextMessages));
+  const handleCreateNewThread = () => {
+    const newThread: ChatThread = {
+      id: 'thread-' + Date.now(),
+      title: `Chat ${threads.length + 1}`,
+      createdAt: Date.now(),
+      messages: [makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")],
+    };
+    const updated = [newThread, ...threads];
+    saveThreads(updated);
+    setActiveThreadId(newThread.id);
+    setMessages(newThread.messages);
+  };
+
+  const handleSwitchThread = (threadId: string) => {
+    const thread = threads.find((t) => t.id === threadId);
+    if (thread) {
+      setActiveThreadId(thread.id);
+      setMessages(thread.messages);
     }
-    
+  };
+
+  const handleStartRename = (threadId: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingThreadId(threadId);
+    setEditingTitle(currentTitle);
+  };
+
+  const handleSaveRename = (threadId: string, e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    if (!editingTitle.trim()) return;
+    const updated = threads.map((t) => (t.id === threadId ? { ...t, title: editingTitle.trim() } : t));
+    saveThreads(updated);
+    setEditingThreadId(null);
+  };
+
+  const handleCancelRename = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingThreadId(null);
+  };
+
+  const handleDeleteThread = (threadId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = threads.filter((t) => t.id !== threadId);
+    saveThreads(updated);
+    if (activeThreadId === threadId) {
+      if (updated.length > 0) {
+        setActiveThreadId(updated[0].id);
+        setMessages(updated[0].messages);
+      } else {
+        handleCreateNewThread();
+      }
+    }
+  };
+
+  const handleTutorMessage = async (e: FormEvent) => {
+    e.preventDefault();
+    const question = chatInput.trim();
+    if (!question || isChatting || !lessonId) return;
+
     setChatInput('');
     setChatError('');
+    const userMsg = makeMessage('user', question);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setIsChatting(true);
+
+    // Update active thread
+    if (activeThreadId) {
+      const updatedThreads = threads.map((t) => (t.id === activeThreadId ? { ...t, messages: updatedMessages } : t));
+      saveThreads(updatedThreads);
+    }
+
     try {
       const response = await apiRequest<TutorResponse>(
-        '/generation/lesson/' + encodeURIComponent(lessonId) + '/chat',
-        { method: 'POST', body: { messages: nextMessages.map(({ role, content: c }) => ({ role, content: c })) } }
-      );
-      const reply = response.reply?.trim();
-      if (!reply) throw new Error('The lesson assistant did not return a response.');
-      const assistantMessage = makeMessage('assistant', reply);
-      setMessages((cur) => {
-        const updated = [...cur, assistantMessage];
-        if (activeCourseId && activeThreadId) {
-          updateThreadMessages(activeCourseId, activeThreadId, updated);
-        } else {
-          const storageKey = `tutorme_ai_chat_${lessonId}`;
-          localStorage.setItem(storageKey, JSON.stringify(updated));
+        `/generation/lesson/${encodeURIComponent(lessonId!)}/chat`,
+        {
+          method: 'POST',
+          body: {
+            question,
+            history: updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+          },
         }
-        return updated;
-      });
-    } catch (requestError) {
-      setChatError(getApiErrorMessage(requestError, 'The AI assistant could not answer that question.'));
+      );
+      const assistantMsg = makeMessage('assistant', response.reply || 'No reply generated.');
+      const finalMessages = [...updatedMessages, assistantMsg];
+      setMessages(finalMessages);
+      if (activeThreadId) {
+        const updatedThreads = threads.map((t) => (t.id === activeThreadId ? { ...t, messages: finalMessages } : t));
+        saveThreads(updatedThreads);
+      }
+    } catch (err) {
+      setChatError(getApiErrorMessage(err, 'Failed to get a response from your tutor.'));
     } finally {
       setIsChatting(false);
     }
   };
 
-  const handleCreateNewThread = () => {
-    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
-    if (!activeCourseId) return;
-    
-    const newThread: ChatThread = {
-      id: 'thread_' + Date.now(),
-      title: 'New Chat',
-      createdAt: Date.now(),
-      messages: [makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]
-    };
-    
-    const nextThreads = [...threads, newThread];
-    setThreads(nextThreads);
-    setActiveThreadId(newThread.id);
-    setMessages(newThread.messages);
-    localStorage.setItem(`tutorme_ai_chats_${activeCourseId}`, JSON.stringify(nextThreads));
-    localStorage.setItem(`tutorme_active_chat_thread_${activeCourseId}`, newThread.id);
-    setIsHistoryOpen(false);
+  const handleToggleComplete = async () => {
+    if (!lessonId || isCompleting) return;
+    setIsCompleting(true);
+    try {
+      const nextState = !isCompleted;
+      await apiRequest(`/lesson-progress/${encodeURIComponent(lessonId!)}`, {
+        method: 'PATCH',
+        body: { status: nextState ? 'COMPLETED' : 'IN_PROGRESS' },
+      });
+      setIsCompleted(nextState);
+      const nextCompleted = new Set(completedLessonIds);
+      if (nextState) nextCompleted.add(lessonId);
+      else nextCompleted.delete(lessonId);
+      setCompletedLessonIds(nextCompleted);
+      await refreshProgress();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to update lesson completion.'));
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
-  const handleDeleteThread = (threadId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
-    if (!activeCourseId) return;
-    
-    const nextThreads = threads.filter(t => t.id !== threadId);
-    setThreads(nextThreads);
-    
-    let nextActiveId = activeThreadId;
-    if (activeThreadId === threadId) {
-      if (nextThreads.length > 0) {
-        nextActiveId = nextThreads[0].id;
-        setMessages(nextThreads[0].messages);
-      } else {
-        const defaultThread: ChatThread = {
-          id: 'thread_' + Date.now(),
-          title: 'New Chat',
-          createdAt: Date.now(),
-          messages: [makeMessage('assistant', "Hello! I'm your AI learning assistant. Ask me anything about this lesson.")]
-        };
-        nextThreads.push(defaultThread);
-        setThreads(nextThreads);
-        nextActiveId = defaultThread.id;
-        setMessages(defaultThread.messages);
-      }
+  const handleGenerateLesson = async () => {
+    if (!lessonId || isGenerating) return;
+    setIsGenerating(true);
+    setError('');
+    try {
+      await apiRequest(`/generation/lesson/${encodeURIComponent(lessonId!)}/generate`, { method: 'POST' });
+      await refreshStatuses();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to generate lesson content.'));
+    } finally {
+      setIsGenerating(false);
     }
-    
-    setActiveThreadId(nextActiveId);
-    localStorage.setItem(`tutorme_ai_chats_${activeCourseId}`, JSON.stringify(nextThreads));
-    if (nextActiveId) {
-      localStorage.setItem(`tutorme_active_chat_thread_${activeCourseId}`, nextActiveId);
+  };
+
+  const handleStartQuiz = async () => {
+    if (!lessonId) return;
+    setIsQuizGenerationModalOpen(true);
+    setQuizGenerationStep(0);
+    try {
+      const res = await apiRequest<QuizGenerationStatus>(`/generation/lesson/${encodeURIComponent(lessonId!)}/quiz-generate`, { method: 'POST' });
+      setQuizStatus(res);
+      if (res.quizId) {
+        setIsQuizGenerationModalOpen(false);
+        navigate(`/quizzes/${encodeURIComponent(res.quizId)}`);
+      }
+    } catch (err) {
+      setQuizStatus({ state: 'failed', isGenerated: false, isGenerating: false, reason: getApiErrorMessage(err, 'Failed to generate quiz.') });
+    }
+  };
+
+  const handleGoToQuiz = () => {
+    if (quizStatus.quizId) {
+      navigate(`/quizzes/${encodeURIComponent(quizStatus.quizId)}`);
     } else {
-      localStorage.removeItem(`tutorme_active_chat_thread_${activeCourseId}`);
+      void handleStartQuiz();
     }
   };
 
-  const handleSwitchThread = (threadId: string) => {
-    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
-    if (!activeCourseId) return;
-    
-    setActiveThreadId(threadId);
-    localStorage.setItem(`tutorme_active_chat_thread_${activeCourseId}`, threadId);
-    const target = threads.find(t => t.id === threadId);
-    setMessages(target ? target.messages : []);
-    setIsHistoryOpen(false);
+  const handlePrevLesson = () => {
+    if (prevLesson && courseId) {
+      navigate(`/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(prevLesson.id)}`);
+    }
   };
 
-  const handleStartRename = (threadId: string, currentTitle: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setEditingThreadId(threadId);
-    setEditingTitle(currentTitle);
+  const handleNextLesson = () => {
+    if (nextLesson && courseId && isNextLessonAccessible) {
+      navigate(`/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(nextLesson.id)}`);
+    }
   };
-
-  const handleSaveRename = (threadId: string, event: React.MouseEvent | React.KeyboardEvent) => {
-    event.stopPropagation();
-    const activeCourseId = routeCourseId || lesson?.module?.courseId || '';
-    if (!activeCourseId) return;
-
-    const trimmed = editingTitle.trim();
-    if (!trimmed) return;
-
-    const nextThreads = threads.map((t) => {
-      if (t.id === threadId) {
-        return { ...t, title: trimmed };
-      }
-      return t;
-    });
-
-    setThreads(nextThreads);
-    setEditingThreadId(null);
-    localStorage.setItem(`tutorme_ai_chats_${activeCourseId}`, JSON.stringify(nextThreads));
-  };
-
-  const handleCancelRename = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    setEditingThreadId(null);
-    setEditingTitle('');
-  };
-
-  const lessonContent = useMemo(() => lesson?.content?.trim() || '', [lesson?.content]);
 
   if (isLoading) {
     return (
       <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
-        <div className="rounded-3xl border-4 border-blue-300 bg-white p-10 text-center shadow-[8px_8px_0_#60a5fa] dark:border-blue-800 dark:bg-gray-800">
-          <LoaderCircle className="mx-auto h-12 w-12 animate-spin text-blue-500" />
-          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">Loading lesson</h1>
-        </div>
-      </main>
-    );
-  }
-
-  if (error && !lesson) {
-    return (
-      <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
-        <section className="max-w-lg rounded-3xl border-4 border-red-300 bg-white p-10 text-center shadow-[8px_8px_0_#f87171] dark:border-red-800 dark:bg-gray-800">
-          <CircleAlert className="mx-auto h-12 w-12 text-red-500" />
-          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">Lesson unavailable</h1>
-          <p role="alert" className="mt-3 font-bold text-red-700 dark:text-red-300">{error}</p>
-          <button onClick={() => void loadLesson()} className="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-blue-700 bg-blue-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#1d4ed8]">
-            <RefreshCw className="h-5 w-5" /> Try again
-          </button>
+        <section className="rounded-3xl border-4 border-purple-300 bg-white p-10 text-center shadow-[8px_8px_0_#c084fc] dark:border-purple-800 dark:bg-gray-800">
+          <LoaderCircle className="mx-auto h-12 w-12 animate-spin text-purple-500" />
+          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">{t('lessonPage.loadingLesson')}</h1>
         </section>
       </main>
     );
   }
 
+  const youtubeId = getYouTubeId(lesson?.videoUrl || null);
+  const lessonContent = lesson?.content || '';
+
   return (
     <div className="h-screen w-full flex bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-['Nunito',sans-serif] overflow-hidden transition-colors duration-300 relative">
-
       <CourseSidebar
-        courseModules={courseModules as any}
+        courseId={courseId}
+        courseModules={courseModules}
         completedLessonIds={completedLessonIds}
-        orderedLessons={orderedLessons as any}
+        orderedLessons={orderedLessons}
         progressPercent={progressPercent}
         allDone={allDone}
         activeLessonId={lessonId}
-        courseId={courseId}
       />
 
-      {/* ── Main Content ── */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-3.5 sm:p-6 md:p-12">
-        <div className="max-w-5xl w-full mx-auto flex flex-col flex-1">
+      <main className="flex-1 flex flex-col h-full overflow-y-auto relative p-4 sm:p-8 md:p-12 pt-16 sm:pt-8 md:pt-12">
+        <div className="max-w-4xl w-full mx-auto flex flex-col flex-1">
 
-          {/* Breadcrumb & Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8 pt-10 sm:pt-0">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 flex-wrap pl-10 sm:pl-0">
-              <span className="hover:text-blue-500 cursor-pointer truncate max-w-[140px] sm:max-w-none" onClick={() => navigate(-1)}>
-                {lesson?.module?.title || 'Course'}
+          {/* Lesson Header */}
+          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                {lesson?.module?.title || 'Lesson Module'}
               </span>
-              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="text-gray-800 dark:text-gray-200 truncate max-w-[160px] sm:max-w-none">{lesson?.title || 'Lesson'}</span>
+              <h1 className="text-2xl sm:text-4xl font-bold font-['Kalam',cursive] text-gray-900 dark:text-gray-100 mt-1 leading-tight">
+                {lesson?.title || 'Untitled Lesson'}
+              </h1>
             </div>
-            {(isLessonReady || isCompleted) && (
-              <button
-                onClick={() => void handleToggleLessonCompletion()}
-                disabled={isCompleting}
-                aria-pressed={isCompleted}
-                className="w-full sm:w-auto px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-default"
-              >
-                {isCompleting ? (
-                  <LoaderCircle className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className={`w-4 h-4 sm:w-5 sm:h-5 ${isCompleted ? 'text-green-500' : 'text-gray-400'}`} />
-                )}
-                {isCompleted ? 'Mark incomplete' : 'Mark complete'}
-              </button>
-            )}
+
+            <button
+              onClick={handleToggleComplete}
+              disabled={isCompleting}
+              className={`px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base transition-all border-2 flex items-center gap-2 font-['Kalam',cursive] shrink-0 ${
+                isCompleted
+                  ? 'bg-green-100 text-green-800 border-green-400 shadow-[3px_3px_0px_0px_rgba(74,222,128,1)] dark:bg-green-950/40 dark:text-green-300 dark:border-green-700'
+                  : 'bg-white text-gray-700 border-gray-300 shadow-[3px_3px_0px_0px_rgba(156,163,175,1)] hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <CheckCircle2 className={`w-5 h-5 ${isCompleted ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} />
+              {isCompleted ? t('lessonPage.completedBadge') : t('lessonPage.markCompleted')}
+            </button>
           </div>
 
-          {/* Video / Generate CTA */}
-          {!isLessonReady ? (
-            <div className="w-full min-h-[290px] sm:min-h-0 aspect-auto sm:aspect-video py-6 sm:py-0 bg-gray-900 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-800 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] sm:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] sm:dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-6 sm:mb-8 flex items-center justify-center relative overflow-hidden">
-              <div className="flex flex-col items-center gap-3 sm:gap-4 z-20 px-4 sm:px-6 text-center">
-                {isGenerating ? (
-                  <>
-                    <LoaderCircle className="w-9 h-9 sm:w-12 sm:h-12 text-pink-500 animate-spin" />
-                    <h2 className="font-['Kalam',cursive] text-xl sm:text-3xl font-bold text-white">Generating your lesson...</h2>
-                    <p className="text-gray-300 font-semibold text-xs sm:text-base max-w-xs sm:max-w-sm">Crafting explanation, examples, and interactive practice for this sub-chapter.</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 sm:w-20 sm:h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(190,24,93,1)] sm:shadow-[4px_4px_0px_0px_rgba(190,24,93,1)]">
-                      <Play className="w-6 h-6 sm:w-10 sm:h-10 text-white fill-white ml-1 sm:ml-2" />
-                    </div>
-                    <h2 className="font-['Kalam',cursive] text-lg sm:text-3xl font-bold text-white leading-tight">Ready to generate this lesson?</h2>
-                    <p className="text-gray-300 font-semibold text-xs sm:text-base max-w-[260px] sm:max-w-sm">TutorMe will generate this lesson's content, not the entire remaining course.</p>
-                    <button
-                      onClick={() => void handleGenerateLesson()}
-                      className="mt-1 sm:mt-2 px-5 py-2.5 sm:px-7 sm:py-3 rounded-xl font-bold text-white bg-pink-500 hover:bg-pink-600 border-2 border-pink-700 shadow-[2px_2px_0_#be185d] flex items-center gap-2 font-['Kalam',cursive] text-sm sm:text-lg active:translate-y-0.5 active:shadow-none transition-all"
-                    >
-                      <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" /> Generate lesson
-                    </button>
-                  </>
-                )}
-              </div>
+          {/* YouTube Video Player (if present) */}
+          {youtubeId && (
+            <div className="mb-8 rounded-3xl border-4 border-purple-400 dark:border-purple-700 overflow-hidden shadow-[6px_6px_0px_0px_#c084fc] dark:shadow-[6px_6px_0px_0px_rgba(126,34,206,0.6)] bg-black aspect-video">
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${youtubeId}`}
+                title="Lesson Video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
             </div>
-          ) : lesson?.videoUrl ? (() => {
-            const ytId = getYouTubeId(lesson.videoUrl);
-            const isDirectVideo = lesson.videoUrl.endsWith('.mp4') || lesson.videoUrl.endsWith('.webm') || lesson.videoUrl.endsWith('.ogg');
+          )}
 
-            if (ytId) {
-              return (
-                <div className="w-full aspect-video bg-gray-900 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-800 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] sm:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] sm:dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-6 sm:mb-8 relative overflow-hidden">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${ytId}?rel=0&showinfo=0`}
-                    title={lesson.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="absolute inset-0 w-full h-full"
-                  />
-                </div>
-              );
-            }
-
-            if (isDirectVideo) {
-              return (
-                <div className="w-full aspect-video bg-gray-900 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-800 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] sm:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] sm:dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-6 sm:mb-8 relative overflow-hidden">
-                  <video
-                    src={lesson.videoUrl}
-                    controls
-                    className="absolute inset-0 w-full h-full object-contain"
-                  />
-                </div>
-              );
-            }
-
-            return (
-              <a
-                href={lesson.videoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full aspect-video bg-gray-900 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-800 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(31,41,55,1)] sm:shadow-[8px_8px_0px_0px_rgba(31,41,55,1)] dark:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] sm:dark:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] mb-6 sm:mb-8 flex items-center justify-center relative overflow-hidden group cursor-pointer no-underline"
+          {/* Lesson Content Area */}
+          {!isLessonReady ? (
+            <div className="rounded-3xl border-4 border-dashed border-purple-300 bg-purple-50 p-8 sm:p-12 text-center dark:border-purple-800 dark:bg-gray-800 my-auto">
+              <Sparkles className="mx-auto h-12 w-12 text-purple-500 animate-pulse mb-4" />
+              <h2 className="font-['Kalam',cursive] text-2xl sm:text-3xl font-bold text-purple-950 dark:text-purple-100 mb-2">
+                This lesson content is not generated yet
+              </h2>
+              <p className="text-sm sm:text-base font-semibold text-purple-800 dark:text-purple-300 mb-6 max-w-md mx-auto">
+                Click below to let TutorMe generate rich, interactive learning blocks and exercises for this topic.
+              </p>
+              <button
+                onClick={handleGenerateLesson}
+                disabled={isGenerating}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-6 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[3px_3px_0px_0px_#7e22ce] transition-all hover:bg-purple-600 active:translate-y-0.5 active:shadow-none"
               >
-                <div className="absolute inset-0 bg-blue-900/20 group-hover:bg-transparent transition-colors z-10"></div>
-                <div className="w-14 h-14 sm:w-20 sm:h-20 bg-pink-500 rounded-full flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(190,24,93,1)] sm:shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] transform group-hover:scale-110 transition-transform z-20">
-                  <Video className="w-7 h-7 sm:w-10 sm:h-10 text-white ml-1" />
-                </div>
-                <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 flex justify-between items-center text-white z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="font-bold text-xs sm:text-base">{lesson.title} — Supporting video link</div>
-                </div>
-              </a>
-            );
-          })() : null}
-
-          {/* Lesson Content */}
-          {isLessonReady && (
-            <div className="bg-white dark:bg-gray-800 p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-300 dark:border-gray-700 shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] sm:shadow-[8px_8px_0px_0px_rgba(156,163,175,1)] dark:shadow-[4px_4px_0px_0px_rgba(55,65,81,0.8)] sm:dark:shadow-[8px_8px_0px_0px_rgba(55,65,81,0.8)] relative">
-              <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-10 sm:w-12 h-5 sm:h-6 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none border-2 border-yellow-500 dark:border-yellow-600"></div>
-              <h1 className="text-2xl sm:text-4xl font-['Kalam',cursive] font-bold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 leading-tight">{lesson?.title}</h1>
+                {isGenerating ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5 fill-current" />}
+                {isGenerating ? t('lessonPage.generatingLesson') : 'Generate Lesson Content'}
+              </button>
+            </div>
+          ) : (
+            <div className="prose dark:prose-invert max-w-none">
               <BlockRenderer content={lessonContent} />
             </div>
           )}
@@ -634,10 +496,10 @@ const Lesson = () => {
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <h2 className="flex items-center gap-2 font-['Kalam',cursive] text-xl sm:text-2xl font-bold text-purple-950 dark:text-purple-100">
-                  <ClipboardCheck className="h-5 w-5 sm:h-6 sm:w-6" /> Lesson Quiz
+                  <ClipboardCheck className="h-5 w-5 sm:h-6 sm:w-6" /> {t('lessonPage.lessonQuizTitle')}
                 </h2>
                 <p className="mt-1 font-semibold text-xs sm:text-base text-purple-800 dark:text-purple-200">
-                  {quizStatus.reason || (isQuizReady ? 'Your quiz is ready. You can take it without marking this lesson complete.' : 'Quiz status will appear after lesson generation.')}
+                  {quizStatus.reason || (isQuizReady ? t('lessonPage.quizReadyDesc') : t('lessonPage.quizStatusWait'))}
                 </p>
               </div>
               {isQuizReady ? (
@@ -645,15 +507,15 @@ const Lesson = () => {
                   onClick={handleGoToQuiz}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-4 py-2.5 sm:px-5 sm:py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce] shrink-0"
                 >
-                  Take quiz
+                  {t('lessonPage.takeQuizBtn')}
                 </button>
               ) : quizStatus.isGenerating ? (
                 <span className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-300 bg-purple-100 px-4 py-2.5 sm:py-3 font-bold text-xs sm:text-base text-purple-800 dark:border-purple-700 dark:bg-purple-900/40 dark:text-purple-200 shrink-0">
-                  <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> Generating quiz…
+                  <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> {t('lessonPage.generatingQuizBtn')}
                 </span>
               ) : (
                 <span className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border-2 border-purple-200 bg-white px-4 py-2.5 sm:py-3 font-bold text-xs sm:text-base text-purple-700 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-200 shrink-0">
-                  Waiting for lesson
+                  {t('lessonPage.waitingForLesson')}
                 </span>
               )}
             </div>
@@ -668,7 +530,7 @@ const Lesson = () => {
                 className="w-full sm:w-auto px-5 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 shadow-[3px_3px_0px_0px_rgba(156,163,175,1)] sm:shadow-[4px_4px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] hover:translate-y-0.5 hover:shadow-sm transition-all flex items-center justify-center gap-2 sm:gap-3 font-['Kalam',cursive] text-base sm:text-lg"
               >
                 <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                Prev Lesson
+                {t('lessonPage.prevLessonBtn')}
               </button>
             ) : <div />}
 
@@ -677,7 +539,7 @@ const Lesson = () => {
               <div className="flex flex-col items-stretch sm:items-end gap-1.5 w-full sm:w-auto">
                 {!isNextLessonAccessible && (
                   <p className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center justify-center sm:justify-end gap-1 text-center sm:text-right">
-                    <Lock className="w-3 h-3 shrink-0" /> Mark complete or generate next to unlock
+                    <Lock className="w-3 h-3 shrink-0" /> {t('lessonPage.unlockNextNotice')}
                   </p>
                 )}
                 <button
@@ -689,7 +551,7 @@ const Lesson = () => {
                       : 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 opacity-60 cursor-not-allowed'
                   }`}
                 >
-                  Next Lesson
+                  {t('lessonPage.nextLessonBtn')}
                   <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
@@ -699,7 +561,7 @@ const Lesson = () => {
                 className="w-full sm:w-auto px-6 py-3 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-blue-900 dark:text-blue-100 bg-blue-100 dark:bg-blue-900 border-2 border-blue-400 dark:border-blue-700 shadow-[3px_3px_0px_0px_rgba(96,165,250,1)] sm:shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[2px_2px_0px_0px_rgba(30,58,138,0.8)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(96,165,250,1)] transition-all flex items-center justify-center gap-2 sm:gap-3 font-['Kalam',cursive] text-lg sm:text-xl"
               >
                 <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
-                Final Exam
+                {t('lessonPage.finalExamBtn')}
                 <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             ) : null}

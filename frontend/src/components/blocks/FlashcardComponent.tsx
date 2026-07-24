@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RotateCw } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import type { FlashcardBlock } from './types';
 
 export const FlashcardComponent: React.FC<FlashcardBlock> = ({ front, back }) => {
+  const { t, i18n } = useTranslation();
   const [flipped, setFlipped] = useState(false);
+
+  let displayFront = front;
+  if (i18n.language === 'id' && front.includes('What is the core takeaway of ')) {
+    displayFront = front.replace(/What is the core takeaway of (.*)\?/i, 'Apa poin utama dari $1?');
+  }
+
+  let displayBack = back;
+  if (i18n.language === 'id' && back.includes('Review the key explanation and connect it to the practical examples')) {
+    displayBack = 'Tinjau penjelasan kunci dan hubungkan dengan contoh praktis dalam pelajaran ini.';
+  }
 
   return (
     <div className="flex flex-col items-center my-6">
       <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3 bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
-        <RotateCw className="w-3.5 h-3.5 animate-pulse" /> Click or tap card to flip
+        <RotateCw className="w-3.5 h-3.5 animate-pulse" /> {t('blocks.flashcard.flipNotice')}
       </div>
 
       <div
@@ -31,15 +43,15 @@ export const FlashcardComponent: React.FC<FlashcardBlock> = ({ front, back }) =>
           >
             <div className="w-full flex justify-between items-center">
               <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wider font-mono">
-                Term / Prompt
+                {t('blocks.flashcard.side1Badge')}
               </span>
-              <span className="text-xs opacity-80 font-['Kalam',cursive]">Side 1 of 2</span>
+              <span className="text-xs opacity-80 font-['Kalam',cursive]">{t('blocks.flashcard.side1Label')}</span>
             </div>
             <div className="my-auto text-xl sm:text-2xl font-bold font-['Kalam',cursive] px-4 leading-relaxed py-4">
-              <MarkdownRenderer content={front} />
+              <MarkdownRenderer content={displayFront} />
             </div>
             <div className="text-xs opacity-75 font-medium flex items-center gap-1">
-              <RotateCw className="w-3 h-3" /> Tap to reveal answer
+              <RotateCw className="w-3 h-3" /> {t('blocks.flashcard.tapToReveal')}
             </div>
           </div>
 
@@ -53,15 +65,15 @@ export const FlashcardComponent: React.FC<FlashcardBlock> = ({ front, back }) =>
           >
             <div className="w-full flex justify-between items-center">
               <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wider font-mono">
-                Answer / Definition
+                {t('blocks.flashcard.side2Badge')}
               </span>
-              <span className="text-xs text-gray-400 font-['Kalam',cursive]">Side 2 of 2</span>
+              <span className="text-xs text-gray-400 font-['Kalam',cursive]">{t('blocks.flashcard.side2Label')}</span>
             </div>
             <div className="my-auto text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 px-4 leading-relaxed py-4">
-              <MarkdownRenderer content={back} />
+              <MarkdownRenderer content={displayBack} />
             </div>
             <div className="text-xs text-indigo-500 font-medium flex items-center gap-1">
-              <RotateCw className="w-3 h-3" /> Tap to flip back
+              <RotateCw className="w-3 h-3" /> {t('blocks.flashcard.tapToFlipBack')}
             </div>
           </div>
         </div>

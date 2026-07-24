@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Check, ChevronDown, FileQuestion, Hourglass, ImagePlus, Square, Minimize2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Sparkles, Check, ChevronDown, FileQuestion, Hourglass, Square, Minimize2, ImagePlus } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import Switch from './Switch';
 import { useCourseGeneration } from '../context/CourseGenerationContext';
 
 const GenerateCourseModal: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
@@ -99,11 +101,7 @@ const GenerateCourseModal: React.FC = () => {
     e.preventDefault();
 
     const topicName = courseTopic.trim();
-    if (!topicName) {
-      return;
-    }
-
-    if (!user?.id) {
+    if (!topicName || !user?.id) {
       return;
     }
 
@@ -135,12 +133,12 @@ const GenerateCourseModal: React.FC = () => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center mb-1">
-            <p className="text-xs font-extrabold text-pink-500 uppercase tracking-wider">Preparing Course</p>
+            <p className="text-xs font-extrabold text-pink-500 uppercase tracking-wider">{t('generateCourse.preparingBadge')}</p>
             <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
               {publishStep + 1}/3
             </span>
           </div>
-          <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{publishCourseTitle || 'Your Course'}</p>
+          <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{publishCourseTitle || t('generateCourse.defaultCourseTitle')}</p>
           <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-2 overflow-hidden">
             <div className="bg-pink-500 dark:bg-pink-400 h-full rounded-full transition-all duration-500" style={{ width: `${percent}%` }} />
           </div>
@@ -151,10 +149,10 @@ const GenerateCourseModal: React.FC = () => {
 
   // Rendering for Publishing full-screen overlay state
   if (isPublishing && !isPublishMinimized) {
-    const steps = [
-      "Saving your curriculum",
-      "Generating the first lesson",
-      "Finalizing course setup"
+    const pubSteps = [
+      t('generateCourse.steps.pub1'),
+      t('generateCourse.steps.pub2'),
+      t('generateCourse.steps.pub3')
     ];
 
     return (
@@ -166,15 +164,13 @@ const GenerateCourseModal: React.FC = () => {
           className="relative max-w-2xl w-[calc(100vw-1rem)] sm:w-full flex flex-col transform scale-100 sm:scale-105 transition-all duration-300"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Tape detail */}
           <div className="absolute top-0 left-1/2 w-20 sm:w-24 h-6 sm:h-8 bg-pink-400/40 dark:bg-pink-500/40 -translate-x-1/2 -translate-y-3 sm:-translate-y-4 rounded-sm transform -rotate-2 backdrop-blur-md border border-pink-200/50 dark:border-pink-700/50 pointer-events-none z-20"></div>
 
           <div className="bg-pink-50/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-[4px_4px_0px_0px_rgba(236,72,153,1)] sm:shadow-[8px_8px_0px_0px_rgba(236,72,153,1)] dark:shadow-[4px_4px_0px_0px_rgba(157,23,77,0.8)] sm:dark:shadow-[8px_8px_0px_0px_rgba(157,23,77,0.8)] border-3 sm:border-4 border-pink-400 dark:border-pink-700 w-full flex flex-col relative overflow-hidden">
-            {/* Minimize Button */}
             <button
               onClick={minimizePublish}
               className="absolute top-3 right-3 sm:top-4 sm:right-4 text-pink-600 dark:text-gray-400 hover:text-pink-900 dark:hover:text-gray-100 font-bold transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-pink-200/50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-gray-500 z-30"
-              aria-label="Minimize"
+              aria-label={t('common.minimize')}
               type="button"
             >
               <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500 dark:text-gray-400" />
@@ -182,10 +178,10 @@ const GenerateCourseModal: React.FC = () => {
 
             <div className="p-4 sm:p-8 md:p-10 relative z-10 py-5 px-3 sm:px-6 flex flex-col items-center">
               <h2 className="text-xl sm:text-3xl font-bold mb-6 sm:mb-10 font-['Nunito',sans-serif] text-gray-900 dark:text-gray-100 text-center leading-tight">
-                Preparing your course...
+                {t('generateCourse.preparingTitle')}
               </h2>
               <div className="space-y-4 sm:space-y-6 font-['Nunito',sans-serif] font-bold text-sm sm:text-lg text-gray-700 dark:text-gray-300 w-full">
-                {steps.map((step, idx) => {
+                {pubSteps.map((step, idx) => {
                   const isCompleted = idx < publishStep;
                   const isCurrent = idx === publishStep;
                   const isPending = idx > publishStep;
@@ -208,10 +204,9 @@ const GenerateCourseModal: React.FC = () => {
                 onClick={cancelPublish}
                 className="mt-6 sm:mt-8 px-5 sm:px-6 py-2 rounded-xl font-bold font-['Kalam',cursive] text-base sm:text-lg border-2 border-red-500 bg-red-100 text-red-700 dark:bg-red-950/40 dark:border-red-800 dark:text-red-300 hover:bg-red-250 dark:hover:bg-red-900/40 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_rgba(239,68,68,0.3)] active:translate-y-0.5 active:shadow-none z-10"
               >
-                Cancel Publishing
+                {t('generateCourse.cancelPublishBtn')}
               </button>
 
-              {/* Fun background graphic when generating */}
               <div className="absolute -bottom-8 -right-8 opacity-20 pointer-events-none hidden sm:block">
                 <Sparkles className="w-40 h-40 fill-pink-500 text-pink-500 animate-pulse" />
               </div>
@@ -240,12 +235,12 @@ const GenerateCourseModal: React.FC = () => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center mb-1">
-            <p className="text-[10px] sm:text-xs font-extrabold text-pink-500 uppercase tracking-wider">Generating Course</p>
+            <p className="text-[10px] sm:text-xs font-extrabold text-pink-500 uppercase tracking-wider">{t('generateCourse.generatingBadge')}</p>
             <span className="text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400">
               {loadingStep + 1}/{totalSteps}
             </span>
           </div>
-          <p className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{topic || 'Personalized Course'}</p>
+          <p className="text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200 truncate">{topic || t('generateCourse.personalizedCourse')}</p>
           <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-1.5 sm:mt-2 overflow-hidden">
             <div className="bg-pink-500 dark:bg-pink-400 h-full rounded-full transition-all duration-500" style={{ width: `${percent}%` }} />
           </div>
@@ -255,12 +250,12 @@ const GenerateCourseModal: React.FC = () => {
   }
 
   const steps = [
-    "Understanding your current skill level",
-    ...(modalReferenceFile ? [`Preparing ${modalReferenceFile.name} as your reference`] : []),
-    "Identifying your learning goals",
-    "Designing your learning roadmap...",
-    "Estimating your study timeline",
-    "Selecting the best learning resources"
+    t('generateCourse.steps.s1'),
+    ...(modalReferenceFile ? [t('generateCourse.steps.s2Ref', { name: modalReferenceFile.name })] : []),
+    t('generateCourse.steps.s2'),
+    t('generateCourse.steps.s3'),
+    t('generateCourse.steps.s4'),
+    t('generateCourse.steps.s5')
   ];
 
   return (
@@ -272,16 +267,14 @@ const GenerateCourseModal: React.FC = () => {
         className={`relative max-w-2xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col transform ${isGenerating ? 'scale-100 sm:scale-105' : 'rotate-0.5 sm:rotate-1 hover:rotate-0'} transition-all duration-300`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Tape detail */}
         <div className="absolute top-0 left-1/2 w-20 sm:w-24 h-6 sm:h-8 bg-pink-400/40 dark:bg-pink-500/40 -translate-x-1/2 -translate-y-3 sm:-translate-y-4 rounded-sm transform -rotate-2 backdrop-blur-md border border-pink-200/50 dark:border-pink-700/50 pointer-events-none z-20"></div>
 
         <div className="bg-pink-50/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-[4px_4px_0px_0px_rgba(236,72,153,1)] sm:shadow-[8px_8px_0px_0px_rgba(236,72,153,1)] dark:shadow-[4px_4px_0px_0px_rgba(157,23,77,0.8)] sm:dark:shadow-[8px_8px_0px_0px_rgba(157,23,77,0.8)] border-3 sm:border-4 border-pink-400 dark:border-pink-700 w-full flex flex-col relative overflow-hidden">
-          {/* Close/Minimize Button */}
           {isGenerating ? (
             <button
               onClick={minimize}
               className="absolute top-3 right-3 sm:top-4 sm:right-4 text-pink-600 dark:text-gray-400 hover:text-pink-900 dark:hover:text-gray-100 font-bold transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-pink-200/50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-gray-500 z-30"
-              aria-label="Minimize"
+              aria-label={t('common.minimize')}
               type="button"
             >
               <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500 dark:text-gray-400" />
@@ -290,7 +283,7 @@ const GenerateCourseModal: React.FC = () => {
             <button
               onClick={closeModal}
               className="absolute top-3 right-3 sm:top-4 sm:right-4 text-pink-600 dark:text-gray-400 hover:text-pink-900 dark:hover:text-gray-100 font-bold font-['Kalam',cursive] text-xl sm:text-2xl transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-pink-200/50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-gray-500 z-30"
-              aria-label="Close"
+              aria-label={t('common.close')}
               type="button"
             >
               X
@@ -302,28 +295,28 @@ const GenerateCourseModal: React.FC = () => {
               <>
                 <h2 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-8 font-['Kalam',cursive] text-pink-900 dark:text-pink-300 text-center flex items-center justify-center gap-2 sm:gap-3 mt-1 sm:mt-2">
                   <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 fill-pink-500 text-pink-500 shrink-0" />
-                  Magic Course
+                  {t('generateCourse.title')}
                 </h2>
 
                 <form className="space-y-4 sm:space-y-6 font-['Nunito',sans-serif]" onSubmit={handleSubmit}>
                   <div>
-                    <label className="block text-pink-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">What course do you want to learn?</label>
+                    <label className="block text-pink-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">{t('generateCourse.askTopic')}</label>
                     <input
                       type="text"
                       value={courseTopic}
                       onChange={(event) => setCourseTopic(event.target.value)}
                       required
                       className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 border border-pink-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 dark:focus:ring-pink-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 text-sm sm:text-base placeholder-gray-400 dark:placeholder-gray-500"
-                      placeholder={modalReferenceFile ? 'Course based on attached reference' : 'e.g. Python for Beginners'}
+                      placeholder={modalReferenceFile ? t('generateCourse.topicPlaceholderRef') : t('generateCourse.topicPlaceholder')}
                     />
-                    {modalReferenceFile && <p className="mt-1.5 flex items-center gap-2 text-xs sm:text-sm font-bold text-pink-700 dark:text-pink-300">Attached reference: {modalReferenceFile.name}</p>}
+                    {modalReferenceFile && <p className="mt-1.5 flex items-center gap-2 text-xs sm:text-sm font-bold text-pink-700 dark:text-pink-300">{t('generateCourse.referenceAttached', { name: modalReferenceFile.name })}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-pink-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">How familiar are you with this skill?</label>
+                    <label className="block text-pink-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">{t('generateCourse.askFamiliarity')}</label>
                     <div className="relative">
                       <button type="button" aria-haspopup="listbox" aria-expanded={openDropdown === 'familiarity'} onClick={() => setOpenDropdown(openDropdown === 'familiarity' ? null : 'familiarity')} className={`flex w-full items-center justify-between rounded-xl border bg-white/70 px-3.5 sm:px-4 py-2.5 sm:py-3 text-left font-medium text-gray-800 shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-pink-400 dark:border-gray-600 dark:bg-gray-900/70 dark:text-gray-100 dark:focus:ring-pink-500 text-sm sm:text-base ${openDropdown === 'familiarity' ? 'border-pink-500' : 'border-pink-300/50'}`}>
-                        {familiarity}<ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-pink-500 transition-transform ${openDropdown === 'familiarity' ? 'rotate-180' : ''}`} />
+                        {t(`generateCourse.familiarity.${familiarity}` as any, familiarity)}<ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-pink-500 transition-transform ${openDropdown === 'familiarity' ? 'rotate-180' : ''}`} />
                       </button>
                       {openDropdown === 'familiarity' && (
                         <div role="listbox" aria-label="Skill familiarity" className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border-2 border-pink-300 bg-white shadow-[4px_4px_0_rgba(236,72,153,.25)] dark:border-pink-700 dark:bg-gray-800 text-sm sm:text-base">
@@ -336,7 +329,7 @@ const GenerateCourseModal: React.FC = () => {
                               onClick={() => { setFamiliarity(option); setOpenDropdown(null); }}
                               className={`flex w-full items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 text-left font-medium transition-colors ${familiarity === option ? 'bg-pink-500 text-white' : 'text-gray-800 hover:bg-pink-100 dark:text-gray-100 dark:hover:bg-pink-900/40'}`}
                             >
-                              {option}
+                              {t(`generateCourse.familiarity.${option}` as any, option)}
                               {familiarity === option && <Check className="h-4 w-4" />}
                             </button>
                           ))}
@@ -346,11 +339,11 @@ const GenerateCourseModal: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-pink-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">
-                      Language
+                      {t('generateCourse.askLanguage')}
                     </label>
                     <div className="relative">
                       <button type="button" aria-haspopup="listbox" aria-expanded={openDropdown === 'language'} onClick={() => setOpenDropdown(openDropdown === 'language' ? null : 'language')} className={`flex w-full items-center justify-between rounded-xl border bg-white/70 px-3.5 sm:px-4 py-2.5 sm:py-3 text-left font-medium text-gray-800 shadow-inner transition-shadow focus:outline-none focus:ring-2 focus:ring-pink-400 dark:border-gray-600 dark:bg-gray-900/70 dark:text-gray-100 dark:focus:ring-pink-500 text-sm sm:text-base ${openDropdown === 'language' ? 'border-pink-500' : 'border-pink-300/50'}`}>
-                        {language}<ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-pink-500 transition-transform ${openDropdown === 'language' ? 'rotate-180' : ''}`} />
+                        {t(`generateCourse.languageOptions.${language}` as any, language)}<ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-pink-500 transition-transform ${openDropdown === 'language' ? 'rotate-180' : ''}`} />
                       </button>
                       {openDropdown === 'language' && (
                         <div role="listbox" aria-label="Course language" className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border-2 border-pink-300 bg-white shadow-[4px_4px_0_rgba(236,72,153,.25)] dark:border-pink-700 dark:bg-gray-800 text-sm sm:text-base">
@@ -363,7 +356,7 @@ const GenerateCourseModal: React.FC = () => {
                               onClick={() => { setLanguage(option); setOpenDropdown(null); }}
                               className={`flex w-full items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 text-left font-medium transition-colors ${language === option ? 'bg-pink-500 text-white' : 'text-gray-800 hover:bg-pink-100 dark:text-gray-100 dark:hover:bg-pink-900/40'}`}
                             >
-                              {option}
+                              {t(`generateCourse.languageOptions.${option}` as any, option)}
                               {language === option && <Check className="h-4 w-4" />}
                             </button>
                           ))}
@@ -380,10 +373,10 @@ const GenerateCourseModal: React.FC = () => {
                     >
                       <div>
                         <h3 className="flex items-center gap-2 font-['Kalam',cursive] text-xl sm:text-2xl font-bold text-pink-900 dark:text-pink-200 group-hover:text-pink-600 transition-colors">
-                          <FileQuestion className="h-5 w-5 sm:h-6 sm:w-6 text-pink-500 shrink-0" /> Course quiz settings
+                          <FileQuestion className="h-5 w-5 sm:h-6 sm:w-6 text-pink-500 shrink-0" /> {t('generateCourse.quizSettingsTitle')}
                         </h3>
                         <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm font-semibold text-pink-800 dark:text-pink-300">
-                          TutorMe automatically generates a fresh quiz for every lesson from these rules.
+                          {t('generateCourse.quizSettingsSubtitle')}
                         </p>
                       </div>
                       <div className="p-1 rounded-lg bg-pink-100 dark:bg-pink-900/40 border border-pink-300 dark:border-pink-700 shrink-0 ml-2">
@@ -402,8 +395,8 @@ const GenerateCourseModal: React.FC = () => {
                           className={`flex w-full items-center justify-between gap-3 sm:gap-4 rounded-xl border-2 p-3 sm:p-4 text-left transition-colors cursor-pointer ${enableEssayQuestions ? 'border-pink-400 bg-pink-100/70 dark:bg-pink-900/35' : 'border-gray-300 bg-white/70 dark:border-gray-600 dark:bg-gray-800/60'}`}
                         >
                           <div>
-                            <span className="block font-bold text-xs sm:text-base text-gray-900 dark:text-gray-100">Enable Essay Questions</span>
-                            <span className="mt-0.5 block text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300">Include written-response questions in generated quizzes.</span>
+                            <span className="block font-bold text-xs sm:text-base text-gray-900 dark:text-gray-100">{t('generateCourse.enableEssay')}</span>
+                            <span className="mt-0.5 block text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300">{t('generateCourse.enableEssayDesc')}</span>
                           </div>
                           <Switch
                             checked={enableEssayQuestions}
@@ -412,7 +405,7 @@ const GenerateCourseModal: React.FC = () => {
                               if (!checked) setRequireImageSubmission(false);
                             }}
                             color="pink"
-                            label="Enable Essay Questions"
+                            label={t('generateCourse.enableEssay')}
                           />
                         </div>
 
@@ -426,21 +419,21 @@ const GenerateCourseModal: React.FC = () => {
                         >
                           <div>
                             <span className="flex items-center gap-1.5 sm:gap-2 font-bold text-xs sm:text-base text-gray-900 dark:text-gray-100">
-                              <ImagePlus className="h-4 w-4 sm:h-5 sm:w-5 text-pink-500 shrink-0" /> Require Image Submission
+                              <ImagePlus className="h-4 w-4 sm:h-5 sm:w-5 text-pink-500 shrink-0" /> {t('generateCourse.requireImage')}
                             </span>
-                            <span className="mt-0.5 block text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300">Essay answers must include an image. Images stay unavailable when disabled.</span>
+                            <span className="mt-0.5 block text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300">{t('generateCourse.requireImageDesc')}</span>
                           </div>
                           <Switch
                             checked={requireImageSubmission}
                             onChange={(checked) => setRequireImageSubmission(checked)}
                             disabled={!enableEssayQuestions}
                             color="pink"
-                            label="Require Image Submission"
+                            label={t('generateCourse.requireImage')}
                           />
                         </div>
                         <div className="relative rounded-xl border-2 border-gray-300 bg-white/70 p-3 sm:p-4 dark:border-gray-600 dark:bg-gray-800/60">
-                          <p className="font-bold text-xs sm:text-base text-gray-900 dark:text-gray-100">Quiz Length</p>
-                          <p className="mt-0.5 text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300">Choose a fixed number or let TutorMe determine an appropriate length.</p>
+                          <p className="font-bold text-xs sm:text-base text-gray-900 dark:text-gray-100">{t('generateCourse.quizLength')}</p>
+                          <p className="mt-0.5 text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300">{t('generateCourse.quizLengthDesc')}</p>
                           <button type="button" aria-haspopup="listbox" aria-expanded={isQuizLengthOpen} onClick={() => setIsQuizLengthOpen((isOpen) => !isOpen)} className="mt-2.5 sm:mt-3 flex w-full items-center justify-between rounded-lg border-2 border-pink-200 bg-white px-3 py-2 text-xs sm:text-base font-bold text-gray-800 dark:border-pink-700 dark:bg-gray-900 dark:text-gray-100">
                             <span>{quizLength}</span>
                             <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 text-pink-500 transition-transform ${isQuizLengthOpen ? 'rotate-180' : ''}`} />
@@ -471,7 +464,7 @@ const GenerateCourseModal: React.FC = () => {
                     disabled={!courseTopic.trim() || !user?.id}
                     className="w-full mt-6 sm:mt-8 bg-pink-400 dark:bg-pink-500 hover:bg-pink-500 dark:hover:bg-pink-600 text-white font-bold py-3.5 sm:py-4 px-5 sm:px-6 rounded-xl shadow-[3px_3px_0px_0px_rgba(190,24,93,1)] sm:shadow-[4px_4px_0px_0px_rgba(190,24,93,1)] dark:shadow-[3px_3px_0px_0px_rgba(157,23,77,1)] sm:dark:shadow-[4px_4px_0px_0px_rgba(157,23,77,1)] active:translate-y-1 active:shadow-none transform transition focus:outline-none focus:ring-4 focus:ring-pink-400/50 font-['Kalam',cursive] text-xl sm:text-2xl tracking-wide flex justify-center items-center gap-2.5 sm:gap-3 border-2 border-pink-600 dark:border-pink-700"
                   >
-                    Generate Curriculum <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                    {t('generateCourse.generateBtn')} <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                   {errorMessage && (
                     <p role="alert" className="rounded-xl border-2 border-red-300 bg-red-50 px-3.5 sm:px-4 py-2.5 sm:py-3 text-center font-bold text-xs sm:text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
@@ -483,7 +476,7 @@ const GenerateCourseModal: React.FC = () => {
             ) : (
               <div className="py-5 sm:py-6 px-1 sm:px-2 flex flex-col items-center">
                 <h2 className="text-xl sm:text-3xl font-bold mb-6 sm:mb-10 font-['Nunito',sans-serif] text-gray-900 dark:text-gray-100 text-center leading-tight">
-                  Creating your personalized course
+                  {t('generateCourse.generatingTitle')}
                 </h2>
                 <div className="space-y-4 sm:space-y-6 font-['Nunito',sans-serif] font-bold text-sm sm:text-lg text-gray-700 dark:text-gray-300 w-full">
                   {steps.map((step, idx) => {
@@ -509,10 +502,9 @@ const GenerateCourseModal: React.FC = () => {
                   onClick={cancelGeneration}
                   className="mt-6 sm:mt-8 px-5 sm:px-6 py-2 rounded-xl font-bold font-['Kalam',cursive] text-base sm:text-lg border-2 border-red-500 bg-red-100 text-red-700 dark:bg-red-950/40 dark:border-red-800 dark:text-red-300 hover:bg-red-250 dark:hover:bg-red-900/40 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_rgba(239,68,68,0.3)] active:translate-y-0.5 active:shadow-none z-10"
                 >
-                  Cancel Generation
+                  {t('generateCourse.cancelBtn')}
                 </button>
 
-                {/* Fun background graphic when generating */}
                 <div className="absolute -bottom-8 -right-8 opacity-20 pointer-events-none hidden sm:block">
                   <Sparkles className="w-40 h-40 fill-pink-500 text-pink-500 animate-pulse" />
                 </div>

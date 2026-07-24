@@ -12,10 +12,12 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.3.2",
     "axios": "^1.18.1",
+    "i18next": "^26.3.6",
     "katex": "^0.18.1",
     "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.11",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.1",
     "rehype-katex": "^7.0.1",

@@ -74,6 +74,10 @@ function buildQuizPrompt(lessonContent: string, settings: QuizSettings): string 
   return `Generate a short quiz for the following educational content.
 ${questionSpec}
 
+CRITICAL: Every question object in the "questions" array MUST explicitly include the "type" field ("MULTIPLE_CHOICE" or "ESSAY").
+- For MULTIPLE_CHOICE: include "type": "MULTIPLE_CHOICE", "prompt", "options" (array of 4 choices), "correctAnswer" (0-based integer index), and "explanations" (array of explanation strings).
+- For ESSAY: include "type": "ESSAY", "prompt", and "requiresImage" (boolean).
+
 Lesson Content:
 ${lessonContent}`;
 }
@@ -161,7 +165,7 @@ export class QuizGeneratorService {
     }
 
     const prompt = buildQuizPrompt(getLessonPlainContent(lesson.content), settings);
-    const system = "You are an expert curriculum designer creating assessments.";
+    const system = "You are an expert curriculum designer creating assessments. Every question object MUST have a 'type' property with value 'MULTIPLE_CHOICE' or 'ESSAY'.";
 
     const result = await AiService.structuredObject<z.infer<typeof QuestionSchema>>(
       prompt,

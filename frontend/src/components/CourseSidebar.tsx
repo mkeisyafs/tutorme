@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Sidebar, Plus, Minus, CheckCircle2, Play, Lock, ArrowLeft } from 'lucide-react';
 import type { CourseModule } from '../types/course';
 
@@ -22,6 +23,7 @@ export function CourseSidebar({
   activeLessonId,
   courseId,
 }: CourseSidebarProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -123,11 +125,11 @@ export function CourseSidebar({
                 {/* Course Progress Card */}
                 <div className="bg-blue-100 dark:bg-blue-900/40 p-5 rounded-2xl border-4 border-blue-300 dark:border-blue-700/50 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:shadow-[4px_4px_0px_0px_rgba(30,58,138,0.8)] transform -rotate-1 relative">
                   <div className="absolute -top-3 -right-2 w-8 h-4 bg-yellow-400/80 dark:bg-yellow-500/40 transform rotate-12 backdrop-blur-sm shadow-sm pointer-events-none"></div>
-                  <span className="text-xs font-bold uppercase tracking-wider mb-2 inline-block text-blue-800 dark:text-blue-300">Your course</span>
+                  <span className="text-xs font-bold uppercase tracking-wider mb-2 inline-block text-blue-800 dark:text-blue-300">{t('courseSidebar.yourCourse')}</span>
                   <h3 className="text-2xl font-bold font-['Kalam',cursive] text-blue-950 dark:text-blue-100 mb-4 leading-tight">
                     {courseModules.length > 0
-                      ? courseModules[0].courseTitle || 'Your Course'
-                      : 'Your Course'}
+                      ? courseModules[0].courseTitle || t('courseSidebar.defaultCourseTitle')
+                      : t('courseSidebar.defaultCourseTitle')}
                   </h3>
                   <div className="w-full bg-blue-200 dark:bg-blue-800/50 rounded-full h-2 mb-2 border border-blue-300 dark:border-blue-700">
                     <div
@@ -136,14 +138,14 @@ export function CourseSidebar({
                     />
                   </div>
                   <div className="flex justify-between text-xs font-bold text-blue-700 dark:text-blue-300">
-                    <span>{allDone ? 'Completed' : 'In progress'}</span>
+                    <span>{allDone ? t('courseSidebar.completed') : t('courseSidebar.inProgress')}</span>
                     <span>{progressPercent}%</span>
                   </div>
                 </div>
 
                 {/* Course Roadmap Nav */}
                 <div className="mt-4 flex flex-col gap-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Course Roadmap</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{t('courseSidebar.courseRoadmap')}</span>
                   <div className="flex flex-col gap-2">
                     {courseModules.map((module) => {
                       const isExpanded = sidebarExpandedModule === module.id;
@@ -213,7 +215,7 @@ export function CourseSidebar({
                 className="mt-8 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] transition-all active:translate-y-0.5 active:shadow-none w-full font-['Kalam',cursive] text-lg flex-shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
-                Back
+                {t('courseSidebar.back')}
               </button>
             </div>
           </aside>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Pause, RotateCcw, Plus, Coffee, Brain, ChevronUp, ChevronDown, GripHorizontal } from 'lucide-react';
 
 interface PomodoroTimerProps {
@@ -6,6 +7,7 @@ interface PomodoroTimerProps {
 }
 
 const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ className = '' }) => {
+  const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'focus' | 'break'>('focus');
@@ -125,12 +127,12 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ className = '' }) => {
       <div className="flex justify-between items-center mb-2">
         <span className="text-[10px] font-bold uppercase tracking-wider text-pink-800 dark:text-pink-300 flex items-center gap-1">
           {mode === 'focus' ? <Brain className="w-3 h-3" /> : <Coffee className="w-3 h-3" />}
-          {mode === 'focus' ? 'Focus Time' : 'Break Time'}
+          {mode === 'focus' ? t('pomodoro.focusTime') : t('pomodoro.breakTime')}
         </span>
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="text-pink-600 dark:text-pink-400 hover:bg-pink-200 dark:hover:bg-pink-800/50 p-0.5 rounded transition-colors relative z-20"
-          title={isCollapsed ? "Expand" : "Collapse"}
+          title={isCollapsed ? t('pomodoro.expand') : t('pomodoro.collapse')}
         >
           {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
         </button>
@@ -159,7 +161,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ className = '' }) => {
           
           <button 
             onClick={addTime}
-            title="Add 5 Minutes"
+            title={t('pomodoro.addFiveMin')}
             className="w-8 flex justify-center items-center bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-pink-600 dark:text-pink-400 p-1.5 rounded-lg border-2 border-pink-300 dark:border-pink-700 shadow-[0_2px_0px_0px_rgba(244,114,182,1)] dark:shadow-[0_2px_0px_0px_rgba(190,24,93,0.8)] active:translate-y-0.5 active:shadow-none transition-all"
           >
             <Plus className="w-3 h-3" />
@@ -167,7 +169,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ className = '' }) => {
           
           <button 
             onClick={resetTimer}
-            title="Reset Timer"
+            title={t('pomodoro.resetTimer')}
             className="w-8 flex justify-center items-center bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-pink-600 dark:text-pink-400 p-1.5 rounded-lg border-2 border-pink-300 dark:border-pink-700 shadow-[0_2px_0px_0px_rgba(244,114,182,1)] dark:shadow-[0_2px_0px_0px_rgba(190,24,93,0.8)] active:translate-y-0.5 active:shadow-none transition-all"
           >
             <RotateCcw className="w-3 h-3" />

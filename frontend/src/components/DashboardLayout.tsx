@@ -1,5 +1,6 @@
 import React, { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Home, BookOpen, LibraryBig, Settings, LogOut, Moon, Sun, User, Menu, X } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { listed } from '../constant/listed';
@@ -7,19 +8,20 @@ import { useAuth } from '../auth/useAuth';
 
 interface DashboardLayoutProps { children: ReactNode; }
 
-const navItems = [
-  { to: listed.home, label: 'Home', icon: Home, active: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300' },
-  { to: listed.course, label: 'Courses', icon: BookOpen, active: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300' },
-  { to: listed.library, label: 'Library', icon: LibraryBig, active: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300' },
-  { to: listed.profile, label: 'Profile', icon: User, active: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' },
-];
-
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navItems = [
+    { to: listed.home, label: t('nav.home'), icon: Home, active: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300' },
+    { to: listed.course, label: t('nav.courses'), icon: BookOpen, active: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300' },
+    { to: listed.library, label: t('nav.library'), icon: LibraryBig, active: 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300' },
+    { to: listed.profile, label: t('nav.profile'), icon: User, active: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' },
+  ];
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -70,11 +72,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             isMobileMenuOpen ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-full opacity-0 pointer-events-none'
           }`}
         >
-          <div className="flex items-center justify-between mb-8"><span className="text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400">Menu</span><button onClick={() => setIsMobileMenuOpen(false)} aria-label="Close navigation menu" className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700"><X className="w-6 h-6" /></button></div>
+          <div className="flex items-center justify-between mb-8"><span className="text-3xl font-['Kalam',cursive] font-bold text-blue-600 dark:text-blue-400">{t('nav.menu')}</span><button onClick={() => setIsMobileMenuOpen(false)} aria-label="Close navigation menu" className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700"><X className="w-6 h-6" /></button></div>
           {navigation(true)}
           <div className="mt-auto pt-6 border-t-2 border-dashed border-gray-200 dark:border-gray-700 space-y-2">
-            <NavLink to={listed.settings} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => navLinkClass('bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200', isActive, true)}><Settings className="w-5 h-5" /><span className="font-['Kalam',cursive] text-lg">Settings</span></NavLink>
-            <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-lg"><LogOut className="w-5 h-5" /> Log Out</button>
+            <NavLink to={listed.settings} onClick={() => setIsMobileMenuOpen(false)} className={({ isActive }) => navLinkClass('bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200', isActive, true)}><Settings className="w-5 h-5" /><span className="font-['Kalam',cursive] text-lg">{t('nav.settings')}</span></NavLink>
+            <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-lg"><LogOut className="w-5 h-5" /> {t('nav.logout')}</button>
           </div>
         </aside>
       </div>
@@ -86,8 +88,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           {navigation()}
         </div>
         <div className="mt-auto pt-6 border-t-2 border-dashed border-gray-200 dark:border-gray-700 space-y-2">
-          <NavLink to={listed.settings} className={({ isActive }) => navLinkClass('bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200', isActive)}><Settings className="w-5 h-5" /><span className="font-['Kalam',cursive] text-xl">Settings</span></NavLink>
-          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-xl"><LogOut className="w-5 h-5" /> Log Out</button>
+          <NavLink to={listed.settings} className={({ isActive }) => navLinkClass('bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200', isActive)}><Settings className="w-5 h-5" /><span className="font-['Kalam',cursive] text-xl">{t('nav.settings')}</span></NavLink>
+          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 w-full font-['Kalam',cursive] text-xl"><LogOut className="w-5 h-5" /> {t('nav.logout')}</button>
         </div>
       </aside>
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Terminal, Code2, RefreshCw, Play } from 'lucide-react';
 import { runPythonMock } from './pythonInterpreter';
 import type { CodeSandboxBlock } from './types';
@@ -9,6 +10,7 @@ export const CodeSandboxComponent: React.FC<CodeSandboxBlock> = ({
   expectedOutput,
   instructions,
 }) => {
+  const { t } = useTranslation();
   const [code, setCode] = useState(defaultCode);
   const [consoleOutput, setConsoleOutput] = useState<string>('');
   const [isCompiling, setIsCompiling] = useState(false);
@@ -57,7 +59,7 @@ export const CodeSandboxComponent: React.FC<CodeSandboxBlock> = ({
         </div>
         <div>
           <span className="text-[11px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest block font-mono">
-            Interactive Playground
+            {t('blocks.codeSandbox.badge')}
           </span>
           <p className="text-gray-800 dark:text-gray-200 font-semibold text-sm sm:text-base leading-relaxed">
             {instructions}
@@ -71,9 +73,9 @@ export const CodeSandboxComponent: React.FC<CodeSandboxBlock> = ({
         <div className="flex flex-col bg-gray-950 border-r-0 lg:border-r-3 border-b-3 lg:border-b-0 border-gray-800">
           <div className="flex justify-between items-center px-4 py-2 bg-gray-900 border-b border-gray-800 text-[11px] font-mono font-bold tracking-wider text-gray-400">
             <span className="flex items-center gap-1.5 text-pink-400">
-              <Code2 className="w-3.5 h-3.5" /> {language.toUpperCase()} EDITOR
+              <Code2 className="w-3.5 h-3.5" /> {t('blocks.codeSandbox.editorTitle', { lang: language.toUpperCase() })}
             </span>
-            <span className="text-[10px] text-gray-500 bg-gray-800 px-2 py-0.5 rounded">Editable</span>
+            <span className="text-[10px] text-gray-500 bg-gray-800 px-2 py-0.5 rounded">{t('blocks.codeSandbox.editable')}</span>
           </div>
           <textarea
             value={code}
@@ -87,7 +89,7 @@ export const CodeSandboxComponent: React.FC<CodeSandboxBlock> = ({
         <div className="flex flex-col bg-black text-green-400 font-mono text-xs">
           <div className="flex justify-between items-center px-4 py-2 bg-gray-900/90 border-b border-gray-800 text-[11px] font-bold tracking-wider text-gray-400">
             <span className="flex items-center gap-1.5 text-green-400">
-              <Terminal className="w-3.5 h-3.5" /> CONSOLE OUTPUT
+              <Terminal className="w-3.5 h-3.5" /> {t('blocks.codeSandbox.consoleTitle')}
             </span>
             {expectedOutput && (
               <span className="text-[10px] text-gray-500 truncate max-w-[180px]">
@@ -96,7 +98,7 @@ export const CodeSandboxComponent: React.FC<CodeSandboxBlock> = ({
             )}
           </div>
           <pre className="flex-1 p-4 overflow-y-auto leading-relaxed min-h-[13rem] select-text">
-            <code>{consoleOutput || 'Click "Run Code" to execute code.'}</code>
+            <code>{consoleOutput || t('blocks.codeSandbox.runPrompt')}</code>
           </pre>
         </div>
       </div>
@@ -109,7 +111,7 @@ export const CodeSandboxComponent: React.FC<CodeSandboxBlock> = ({
           disabled={isCompiling}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isCompiling ? 'animate-spin' : ''}`} />
-          Reset
+          {t('blocks.codeSandbox.resetBtn')}
         </button>
 
         <button
@@ -118,7 +120,7 @@ export const CodeSandboxComponent: React.FC<CodeSandboxBlock> = ({
           disabled={isCompiling}
         >
           <Play className="w-4 h-4 fill-white text-white" />
-          {isCompiling ? 'Running...' : 'Run Code'}
+          {isCompiling ? t('blocks.codeSandbox.runningBtn') : t('blocks.codeSandbox.runBtn')}
         </button>
       </div>
     </div>

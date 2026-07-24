@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, Pencil, Play, RefreshCw, Save, Sidebar, Sparkles, X } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
 import { useCourseGeneration, saveDraftToLocalStorage } from '../context/CourseGenerationContext';
@@ -16,6 +17,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const Roadmap = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { draftId } = useParams<{ draftId: string }>();
   const [draft, setDraft] = useState<DraftOutline | null>(null);
@@ -119,15 +121,13 @@ const Roadmap = () => {
       setEditedTitle(updatedDraft.courseTitle);
       setEditedDescription(updatedDraft.courseDescription);
       setIsEditingDetails(false);
-      showGuideMessage('Draft details saved. Your course still will not be published until you click Start Learning.');
+      showGuideMessage(t('roadmap.draftSavedToast'));
     } catch (error) {
       setActionError(getErrorMessage(error, 'We could not save your draft details. Please try again.'));
     } finally {
       setIsSavingDetails(false);
     }
   };
-
-
 
   const handlePublish = async () => {
     if (!draftId || !draft || isPublishing) return;
@@ -141,8 +141,8 @@ const Roadmap = () => {
       <div className="min-h-screen w-full bg-gray-50 px-6 py-16 font-['Nunito',sans-serif] text-gray-800 dark:bg-gray-900 dark:text-gray-100">
         <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border-4 border-purple-300 bg-white p-10 text-center shadow-[8px_8px_0px_0px_rgba(168,85,247,1)] dark:border-purple-700 dark:bg-gray-800">
           <LoaderCircle className="h-12 w-12 animate-spin text-purple-500" />
-          <h1 className="mt-5 font-['Kalam',cursive] text-3xl font-bold">Loading your draft roadmap</h1>
-          <p className="mt-2 font-bold text-gray-600 dark:text-gray-300">Getting your modules and lessons ready for review…</p>
+          <h1 className="mt-5 font-['Kalam',cursive] text-3xl font-bold">{t('roadmap.loadingRoadmap')}</h1>
+          <p className="mt-2 font-bold text-gray-600 dark:text-gray-300">{t('roadmap.gettingModulesReady')}</p>
         </div>
       </div>
     );
@@ -153,15 +153,15 @@ const Roadmap = () => {
       <div className="min-h-screen w-full bg-gray-50 px-6 py-16 font-['Nunito',sans-serif] text-gray-800 dark:bg-gray-900 dark:text-gray-100">
         <div className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border-4 border-red-300 bg-white p-10 text-center shadow-[8px_8px_0px_0px_rgba(248,113,113,1)] dark:border-red-800 dark:bg-gray-800">
           <CircleAlert className="h-12 w-12 text-red-500" />
-          <h1 className="mt-5 font-['Kalam',cursive] text-3xl font-bold">We couldn’t open this draft</h1>
+          <h1 className="mt-5 font-['Kalam',cursive] text-3xl font-bold">{t('roadmap.couldNotOpen')}</h1>
           <p role="alert" className="mt-3 font-bold text-red-700 dark:text-red-300">{draftError || 'The draft is unavailable.'}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <button onClick={() => void loadDraft()} className="flex items-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(126,34,206,1)] transition-all active:translate-y-0.5 active:shadow-none">
               <RefreshCw className="h-5 w-5" />
-              Try again
+              {t('roadmap.tryAgain')}
             </button>
             <button onClick={() => navigate(-1)} className="rounded-xl border-2 border-gray-300 bg-gray-100 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] transition-all active:translate-y-0.5 active:shadow-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
-              Go back
+              {t('roadmap.goBack')}
             </button>
           </div>
         </div>
@@ -181,7 +181,7 @@ const Roadmap = () => {
         </button>
       )}
 
-      {/* Left Sidebar (Draft Info) - Responsive overlay on mobile */}
+      {/* Left Sidebar (Draft Info) */}
       {isSidebarOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-gray-900/40 backdrop-blur-sm lg:hidden" onClick={() => setIsSidebarOpen(false)} />
@@ -196,14 +196,14 @@ const Roadmap = () => {
 
               <div className="relative -rotate-1 transform rounded-2xl border-4 border-blue-300 bg-blue-100 p-5 shadow-[4px_4px_0px_0px_rgba(96,165,250,1)] dark:border-blue-700/50 dark:bg-blue-900/40 dark:shadow-[4px_4px_0px_0px_rgba(30,58,138,0.8)]">
                 <div className="pointer-events-none absolute -right-2 -top-3 h-4 w-8 rotate-12 transform bg-yellow-400/80 shadow-sm backdrop-blur-sm dark:bg-yellow-500/40" />
-                <span className="mb-2 inline-block text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">Your draft</span>
+                <span className="mb-2 inline-block text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">{t('roadmap.yourDraft')}</span>
                 <h3 className="mb-4 font-['Kalam',cursive] text-2xl font-bold leading-tight text-blue-950 dark:text-blue-100">{draft.courseTitle}</h3>
                 <div className="mb-2 h-2 w-full rounded-full border border-blue-300 bg-blue-200 dark:border-blue-700 dark:bg-blue-800/50">
                   <div className="h-full w-0 rounded-full bg-blue-500 dark:bg-blue-400" />
                 </div>
                 <div className="flex justify-between text-xs font-bold text-blue-700 dark:text-blue-300">
-                  <span>{lessonCount} {lessonCount === 1 ? 'lesson' : 'lessons'}</span>
-                  <span>Not started</span>
+                  <span>{lessonCount === 1 ? t('roadmap.oneLesson') : t('roadmap.lessonsCount', { count: lessonCount })}</span>
+                  <span>{t('roadmap.notStarted')}</span>
                 </div>
               </div>
             </div>
@@ -213,7 +213,7 @@ const Roadmap = () => {
               className="mt-8 flex w-full flex-shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-100 px-4 py-3 font-['Kalam',cursive] text-lg font-bold text-gray-700 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] transition-all active:translate-y-0.5 active:shadow-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] dark:hover:bg-gray-700"
             >
               <ArrowLeft className="h-5 w-5" />
-              Back
+              {t('roadmap.back')}
             </button>
           </aside>
         </>
@@ -224,7 +224,7 @@ const Roadmap = () => {
           <div className="mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-4">
             <h1 className="flex items-center gap-3 sm:gap-4 font-['Kalam',cursive] text-3xl font-bold uppercase tracking-wide text-gray-900 sm:text-5xl dark:text-gray-100">
               <Play className="h-8 w-8 sm:h-10 sm:w-10 rotate-12 transform fill-pink-500 text-pink-500" />
-              Roadmap
+              {t('roadmap.roadmapTitle')}
             </h1>
             <div className="flex gap-2 sm:gap-4">
               <button
@@ -232,7 +232,7 @@ const Roadmap = () => {
                 disabled={isPublishing}
                 className="rounded-xl border-2 border-gray-300 bg-white px-4 py-2.5 font-['Kalam',cursive] text-lg font-bold text-gray-600 shadow-[2px_2px_0px_0px_rgba(156,163,175,1)] transition-all hover:bg-gray-100 hover:text-gray-900 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:shadow-[2px_2px_0px_0px_rgba(75,85,99,1)] dark:hover:bg-gray-700"
               >
-                Cancel
+                {t('roadmap.cancel')}
               </button>
               <button
                 onClick={() => void handlePublish()}
@@ -240,7 +240,7 @@ const Roadmap = () => {
                 className="flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 hover:bg-green-600 px-4 py-2.5 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0px_0px_rgba(21,128,61,1)] transition-all active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 dark:bg-green-600 dark:hover:bg-green-500"
               >
                 {isPublishing && <LoaderCircle className="h-5 w-5 animate-spin" />}
-                {isPublishing ? 'Starting…' : 'Start Learning'}
+                {isPublishing ? t('roadmap.starting') : t('roadmap.startLearning')}
               </button>
             </div>
           </div>
@@ -259,8 +259,8 @@ const Roadmap = () => {
               <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-purple-700 dark:text-purple-300" />
             </div>
             <div>
-              <h3 className="mb-1 font-['Kalam',cursive] text-xl sm:text-2xl font-bold text-purple-950 dark:text-purple-100">Editor Mode</h3>
-              <p className="text-xs sm:text-sm font-bold text-purple-800 dark:text-purple-300">This outline is a draft only. It enters your course database only after you click <strong className="text-purple-900 dark:text-purple-200">Start Learning</strong>.</p>
+              <h3 className="mb-1 font-['Kalam',cursive] text-xl sm:text-2xl font-bold text-purple-950 dark:text-purple-100">{t('roadmap.editorModeTitle')}</h3>
+              <p className="text-xs sm:text-sm font-bold text-purple-800 dark:text-purple-300">{t('roadmap.editorModeDesc', { action: t('roadmap.startLearning') })}</p>
             </div>
           </div>
 
@@ -276,21 +276,21 @@ const Roadmap = () => {
             {isEditingDetails ? (
               <form onSubmit={handleSaveDetails} className="space-y-4">
                 <label className="block">
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Course title</span>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">{t('roadmap.courseTitle')}</span>
                   <input value={editedTitle} onChange={(event) => setEditedTitle(event.target.value)} className="w-full rounded-xl border-2 border-yellow-400 bg-white px-4 py-3 text-xl sm:text-2xl font-bold text-gray-900 outline-none focus:ring-4 focus:ring-yellow-300 dark:bg-gray-800 dark:text-gray-100" />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Description</span>
+                  <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">{t('roadmap.description')}</span>
                   <textarea value={editedDescription} onChange={(event) => setEditedDescription(event.target.value)} rows={3} className="w-full resize-y rounded-xl border-2 border-yellow-400 bg-white px-4 py-3 text-sm sm:text-base font-bold text-gray-700 outline-none focus:ring-4 focus:ring-yellow-300 dark:bg-gray-800 dark:text-gray-100" />
                 </label>
                 <div className="flex flex-wrap gap-3">
                   <button type="submit" disabled={isSavingDetails} className="flex items-center gap-2 rounded-xl border-2 border-yellow-700 bg-yellow-400 px-4 py-2.5 font-['Kalam',cursive] text-lg font-bold text-yellow-950 shadow-[2px_2px_0px_0px_rgba(161,98,7,1)] transition-all active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60">
                     {isSavingDetails ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-                    Save draft details
+                    {t('roadmap.saveDraftDetails')}
                   </button>
                   <button type="button" disabled={isSavingDetails} onClick={() => { setEditedTitle(draft.courseTitle); setEditedDescription(draft.courseDescription); setIsEditingDetails(false); }} className="flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 py-2.5 font-['Kalam',cursive] text-lg font-bold text-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
                     <X className="h-5 w-5" />
-                    Cancel edit
+                    {t('roadmap.cancelEdit')}
                   </button>
                 </div>
               </form>
@@ -303,7 +303,7 @@ const Roadmap = () => {
                   </div>
                   <button onClick={() => setIsEditingDetails(true)} className="flex items-center gap-2 rounded-xl border-2 border-yellow-500 bg-white/80 px-3 sm:px-4 py-2 sm:py-2.5 font-['Kalam',cursive] text-base sm:text-lg font-bold text-yellow-800 shadow-[2px_2px_0px_0px_rgba(234,179,8,1)] transition-all active:translate-y-0.5 active:shadow-none dark:bg-gray-800 dark:text-yellow-300">
                     <Pencil className="h-4 w-4 sm:h-5 sm:w-5" />
-                    Edit details
+                    {t('roadmap.editDetails')}
                   </button>
                 </div>
                 <div className="mt-4 sm:mt-5 flex flex-wrap gap-2 text-xs sm:text-sm font-bold">
@@ -317,7 +317,7 @@ const Roadmap = () => {
           <div className="space-y-4 sm:space-y-5 pb-12">
             {draft.modules.length === 0 ? (
               <div className="rounded-2xl border-4 border-dashed border-gray-300 bg-white p-8 text-center font-bold text-gray-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                This draft has no modules yet.
+                {t('roadmap.noModules')}
               </div>
             ) : draft.modules.map((module) => {
               const isExpanded = expandedModule === module.id;
@@ -330,7 +330,7 @@ const Roadmap = () => {
                     <div className="flex-1">
                       <h3 className="font-['Nunito',sans-serif] text-lg sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">{module.title}</h3>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400">
-                        <span>{module.lessons.length} {module.lessons.length === 1 ? 'lesson' : 'lessons'}</span>
+                        <span>{module.lessons.length === 1 ? t('roadmap.oneLesson') : t('roadmap.lessonsCount', { count: module.lessons.length })}</span>
                         <span className="h-1.5 w-1.5 rounded-full bg-gray-400 dark:bg-gray-500" />
                         <span>{module.description || 'A focused set of lessons'}</span>
                       </div>
@@ -344,17 +344,17 @@ const Roadmap = () => {
                     <div className="overflow-hidden">
                       <div className="border-t-2 border-dashed border-gray-200 bg-white px-3 sm:px-5 pb-5 pt-3 pl-8 sm:pl-14 dark:border-gray-700 dark:bg-gray-800">
                         {module.lessons.length === 0 ? (
-                          <p className="font-bold text-xs sm:text-sm text-gray-500 dark:text-gray-400">No lessons in this module yet.</p>
+                          <p className="font-bold text-xs sm:text-sm text-gray-500 dark:text-gray-400">{t('roadmap.noLessonsInModule')}</p>
                         ) : (
                           <ul className="space-y-2.5 sm:space-y-3">
                             {module.lessons.map((lesson) => (
                               <li key={lesson.id}>
-                                <button type="button" onClick={() => showGuideMessage('This is an unpublished draft. Click Start Learning to create the course before opening lessons.')} className="group flex w-full items-center justify-between gap-3 rounded-xl border-2 border-transparent p-2.5 sm:p-3 text-left text-sm sm:text-lg font-bold text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600 dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-blue-400">
+                                <button type="button" onClick={() => showGuideMessage(t('roadmap.draftClickNotice'))} className="group flex w-full items-center justify-between gap-3 rounded-xl border-2 border-transparent p-2.5 sm:p-3 text-left text-sm sm:text-lg font-bold text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600 dark:text-gray-300 dark:hover:bg-gray-700/50 dark:hover:text-blue-400">
                                   <span className="flex items-center gap-2.5 pl-1">
                                     <span className="h-2 w-2 flex-shrink-0 rounded-full bg-gray-300 transition-colors group-hover:bg-blue-400 dark:bg-gray-600" />
                                     {lesson.title}
                                   </span>
-                                  <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[0.65rem] sm:text-xs font-bold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Draft</span>
+                                  <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[0.65rem] sm:text-xs font-bold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{t('roadmap.draftBadge')}</span>
                                 </button>
                               </li>
                             ))}
@@ -376,8 +376,6 @@ const Roadmap = () => {
           </div>
         </div>
       </main>
-
-
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/useAuth';
 import { getPasswordValidationMessage } from '../auth/passwordValidation';
 import { getApiErrorMessage } from '../lib/api';
@@ -12,6 +13,7 @@ interface SignUpModalProps {
 }
 
 const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLogin }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { register } = useAuth();
   const [fullName, setFullName] = useState('');
@@ -47,7 +49,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLo
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('signUp.passwordMismatch'));
       return;
     }
 
@@ -58,7 +60,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLo
       onClose();
       navigate('/home');
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, 'We could not create your account. Please try again.'));
+      setError(getApiErrorMessage(requestError, t('signUp.errorDefault')));
     } finally {
       setIsSubmitting(false);
     }
@@ -75,16 +77,16 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLo
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 sm:top-4 sm:right-4 text-green-600 dark:text-gray-400 hover:text-green-900 dark:hover:text-gray-100 font-bold font-['Kalam',cursive] text-xl sm:text-2xl transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-green-200/50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-gray-500"
-          aria-label="Close"
+          aria-label={t('common.close')}
         >
           X
         </button>
 
-        <h2 className="text-3xl sm:text-4xl font-bold mb-6 sm:mb-8 font-['Kalam',cursive] text-green-900 dark:text-green-300 text-center">Join TutorMe!</h2>
+        <h2 className="text-3xl sm:text-4xl font-bold mb-6 sm:mb-8 font-['Kalam',cursive] text-green-900 dark:text-green-300 text-center">{t('signUp.title')}</h2>
         
         <form className="space-y-4 sm:space-y-5 font-['Nunito',sans-serif]" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-green-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">Full Name</label>
+            <label className="block text-green-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">{t('signUp.fullName')}</label>
             <input 
               type="text" 
               value={fullName}
@@ -95,7 +97,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLo
             />
           </div>
           <div>
-            <label className="block text-green-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">Email</label>
+            <label className="block text-green-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">{t('signUp.email')}</label>
             <input 
               type="email" 
               value={email}
@@ -106,26 +108,26 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLo
             />
           </div>
           <div className="relative">
-            <label className="block text-green-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">Password</label>
+            <label className="block text-green-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">{t('signUp.password')}</label>
             <input 
               type={isPasswordVisible ? 'text' : 'password'}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
               className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-12 border border-green-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-green-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 text-sm sm:text-base placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="Create your password"
+              placeholder="••••••••"
             />
             <button
               type="button"
               onClick={() => setIsPasswordVisible((visible) => !visible)}
               className="absolute bottom-0 right-0 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center text-green-700 hover:text-green-950 dark:text-gray-400 dark:hover:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
-              aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+              aria-label={isPasswordVisible ? t('login.hidePassword') : t('login.showPassword')}
             >
               {isPasswordVisible ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
             </button>
           </div>
           <div className="relative">
-            <label className="block text-green-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">Confirm Password</label>
+            <label className="block text-green-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">{t('signUp.confirmPassword')}</label>
             <input
               type={isConfirmPasswordVisible ? 'text' : 'password'}
               value={confirmPassword}
@@ -133,13 +135,13 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLo
               required
               aria-invalid={Boolean(error && password !== confirmPassword)}
               className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-12 border border-green-300/50 dark:border-gray-600 bg-white/70 dark:bg-gray-900/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 dark:focus:ring-green-500 focus:border-transparent transition-shadow font-medium shadow-inner text-gray-800 dark:text-gray-100 text-sm sm:text-base placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="Confirm your password"
+              placeholder="••••••••"
             />
             <button
               type="button"
               onClick={() => setIsConfirmPasswordVisible((visible) => !visible)}
               className="absolute bottom-0 right-0 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center text-green-700 hover:text-green-950 dark:text-gray-400 dark:hover:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
-              aria-label={isConfirmPasswordVisible ? 'Show password confirmation' : 'Hide password confirmation'}
+              aria-label={isConfirmPasswordVisible ? t('signUp.hideConfirmPassword') : t('signUp.showConfirmPassword')}
             >
               {isConfirmPasswordVisible ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
             </button>
@@ -150,10 +152,10 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLo
             type="submit" 
             className="w-full mt-6 sm:mt-8 bg-green-400 hover:bg-green-500 disabled:cursor-wait disabled:opacity-70 text-green-950 font-bold py-3.5 sm:py-4 px-6 rounded-xl shadow-[0_8px_20px_-6px_rgba(74,222,128,0.2)] transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-green-400/50 font-['Kalam',cursive] text-xl sm:text-2xl tracking-wide"
           >
-            {isSubmitting ? 'Creating Account…' : 'Sign Up'}
+            {isSubmitting ? t('signUp.creatingAccountBtn') : t('signUp.signUpBtn')}
           </button>
           <div className="mt-4 text-center font-['Nunito',sans-serif] text-xs sm:text-sm text-green-900/80 dark:text-gray-300">
-            Already have an account?{' '}
+            {t('signUp.hasAccount')}{' '}
             <button
               type="button"
               onClick={() => {
@@ -162,7 +164,7 @@ const SignUpModal: React.FC<SignUpModalProps> = ({ isOpen, onClose, onSwitchToLo
               }}
               className="font-bold text-green-800 hover:text-green-950 dark:text-green-400 dark:hover:text-green-300 underline underline-offset-2 transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 rounded-sm"
             >
-              Log In
+              {t('signUp.loginLink')}
             </button>
           </div>
         </form>

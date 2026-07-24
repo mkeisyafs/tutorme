@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Award,
@@ -17,14 +18,8 @@ import { apiRequest, getApiErrorMessage } from '../lib/api';
 import type { ReturnToCourseResponse, SubmissionSummary } from '../types/assessment';
 import type { CourseLesson } from '../types/course';
 
-const lessonGenerationSteps = [
-  'Preparing lesson structure',
-  'Crafting explanations & concepts',
-  'Building interactive exercises',
-  'Finishing your next lesson',
-];
-
 const CourseAnalysis = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { submissionId } = useParams<{ submissionId: string }>();
   const [summary, setSummary] = useState<SubmissionSummary | null>(null);
@@ -35,6 +30,13 @@ const CourseAnalysis = () => {
   const [generationStep, setGenerationStep] = useState(0);
   const [error, setError] = useState('');
   const [returnError, setReturnError] = useState('');
+
+  const lessonGenerationSteps = useMemo(() => [
+    t('courseAnalysis.genSteps.s1'),
+    t('courseAnalysis.genSteps.s2'),
+    t('courseAnalysis.genSteps.s3'),
+    t('courseAnalysis.genSteps.s4'),
+  ], [t]);
 
   const courseId = summary?.quiz.courseId || '';
   const { courseModules, completedLessonIds, orderedLessons, progressPercent, allDone } = useCourseSidebar(courseId);
@@ -48,7 +50,7 @@ const CourseAnalysis = () => {
       setGenerationStep((prev) => Math.min(prev + 1, lessonGenerationSteps.length - 1));
     }, 1200);
     return () => window.clearInterval(timer);
-  }, [nextLessonGenerating]);
+  }, [nextLessonGenerating, lessonGenerationSteps.length]);
 
   const loadSummary = useCallback(async () => {
     if (!submissionId) {
@@ -116,7 +118,7 @@ const CourseAnalysis = () => {
       <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
         <section className="rounded-3xl border-4 border-green-300 bg-white p-10 text-center shadow-[8px_8px_0_#4ade80] dark:border-green-800 dark:bg-gray-800">
           <LoaderCircle className="mx-auto h-12 w-12 animate-spin text-green-500" />
-          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">Loading your result</h1>
+          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">{t('courseAnalysis.loadingResult')}</h1>
         </section>
       </main>
     );
@@ -127,11 +129,11 @@ const CourseAnalysis = () => {
       <main className="min-h-screen grid place-items-center bg-gray-50 p-6 font-['Nunito',sans-serif] dark:bg-gray-900">
         <section className="max-w-lg rounded-3xl border-4 border-red-300 bg-white p-10 text-center shadow-[8px_8px_0_#f87171] dark:border-red-800 dark:bg-gray-800">
           <CircleAlert className="mx-auto h-12 w-12 text-red-500" />
-          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">Result unavailable</h1>
+          <h1 className="mt-4 font-['Kalam',cursive] text-3xl font-bold text-gray-900 dark:text-white">{t('courseAnalysis.resultUnavailable')}</h1>
           <p role="alert" className="mt-3 font-bold text-red-700 dark:text-red-300">{error}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <button onClick={() => void loadSummary()} className="inline-flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#15803d]"><RefreshCw className="h-5 w-5" /> Try again</button>
-            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-100 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> Go back</button>
+            <button onClick={() => void loadSummary()} className="inline-flex items-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-white shadow-[2px_2px_0_#15803d]"><RefreshCw className="h-5 w-5" /> {t('courseAnalysis.tryAgain')}</button>
+            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-100 px-5 py-3 font-['Kalam',cursive] text-lg font-bold text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"><ArrowLeft className="h-5 w-5" /> {t('courseAnalysis.goBack')}</button>
           </div>
         </section>
       </main>
@@ -187,29 +189,29 @@ const CourseAnalysis = () => {
           <section className="w-full max-w-4xl mx-auto rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-green-300 bg-white p-4 sm:p-8 shadow-[5px_5px_0_#4ade80] sm:shadow-[10px_10px_0_#4ade80] dark:border-green-800 dark:bg-gray-800 md:p-11">
         <div className="text-center">
           <Award className="mx-auto h-10 w-10 sm:h-14 sm:w-14 text-green-500" />
-          <p className="mt-2 sm:mt-4 text-xs sm:text-sm font-bold uppercase tracking-wider text-green-700 dark:text-green-300">{summary?.quiz.type === 'FINAL_EXAM' ? 'Final exam' : 'Quiz result'}</p>
-          <h1 className="mt-1 sm:mt-2 font-['Kalam',cursive] text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white leading-tight">{summary?.quiz.title || 'Assessment result'}</h1>
+          <p className="mt-2 sm:mt-4 text-xs sm:text-sm font-bold uppercase tracking-wider text-green-700 dark:text-green-300">{summary?.quiz.type === 'FINAL_EXAM' ? t('courseAnalysis.finalExamBadge') : t('courseAnalysis.quizResultBadge')}</p>
+          <h1 className="mt-1 sm:mt-2 font-['Kalam',cursive] text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white leading-tight">{summary?.quiz.title || t('courseAnalysis.assessmentResultTitle')}</h1>
         </div>
 
         <div className="mt-5 sm:mt-9 grid grid-cols-3 gap-2 sm:gap-4">
-          <div className="rounded-xl sm:rounded-2xl border-2 border-green-300 bg-green-50 p-2.5 sm:p-5 text-center dark:border-green-800 dark:bg-green-950/30"><p className="text-[10px] sm:text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-300">Score</p><p className="mt-1 sm:mt-2 font-['Kalam',cursive] text-xl sm:text-4xl font-bold text-green-950 dark:text-green-100">{summary?.score ?? 0}%</p></div>
-          <div className="rounded-xl sm:rounded-2xl border-2 border-blue-300 bg-blue-50 p-2.5 sm:p-5 text-center dark:border-blue-800 dark:bg-blue-950/30"><p className="text-[10px] sm:text-sm font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">Grade</p><p className="mt-1 sm:mt-2 font-['Kalam',cursive] text-xl sm:text-4xl font-bold text-blue-950 dark:text-blue-100">{summary?.gradeLetter || '—'}</p></div>
-          <div className="rounded-xl sm:rounded-2xl border-2 border-purple-300 bg-purple-50 p-2.5 sm:p-5 text-center dark:border-purple-800 dark:bg-purple-950/30"><p className="text-[10px] sm:text-sm font-bold uppercase tracking-wide text-purple-700 dark:text-purple-300">Correct</p><p className="mt-1 sm:mt-2 font-['Kalam',cursive] text-xl sm:text-4xl font-bold text-purple-950 dark:text-purple-100">{String(summary?.correctCount ?? 0) + '/' + String(summary?.totalQuestions ?? 0)}</p></div>
+          <div className="rounded-xl sm:rounded-2xl border-2 border-green-300 bg-green-50 p-2.5 sm:p-5 text-center dark:border-green-800 dark:bg-green-950/30"><p className="text-[10px] sm:text-sm font-bold uppercase tracking-wide text-green-700 dark:text-green-300">{t('courseAnalysis.score')}</p><p className="mt-1 sm:mt-2 font-['Kalam',cursive] text-xl sm:text-4xl font-bold text-green-950 dark:text-green-100">{summary?.score ?? 0}%</p></div>
+          <div className="rounded-xl sm:rounded-2xl border-2 border-blue-300 bg-blue-50 p-2.5 sm:p-5 text-center dark:border-blue-800 dark:bg-blue-950/30"><p className="text-[10px] sm:text-sm font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">{t('courseAnalysis.grade')}</p><p className="mt-1 sm:mt-2 font-['Kalam',cursive] text-xl sm:text-4xl font-bold text-blue-950 dark:text-blue-100">{summary?.gradeLetter || '—'}</p></div>
+          <div className="rounded-xl sm:rounded-2xl border-2 border-purple-300 bg-purple-50 p-2.5 sm:p-5 text-center dark:border-purple-800 dark:bg-purple-950/30"><p className="text-[10px] sm:text-sm font-bold uppercase tracking-wide text-purple-700 dark:text-purple-300">{t('courseAnalysis.correct')}</p><p className="mt-1 sm:mt-2 font-['Kalam',cursive] text-xl sm:text-4xl font-bold text-purple-950 dark:text-purple-100">{String(summary?.correctCount ?? 0) + '/' + String(summary?.totalQuestions ?? 0)}</p></div>
         </div>
 
         <div className={'mt-5 sm:mt-7 rounded-xl sm:rounded-2xl border-2 p-3.5 sm:p-5 ' + (passed ? 'border-green-300 bg-green-50 text-green-900 dark:border-green-800 dark:bg-green-950/30 dark:text-green-100' : 'border-orange-300 bg-orange-50 text-orange-900 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-100')}>
           <div className="flex items-start gap-2.5 sm:gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
             <div>
-              <h2 className="font-['Kalam',cursive] text-xl sm:text-2xl font-bold">{passed ? 'Great work!' : 'Keep practicing'}</h2>
-              <p className="mt-0.5 sm:mt-1 text-xs sm:text-base font-semibold">{passed ? 'You passed this assessment.' : 'Review the lesson material and try again next time.'}</p>
+              <h2 className="font-['Kalam',cursive] text-xl sm:text-2xl font-bold">{passed ? t('courseAnalysis.greatWork') : t('courseAnalysis.keepPracticing')}</h2>
+              <p className="mt-0.5 sm:mt-1 text-xs sm:text-base font-semibold">{passed ? t('courseAnalysis.passedDesc') : t('courseAnalysis.failedDesc')}</p>
             </div>
           </div>
         </div>
 
         {summary?.aiFeedback && (
           <div className="mt-4 sm:mt-6 rounded-xl sm:rounded-2xl border-2 border-blue-200 bg-blue-50/60 p-3.5 sm:p-5 dark:border-blue-800 dark:bg-blue-950/20">
-            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400">AI Feedback</p>
+            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400">{t('courseAnalysis.aiFeedback')}</p>
             <p className="mt-1.5 sm:mt-2 whitespace-pre-wrap text-xs sm:text-base font-medium leading-relaxed text-gray-700 dark:text-gray-200">{summary.aiFeedback}</p>
           </div>
         )}
@@ -220,7 +222,7 @@ const CourseAnalysis = () => {
         {error && <p role="alert" className="mt-3 sm:mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-center text-xs sm:text-sm font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">{error}</p>}
         {returnError && <p role="alert" aria-live="polite" className="mt-3 sm:mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center text-xs sm:text-sm font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{returnError}</p>}
         <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3">
-          <button onClick={() => void handleBackToCourse()} disabled={isReturning || isNavigatingNext || !summary} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-wait disabled:opacity-70">{isReturning ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />} {isReturning ? 'Returning…' : 'Back to course'}</button>
+          <button onClick={() => void handleBackToCourse()} disabled={isReturning || isNavigatingNext || !summary} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-wait disabled:opacity-70">{isReturning ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />} {isReturning ? t('courseAnalysis.returning') : t('courseAnalysis.backToCourse')}</button>
           {isChapterQuiz && nextLesson && (
             <button
               onClick={() => void handleNextLesson()}
@@ -230,12 +232,12 @@ const CourseAnalysis = () => {
               {isNavigatingNext ? (
                 <>
                   <LoaderCircle className="h-5 w-5 animate-spin" />
-                  {nextLessonGenerating ? 'Generating lesson…' : 'Loading…'}
+                  {nextLessonGenerating ? t('courseAnalysis.generatingLesson') : t('common.loading')}
                 </>
               ) : (
                 <>
                   {nextLesson.isGenerated ? null : <Sparkles className="h-5 w-5 fill-current" />}
-                  Next Lesson
+                  {t('courseAnalysis.nextLesson')}
                   <ChevronRight className="h-5 w-5" />
                 </>
               )}
@@ -257,10 +259,10 @@ const CourseAnalysis = () => {
                   <Sparkles className="h-6 w-6 sm:h-9 sm:w-9 text-blue-500 fill-blue-500 animate-spin" />
                 </div>
                 <h2 id="lesson-generation-modal-title" className="mt-3 sm:mt-5 text-center font-['Kalam',cursive] text-2xl sm:text-3xl font-bold text-blue-950 dark:text-blue-100 leading-tight">
-                  Generating Next Lesson
+                  {t('courseAnalysis.generatingNextLessonTitle')}
                 </h2>
                 <p className="mt-1.5 text-center font-semibold text-xs sm:text-base text-blue-800 dark:text-blue-200">
-                  TutorMe is creating {nextLesson?.title ? `"${nextLesson.title}"` : 'your next lesson'}...
+                  {nextLesson?.title ? t('courseAnalysis.creatingNextLesson', { title: nextLesson.title }) : t('courseAnalysis.creatingNextLessonFallback')}
                 </p>
 
                 <div className="mt-5 sm:mt-8 space-y-3 sm:space-y-5 font-['Nunito',sans-serif] text-sm sm:text-lg font-bold text-blue-950 dark:text-blue-100">

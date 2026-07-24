@@ -219,6 +219,15 @@ export function normalizeModelResponse(value: unknown): unknown {
       }
     }
 
+    // Infer missing `type` for quiz question objects if missing (common with OpenAI / Gemini proxy outputs)
+    if (!result.type) {
+      if (Array.isArray(result.options) || result.correctAnswer !== undefined || (result as any).correctAnswerIndex !== undefined) {
+        result.type = "MULTIPLE_CHOICE";
+      } else if (result.prompt && typeof result.prompt === "string") {
+        result.type = "ESSAY";
+      }
+    }
+
     // Post-process quiz question objects
     if (result.type === "MULTIPLE_CHOICE") {
       if (Array.isArray(result.options)) {
@@ -244,7 +253,10 @@ export function normalizeModelResponse(value: unknown): unknown {
         result.correctAnswer = 0;
       }
 
-      if (!Array.isArray(result.explanations) || result.explanations.length === 0) {
+      if (typeof result.explanations === "string") {
+        const singleExp = result.explanations;
+        result.explanations = (result.options as string[]).map(() => singleExp);
+      } else if (!Array.isArray(result.explanations) || result.explanations.length === 0) {
         const fallbackExp = typeof result.explanation === "string"
           ? result.explanation
           : "Explanation for option.";

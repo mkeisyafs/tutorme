@@ -49,8 +49,6 @@ export class LessonGeneratorService {
 
     if (!lesson) throw new Error("Lesson not found");
     if (lesson.content) {
-      // A previous server restart or transient worker failure should not leave a
-      // generated lesson permanently without its background quiz.
       QuizWorkerService.enqueueQuizGeneration(lessonId).catch((err) => {
         console.error(`Failed to enqueue quiz for lesson ${lessonId}:`, err);
       });
@@ -81,7 +79,6 @@ CRITICAL RULES:
 - If you use the youtubeSearch tool and find a video, embed the URL naturally in the content (e.g. as a Markdown link).
 - Write in a friendly, encouraging tone suitable for learners.`;
 
-    // Perform searches directly to gather context since tools cause the proxy to crash
     const [webSearchResult, youtubeSearchResult] = await Promise.all([
       performWebSearch(`${courseTitle} ${lessonTitle}`),
       performYoutubeSearch(`${courseTitle} ${lessonTitle}`)
@@ -97,22 +94,13 @@ ${youtubeSearchResult.videoUrl ? `Here is a relevant YouTube video URL you MUST 
     const prompt = `Write the full lesson content for "${lessonTitle}" in Markdown. Start directly with the material — no preamble.
 ${contextSection}`;
 
-    // We omit `tools` here because the current AI provider (HaluAI) crashes
-    // with a "socket hang up" when the `tools` array is sent in the request.
     const rawContent = await AiService.text(prompt, getPowerfulModel(), system);
 
-    // Strip any AI preamble that appears before the actual lesson content.
-    // If the model starts with meta-commentary (e.g. "I'll create..." or
-    // "Here is the lesson...") followed by the real content starting with a
-    // Markdown heading, drop everything before the first heading.
     const firstHeadingIndex = rawContent.search(/^#{1,6}\s/m);
     const content = firstHeadingIndex > 0
       ? rawContent.slice(firstHeadingIndex)
       : rawContent;
     
-    // Video is optional. If the model includes one, accept normal YouTube watch
-    // links with or without www plus short youtu.be links, then strip Markdown
-    // punctuation without turning a missing video into an error.
     const youtubeMatch = content.match(
       /https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s<>{}\[\]]+|youtu\.be\/[A-Za-z0-9_-]+(?:\?[^\s<>{}\[\]]+)*)/i
     );
@@ -137,8 +125,6 @@ ${contextSection}`;
       },
     });
 
-    // 4. Asynchronously trigger Quiz Generation in the background
-    // We do NOT await this. It runs in the background.
     QuizWorkerService.enqueueQuizGeneration(lessonId).catch(err => {
       console.error(`Failed to enqueue quiz for lesson ${lessonId}:`, err);
     });
@@ -153,6 +139,8 @@ Lesson Markdown Content:
 ${markdownContent}`;
 
     const system = `You are an expert curriculum developer. Your task is to convert a Markdown lesson into a structured JSON format containing a list of interactive and instructional blocks.
+
+CRITICAL LANGUAGE RULE: You MUST write all titles, headings, questions, options, explanations, summaries, analogies, flashcards, and instructions in the EXACT SAME LANGUAGE as the source lesson markdown content (e.g., if the lesson is in Indonesian/Bahasa Indonesia, every block title, question, option, explanation, analogy, and summary MUST be in Indonesian).
 
 Return a JSON object matching this schema:
 {
@@ -210,6 +198,8 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
   }
 
   private static buildInterleavedRepairedBlocks(lessonTitle: string, markdownContent: string): LessonBlocks {
+    const isIndonesian = /\b(dan|yang|di|ini|itu|untuk|dari|dengan|kucing|pelajaran|ras|adalah|secara|beberapa|memiliki|mengapa|apa|bagaimana)\b/i.test(`${lessonTitle} ${markdownContent}`);
+
     const rawParagraphs = markdownContent
       .split(/\n{2,}/)
       .map((p) => p.trim())
@@ -220,8 +210,10 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
     const blocks: LessonBlocks["blocks"] = [
       {
         type: "objective",
-        title: "Learning Objectives",
-        content: `Master the key concepts and practical applications of ${lessonTitle}.`,
+        title: isIndonesian ? "Tujuan Pembelajaran" : "Learning Objectives",
+        content: isIndonesian
+          ? `Kuasai konsep kunci dan penerapan praktis dari ${lessonTitle}.`
+          : `Master the key concepts and practical applications of ${lessonTitle}.`,
       },
     ];
 
@@ -235,38 +227,66 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
         if (idx === 0) {
           blocks.push({
             type: "analogy",
-            title: "A helpful analogy",
-            content: `Think of ${lessonTitle} like learning a route: the explanation gives you the map, and practice helps you remember each turn.`,
+            title: isIndonesian ? "Analogi" : "A helpful analogy",
+            content: isIndonesian
+              ? `Bayangkan ${lessonTitle} seperti mempelajari sebuah rute: penjelasan memberi Anda peta, dan latihan membantu Anda mengingat setiap belokan.`
+              : `Think of ${lessonTitle} like learning a route: the explanation gives you the map, and practice helps you remember each turn.`,
           });
         } else if (idx === Math.floor(totalP * 0.3)) {
           blocks.push({
             type: "example",
-            title: "Worked example",
-            content: "Apply the main idea step by step, then compare your result with the explanation above.",
+            title: isIndonesian ? "Contoh Penerapan" : "Worked example",
+            content: isIndonesian
+              ? "Terapkan ide utama langkah demi langkah, lalu bandingkan hasil Anda dengan penjelasan di atas."
+              : "Apply the main idea step by step, then compare your result with the explanation above.",
           });
         } else if (idx === Math.floor(totalP * 0.5)) {
           blocks.push({
             type: "warning",
-            title: "Common pitfall",
-            items: ["Do not skip the explanation before attempting the practice."],
+            title: isIndonesian ? "Kesalahan Umum" : "Common pitfall",
+            items: [
+              isIndonesian
+                ? "Jangan melewatkan penjelasan sebelum mencoba latihan."
+                : "Do not skip the explanation before attempting the practice.",
+            ],
           });
           blocks.push({
             type: "flashcard",
-            front: `What is the core takeaway of ${lessonTitle}?`,
-            back: "Review the key explanation and connect it to the practical examples in this lesson.",
+            front: isIndonesian
+              ? `Apa poin utama dari ${lessonTitle}?`
+              : `What is the core takeaway of ${lessonTitle}?`,
+            back: isIndonesian
+              ? "Tinjau penjelasan kunci dan hubungkan dengan contoh praktis dalam pelajaran ini."
+              : "Review the key explanation and connect it to the practical examples in this lesson.",
           });
         } else if (idx === Math.floor(totalP * 0.7)) {
           blocks.push({
             type: "interactive-reveal",
-            summary: "Key Concept Deep-Dive",
-            details: "Read the explanation, test your understanding with the quiz, and apply the concept in practice.",
+            summary: isIndonesian ? "Pendalaman Konsep Kunci" : "Key Concept Deep-Dive",
+            details: isIndonesian
+              ? "Baca penjelasannya, uji pemahaman Anda dengan kuis, dan terapkan konsep ini dalam praktik."
+              : "Read the explanation, test your understanding with the quiz, and apply the concept in practice.",
           });
           blocks.push({
             type: "interactive-quiz",
-            question: `What is the main objective of ${lessonTitle}?`,
-            options: ["Understand and apply the core principles", "Memorize definitions without practice", "Skip the lesson examples"],
+            question: isIndonesian
+              ? `Apa tujuan utama dari ${lessonTitle}?`
+              : `What is the main objective of ${lessonTitle}?`,
+            options: isIndonesian
+              ? [
+                  "Memahami dan menerapkan prinsip-prinsip utama",
+                  "Menghafal definisi tanpa latihan",
+                  "Melewati contoh pelajaran",
+                ]
+              : [
+                  "Understand and apply the core principles",
+                  "Memorize definitions without practice",
+                  "Skip the lesson examples",
+                ],
             correctIndex: 0,
-            explanation: "Applying the core principles with active practice ensures long-term understanding.",
+            explanation: isIndonesian
+              ? "Menerapkan prinsip utama dengan latihan aktif memastikan pemahaman jangka panjang."
+              : "Applying the core principles with active practice ensures long-term understanding.",
           });
         }
       });
@@ -278,13 +298,17 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
         code: "const lesson = 'practice';\nconsole.log(`Keep going: ${lesson}`);",
         language: "javascript",
         expectedOutput: "Keep going: practice",
-        instructions: "Run the sandbox, then edit the code snippet to test your understanding.",
+        instructions: isIndonesian
+          ? "Jalankan sandbox, lalu edit cuplikan kode untuk menguji pemahaman Anda."
+          : "Run the sandbox, then edit the code snippet to test your understanding.",
       });
     }
 
     blocks.push({
       type: "summary",
-      content: "Review the key idea, connect it to the examples, and practice it in your own learning.",
+      content: isIndonesian
+        ? "Tinjau ide kunci, hubungkan dengan contoh, dan praktikkan dalam pembelajaran Anda sendiri."
+        : "Review the key idea, connect it to the examples, and practice it in your own learning.",
     });
 
     return {

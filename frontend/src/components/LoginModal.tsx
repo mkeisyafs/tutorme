@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/useAuth';
 import { getApiErrorMessage } from '../lib/api';
 
@@ -11,6 +12,7 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSignUp }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
@@ -42,7 +44,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
       onClose();
       navigate('/home');
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError, 'We could not log you in. Please check your details.'));
+      setError(getApiErrorMessage(requestError, t('login.errorDefault')));
     } finally {
       setIsSubmitting(false);
     }
@@ -59,16 +61,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 sm:top-4 sm:right-4 text-yellow-600 dark:text-gray-400 hover:text-yellow-900 dark:hover:text-gray-100 font-bold font-['Kalam',cursive] text-xl sm:text-2xl transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-yellow-200/50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:focus:ring-gray-500"
-          aria-label="Close"
+          aria-label={t('common.close')}
         >
           X
         </button>
 
-        <h2 className="text-3xl sm:text-4xl font-bold mb-6 sm:mb-8 font-['Kalam',cursive] text-yellow-900 dark:text-yellow-300 text-center">Welcome Back!</h2>
+        <h2 className="text-3xl sm:text-4xl font-bold mb-6 sm:mb-8 font-['Kalam',cursive] text-yellow-900 dark:text-yellow-300 text-center">{t('login.title')}</h2>
         
         <form className="space-y-4 sm:space-y-5 font-['Nunito',sans-serif]" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-yellow-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">Email</label>
+            <label className="block text-yellow-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">{t('login.email')}</label>
             <input 
               type="email" 
               value={email}
@@ -79,7 +81,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
             />
           </div>
           <div className="relative">
-            <label className="block text-yellow-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">Password</label>
+            <label className="block text-yellow-900 dark:text-gray-300 font-bold mb-1.5 sm:mb-2 text-xs sm:text-sm tracking-wide uppercase">{t('login.password')}</label>
             <input 
               type={isPasswordVisible ? 'text' : 'password'}
               value={password}
@@ -92,7 +94,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
               type="button"
               onClick={() => setIsPasswordVisible((visible) => !visible)}
               className="absolute bottom-0 right-0 flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center text-yellow-700 hover:text-yellow-950 dark:text-gray-400 dark:hover:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-              aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+              aria-label={isPasswordVisible ? t('login.hidePassword') : t('login.showPassword')}
             >
               {isPasswordVisible ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
             </button>
@@ -103,10 +105,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
             type="submit" 
             className="w-full mt-6 sm:mt-8 bg-yellow-400 hover:bg-yellow-500 disabled:cursor-wait disabled:opacity-70 text-yellow-950 font-bold py-3.5 sm:py-4 px-6 rounded-xl shadow-[0_8px_20px_-6px_rgba(234,179,8,0.6)] dark:shadow-[0_8px_20px_-6px_rgba(234,179,8,0.2)] transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-yellow-400/50 font-['Kalam',cursive] text-xl sm:text-2xl tracking-wide"
           >
-            {isSubmitting ? 'Logging In…' : 'Log In'}
+            {isSubmitting ? t('login.loggingInBtn') : t('login.loginBtn')}
           </button>
           <div className="mt-4 text-center font-['Nunito',sans-serif] text-xs sm:text-sm text-yellow-900/80 dark:text-gray-300">
-            Don't have an account?{' '}
+            {t('login.noAccount')}{' '}
             <button
               type="button"
               onClick={() => {
@@ -115,7 +117,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
               }}
               className="font-bold text-yellow-800 hover:text-yellow-950 dark:text-yellow-400 dark:hover:text-yellow-300 underline underline-offset-2 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded-sm"
             >
-              Sign Up
+              {t('login.signUpLink')}
             </button>
           </div>
         </form>
