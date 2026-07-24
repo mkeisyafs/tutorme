@@ -7,9 +7,10 @@ import { getApiErrorMessage } from '../lib/api';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSwitchToSignUp?: () => void;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSignUp }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
@@ -104,6 +105,19 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           >
             {isSubmitting ? 'Logging In…' : 'Log In'}
           </button>
+          <div className="mt-4 text-center font-['Nunito',sans-serif] text-xs sm:text-sm text-yellow-900/80 dark:text-gray-300">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToSignUp?.();
+              }}
+              className="font-bold text-yellow-800 hover:text-yellow-950 dark:text-yellow-400 dark:hover:text-yellow-300 underline underline-offset-2 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded-sm"
+            >
+              Sign Up
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -286,8 +286,22 @@ const Landing = () => {
         </div>
       </div>
 
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-      <SignUpModal isOpen={isSignUpOpen} onClose={() => setIsSignUpOpen(false)} />
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
+        onSwitchToSignUp={() => {
+          setIsLoginOpen(false);
+          setIsSignUpOpen(true);
+        }}
+      />
+      <SignUpModal 
+        isOpen={isSignUpOpen} 
+        onClose={() => setIsSignUpOpen(false)} 
+        onSwitchToLogin={() => {
+          setIsSignUpOpen(false);
+          setIsLoginOpen(true);
+        }}
+      />
     </div>
   );
 };
