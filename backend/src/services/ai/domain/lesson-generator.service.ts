@@ -76,7 +76,7 @@ CRITICAL RULES:
 - Use headings (##, ###), bullet points, and bold/italic for readability.
 - CRITICAL CODE FORMATTING: ALL code examples, scripts, function definitions, variable configurations, and code snippets MUST BE WRAPPED in triple-backtick fenced code blocks with language specifiers (e.g. \`\`\`python\n...\n\`\`\` or \`\`\`javascript\n...\n\`\`\`). NEVER output multiline code or python functions as raw unformatted prose without code fences!
 - PRESERVE ALL NEWLINES AND INDENTATION inside code blocks.
-- Include one complete fenced Python or JavaScript example that prints observable output.
+- ONLY include code examples (Python, JavaScript, etc.) if the lesson topic is directly about programming, coding, or a technical computing subject. Do NOT add code examples to lessons about math, science, history, language, or any non-programming topic.
 - If you use the webSearch tool, incorporate the information naturally into the content without mentioning that you searched.
 - If you use the youtubeSearch tool and find a video, embed the URL naturally in the content (e.g. as a Markdown link).
 - Write in a friendly, encouraging tone suitable for learners.`;
@@ -177,12 +177,12 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
 - REPEATED BLOCK USAGE ALLOWED & ENCOURAGED: You are NOT limited to using each block type only once. You can and SHOULD use ANY block type MULTIPLE TIMES throughout the lesson whenever helpful for the learner!
   * Multiple "paragraph" blocks for distinct concepts and sections.
   * Multiple "analogy" blocks to explain different complex or abstract topics.
-  * Multiple "example" blocks to demonstrate different code patterns or step-by-step walkthroughs.
+  * Multiple "example" blocks to demonstrate step-by-step walkthroughs, worked problems, or real-world scenarios (do NOT force code examples for non-programming topics).
   * Multiple "warning" blocks for different common pitfalls or edge cases.
   * Multiple "flashcard" blocks for distinct key terms, definitions, or key takeaways.
   * Multiple "interactive-quiz" blocks for quick self-assessment after different topic sections.
   * Multiple "interactive-reveal" blocks for expanding on different deep-dive details.
-  * Multiple "code-sandbox" blocks for practicing different executable snippets in a coding lesson.
+  * Multiple "code-sandbox" blocks ONLY for coding/programming lessons that have executable code snippets.
 - PRESERVE ALL CODE FENCES AND NEWLINES: Every code snippet, script, function definition, or configuration variable in the text MUST retain its fenced code block format (\`\`\`python\n...\n\`\`\` or \`\`\`javascript\n...\n\`\`\`) with exact linebreaks and indentation preserved. NEVER collapse multiline code blocks into flat single-line strings.
 - DO NOT stack or group interactive/callout blocks at the bottom of the lesson!
 - Interleave interactive and instructional blocks naturally INLINE throughout the lesson flow right next to the relevant concepts being explained.
@@ -191,7 +191,7 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
   2. Explain concepts in paragraph blocks, freely inserting analogies, examples, warnings, flashcards, interactive reveals, quizzes, and code sandboxes as many times as needed wherever they fit best in the learning flow.
   3. Conclude with a "summary" block at the very end.
 - Divide long markdown text into multiple smaller "paragraph" blocks so interactive elements can be inserted between them.
-- Include at least one of every required block type (objective, paragraph, analogy, example, warning, summary, interactive-quiz, flashcard, interactive-reveal). Include "code-sandbox" ONLY if the source markdown contains executable Python or JavaScript code.
+- Include at least one of every required block type (objective, paragraph, analogy, example, warning, summary, interactive-quiz, flashcard, interactive-reveal). Include "code-sandbox" ONLY if the source markdown contains executable Python or JavaScript code AND the lesson is about a programming/coding topic.
 - Ensure the output is strictly valid JSON conforming to the schema. Do not output anything else.`;
 
     try {
