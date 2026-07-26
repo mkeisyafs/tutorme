@@ -40,7 +40,9 @@ describe("learner assessment idempotency contracts", () => {
 
     expect(ownerGuardIndex).toBeGreaterThan(-1);
     expect(reviewParseIndex).toBeGreaterThan(ownerGuardIndex);
-    expect(source).toContain('submission.quiz.type === "CHAPTER_QUIZ"');
+    // Reviews are returned for both quiz types so final exams also show
+    // per-question answers and explanations.
+    expect(source).not.toContain('submission.quiz.type === "CHAPTER_QUIZ"');
     expect(source).toContain("lessonId: true");
     expect(source).toContain("review: true");
   });
@@ -67,5 +69,24 @@ describe("learner assessment idempotency contracts", () => {
     expect(service).toContain("return submitFinalExamQuiz(userId, quiz, answers, input)");
     expect(finalSubmit).not.toContain("canonicalAttemptKey");
     expect(finalSubmit).toContain("prisma.examSubmission.create");
+  });
+
+  test("Given a submitted final exam When status is read Then it reports completed with the saved submission", async () => {
+    const generator = await Bun.file(new URL("./final-exam-generator.service.ts", import.meta.url)).text();
+    const route = await Bun.file(routeUrl).text();
+
+    // Re-entry shows the saved score instead of the same questions again.
+    expect(generator).toContain("findLatestSubmission(userId, existingExam.id)");
+    expect(generator).toContain('state: submission ? "completed" : "ready"');
+    expect(generator).toContain("submissionId: submission.id");
+
+    // A retake writes a NEW quiz row so the old submission keeps its questions,
+    // and status must resolve to the newest exam.
+    expect(generator).toContain("static async requestRetake");
+    expect(generator).toContain("if (isRetake) {");
+    expect(generator).toContain("tx.quiz.create");
+    expect(generator).toContain('orderBy: { createdAt: "desc" }');
+    expect(route).toContain('"/course/:courseId/final-exam/retake"');
+    expect(route).toContain("FinalExamGeneratorService.requestRetake");
   });
 });

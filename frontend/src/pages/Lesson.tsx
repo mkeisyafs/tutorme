@@ -360,7 +360,7 @@ const Lesson = () => {
     setIsQuizGenerationModalOpen(true);
     setQuizGenerationStep(0);
     try {
-      const res = await apiRequest<QuizGenerationStatus>(`/generation/lesson/${encodeURIComponent(lessonId!)}/quiz-generate`, { method: 'POST' });
+      const res = await apiRequest<QuizGenerationStatus>(`/generation/lesson/${encodeURIComponent(lessonId!)}/quiz/generate`, { method: 'POST' });
       setQuizStatus(res);
       if (res.quizId) {
         setIsQuizGenerationModalOpen(false);
@@ -370,6 +370,35 @@ const Lesson = () => {
       setQuizStatus({ state: 'failed', isGenerated: false, isGenerating: false, reason: getApiErrorMessage(err, 'Failed to generate quiz.') });
     }
   };
+
+  // Poll quiz status while it's in flight (either from handleStartQuiz or a
+  // background job kicked off by lesson generation) so the modal/badge don't
+  // get stuck showing "generating" after the quiz actually finishes.
+  useEffect(() => {
+    if (quizStatus.state !== 'queued' && quizStatus.state !== 'generating') return;
+    const interval = window.setInterval(async () => {
+      if (!lessonId) return;
+      try {
+        const next = await apiRequest<QuizGenerationStatus>(`/generation/lesson/${encodeURIComponent(lessonId)}/quiz-status`);
+        setQuizStatus(next);
+        if (next.quizId && isQuizGenerationModalOpen) {
+          setIsQuizGenerationModalOpen(false);
+          navigate(`/quizzes/${encodeURIComponent(next.quizId)}`);
+        }
+      } catch {
+        // Keep polling; a transient failure shouldn't flip the UI to an error state.
+      }
+    }, 2500);
+    return () => window.clearInterval(interval);
+  }, [quizStatus.state, lessonId, isQuizGenerationModalOpen, navigate]);
+
+  // Advance the modal's step animation while generation is in progress.
+  useEffect(() => {
+    if (!isQuizGenerationModalOpen || (quizStatus.state !== 'queued' && quizStatus.state !== 'generating')) return;
+    if (quizGenerationStep >= quizGenerationSteps.length - 1) return;
+    const timer = window.setTimeout(() => setQuizGenerationStep((s) => s + 1), 1800);
+    return () => window.clearTimeout(timer);
+  }, [isQuizGenerationModalOpen, quizStatus.state, quizGenerationStep, quizGenerationSteps.length]);
 
   const handleGoToQuiz = () => {
     if (quizStatus.quizId) {

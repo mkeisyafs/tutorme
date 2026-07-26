@@ -40,7 +40,9 @@ export async function getSubmissionSummary(
     };
   }
 
-  const review = submission.review && submission.quiz.type === "CHAPTER_QUIZ"
+  // Final exams store the same per-question review shape as chapter quizzes,
+  // so both surface answer-by-answer explanations in the result page.
+  const review = submission.review
     ? LessonQuizReviewSchema.safeParse(submission.review)
     : null;
   if (review !== null && !review.success) {

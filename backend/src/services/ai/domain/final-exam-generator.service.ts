@@ -56,11 +56,14 @@ export type FinalExamGenerationState =
   | "blocked"
   | "queued"
   | "generating"
-  | "ready";
+  | "ready"
+  | "completed";
 
 export interface FinalExamGenerationStatus {
   state: FinalExamGenerationState;
   quizId?: string;
+  /** Set when the learner already submitted this final exam. */
+  submissionId?: string;
   reason?: string;
   completedLessons: number;
   totalLessons: number;
@@ -94,20 +97,27 @@ export class FinalExamGeneratorService {
       return this.statusFromReadiness(readiness, "blocked", false);
     }
 
+    const job = this.jobs.get(courseId);
+    // An in-flight job wins over any existing exam: during a retake the previous
+    // exam still exists, and reporting it would bounce the learner back to the
+    // old result while the replacement is still being written.
+    if (job?.state === "queued" || job?.state === "generating") {
+      return this.statusFromReadiness(readiness, job.state, false);
+    }
+
     const existingExam = await this.findReadyFinalExam(courseId);
     if (existingExam) {
+      // A learner who already sat this exam is sent back to their saved result
+      // instead of silently re-entering the same questions.
+      const submission = await this.findLatestSubmission(userId, existingExam.id);
       return {
-        state: "ready",
+        state: submission ? "completed" : "ready",
         quizId: existingExam.id,
+        ...(submission ? { submissionId: submission.id } : {}),
         completedLessons: readiness.completedLessons,
         totalLessons: readiness.totalLessons,
         canGenerate: false,
       };
-    }
-
-    const job = this.jobs.get(courseId);
-    if (job?.state === "queued" || job?.state === "generating") {
-      return this.statusFromReadiness(readiness, job.state, false);
     }
 
     if (job?.state === "failed") {
@@ -171,7 +181,7 @@ export class FinalExamGeneratorService {
     };
   }
 
-  private static async generateInBackground(userId: string, courseId: string) {
+  private static async generateInBackground(userId: string, courseId: string, isRetake = false) {
     this.jobs.set(courseId, { state: "generating" });
 
     try {
@@ -182,7 +192,7 @@ export class FinalExamGeneratorService {
         throw new Error(readiness.reason || "The course is not ready for a final exam.");
       }
 
-      await this.createFinalExam(courseId, readiness.material);
+      await this.createFinalExam(courseId, readiness.material, isRetake);
       this.jobs.delete(courseId);
     } catch (error) {
       console.error(`Failed to generate final exam for course ${courseId}:`, error);
@@ -311,6 +321,7 @@ export class FinalExamGeneratorService {
     };
   }
 
+  /** Newest first: a retake creates a fresh exam that supersedes earlier ones. */
   private static async findReadyFinalExam(courseId: string) {
     return prisma.quiz.findFirst({
       where: {
@@ -318,17 +329,55 @@ export class FinalExamGeneratorService {
         type: "FINAL_EXAM",
         questions: { some: {} },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       select: { id: true },
     });
   }
 
-  private static async createFinalExam(courseId: string, material: CourseMaterial) {
+  private static async findLatestSubmission(userId: string, quizId: string) {
+    return prisma.examSubmission.findFirst({
+      where: { userId, quizId },
+      orderBy: { submittedAt: "desc" },
+      select: { id: true },
+    });
+  }
+
+  /**
+   * Replaces the course final exam with a freshly generated set of questions so
+   * a retake never repeats the previous attempt. Past submissions are kept.
+   */
+  static async requestRetake(
+    userId: string,
+    courseId: string
+  ): Promise<FinalExamGenerationStatus> {
+    const readiness = await this.getCourseReadiness(userId, courseId);
+    if (!readiness.eligible || !readiness.material) {
+      return this.statusFromReadiness(readiness, "blocked", false);
+    }
+
+    const job = this.jobs.get(courseId);
+    if (job?.state === "queued" || job?.state === "generating") {
+      return this.statusFromReadiness(readiness, job.state, false);
+    }
+
+    this.jobs.set(courseId, { state: "queued" });
+    setTimeout(() => {
+      void this.generateInBackground(userId, courseId, true);
+    }, 0);
+
+    return this.statusFromReadiness(readiness, "queued", false);
+  }
+
+  private static async createFinalExam(
+    courseId: string,
+    material: CourseMaterial,
+    isRetake = false
+  ) {
     const materialForPrompt = this.formatMaterial(material);
     const prompt = `Create a comprehensive final exam for the course "${material.courseTitle}" using only the supplied course material.
 
 Create 10 questions: 8 multiple-choice questions and 2 essay questions. Cover the major modules and lessons rather than concentrating on one topic. For multiple-choice questions, provide 4 plausible options, the zero-based correctAnswer index, and an "explanations" array with exactly one concise explanation per option, in the same order as "options", saying why that specific option is correct or wrong. For essay questions, do not provide a correctAnswer.
-
+${isRetake ? "\nThis is a RETAKE: write a different set of questions covering different angles, examples, and lessons than a typical first attempt would use.\n" : ""}
 COURSE MATERIAL:
 ${materialForPrompt}`;
 
@@ -341,6 +390,22 @@ ${materialForPrompt}`;
     const questions = this.normalizeQuestions(result);
 
     return prisma.$transaction(async (tx) => {
+      // A retake always writes a new quiz row: the previous one is referenced by
+      // the learner's saved submission and must stay intact.
+      if (isRetake) {
+        const retakeQuiz = await tx.quiz.create({
+          data: {
+            courseId,
+            title: FINAL_EXAM_TITLE,
+            type: "FINAL_EXAM",
+            passingScore: 70,
+          },
+          select: { id: true },
+        });
+        await this.persistQuestions(tx, retakeQuiz.id, questions);
+        return retakeQuiz.id;
+      }
+
       // Another request may have completed while the model was working. Re-use
       // that exam instead of writing a second FINAL_EXAM for the same course.
       const completedExam = await tx.quiz.findFirst({
@@ -371,22 +436,29 @@ ${materialForPrompt}`;
           select: { id: true },
         }));
 
-      for (const question of questions) {
-        await tx.question.create({
-          data: {
-            quizId: quiz.id,
-            type: question.type,
-            prompt: question.prompt,
-            options: question.options,
-            explanations: question.explanations,
-            correctAnswer: question.correctAnswer,
-            requiresImage: question.requiresImage,
-          },
-        });
-      }
-
+      await this.persistQuestions(tx, quiz.id, questions);
       return quiz.id;
     });
+  }
+
+  private static async persistQuestions(
+    tx: { question: { create: (args: any) => Promise<unknown> } },
+    quizId: string,
+    questions: readonly PersistedQuestion[]
+  ) {
+    for (const question of questions) {
+      await tx.question.create({
+        data: {
+          quizId,
+          type: question.type,
+          prompt: question.prompt,
+          options: question.options,
+          explanations: question.explanations,
+          correctAnswer: question.correctAnswer,
+          requiresImage: question.requiresImage,
+        },
+      });
+    }
   }
 
   private static formatMaterial(material: CourseMaterial) {

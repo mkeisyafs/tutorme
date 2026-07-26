@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createLessonBlocksSchema, getLessonPlainContent, LessonBlocksSchema, type LessonBlocks } from "./lesson-blocks";
+import { buildRepairedLessonBlocks, createLessonBlocksSchema, getLessonPlainContent, LessonBlocksSchema, type LessonBlocks } from "./lesson-blocks";
 
 const MARKDOWN_WITH_EXECUTABLE_CODE = `## Variables
 
@@ -238,5 +238,30 @@ describe("lesson block generation contracts", () => {
     const result = createLessonBlocksSchema("```javascript\nconsole.log('Test 1');\n```").safeParse(repeatedBlocks);
 
     expect(result.success).toBe(true);
+  });
+});
+
+describe("buildRepairedLessonBlocks fallback", () => {
+  const MARKDOWN = "## Mengapa Kita Mandi?\n\nMandi membersihkan kulit dari kotoran dan bakteri.\n\n## Manfaat Kesehatan\n\nMandi teratur menjaga kesehatan kulit.";
+
+  test("Given markdown When AI conversion fails Then fallback blocks contain only real lesson content", () => {
+    const { blocks } = buildRepairedLessonBlocks("Mengapa Kita Mandi?", MARKDOWN);
+
+    // No canned filler blocks — every paragraph comes from the markdown itself
+    expect(blocks.some((b) => b.type === "analogy" || b.type === "warning" || b.type === "interactive-quiz" || b.type === "flashcard" || b.type === "interactive-reveal")).toBe(false);
+    const paragraphs = blocks.filter((b) => b.type === "paragraph") as Extract<LessonBlocks["blocks"][number], { type: "paragraph" }>[];
+    expect(paragraphs.length).toBeGreaterThan(0);
+    for (const p of paragraphs) {
+      expect(MARKDOWN).toContain(p.content);
+    }
+    // Summary derived from real headings
+    const summary = blocks.find((b) => b.type === "summary") as Extract<LessonBlocks["blocks"][number], { type: "summary" }> | undefined;
+    expect(summary?.content).toContain("Mengapa Kita Mandi?");
+  });
+
+  test("Given empty-ish markdown Then still produces objective + paragraph", () => {
+    const { blocks } = buildRepairedLessonBlocks("Topic", "just one line");
+    expect(blocks[0].type).toBe("objective");
+    expect(blocks.some((b) => b.type === "paragraph")).toBe(true);
   });
 });

@@ -70,6 +70,17 @@ export const protectedAssessmentRoute = new Elysia()
       params: t.Object({ courseId: t.String() }),
     }
   )
+  .post(
+    "/course/:courseId/final-exam/retake",
+    async ({ params, user, set }) => {
+      const verified = verifiedUser(user, set);
+      if ("message" in verified) return verified;
+      return FinalExamGeneratorService.requestRetake(verified.sub, params.courseId);
+    },
+    {
+      params: t.Object({ courseId: t.String() }),
+    }
+  )
   .get(
     "/quiz/:quizId/attempt",
     async ({ params, user, set }) => {

@@ -142,6 +142,66 @@ export function createLessonBlocksSchema(markdownContent: string, allowedImageUr
   });
 }
 
+/**
+ * ponytail: content-preserving fallback when AI block conversion fails. Only emits
+ * blocks whose content comes from the actual markdown — no generic filler
+ * analogies/warnings/quizzes. Upgrade path: a cheaper AI enrichment pass.
+ */
+export function buildRepairedLessonBlocks(
+  lessonTitle: string,
+  markdownContent: string,
+  images: { url: string; title: string; altText: string }[] = []
+): LessonBlocks {
+  const isIndonesian = /\b(dan|yang|di|ini|itu|untuk|dari|dengan|kucing|pelajaran|ras|adalah|secara|beberapa|memiliki|mengapa|apa|bagaimana)\b/i.test(`${lessonTitle} ${markdownContent}`);
+
+  const rawParagraphs = markdownContent
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const blocks: LessonBlocks["blocks"] = [
+    {
+      type: "objective",
+      title: isIndonesian ? "Tujuan Pembelajaran" : "Learning Objectives",
+      content: isIndonesian
+        ? `Kuasai konsep kunci dan penerapan praktis dari ${lessonTitle}.`
+        : `Master the key concepts and practical applications of ${lessonTitle}.`,
+    },
+  ];
+
+  if (rawParagraphs.length === 0) {
+    blocks.push({ type: "paragraph", content: markdownContent });
+  } else {
+    rawParagraphs.forEach((p, idx) => {
+      blocks.push({ type: "paragraph", content: p });
+
+      // Spread the retrieved images across the lesson instead of stacking them at the top.
+      const image = idx % 3 === 0 ? images[idx / 3] : undefined;
+      if (image) {
+        blocks.push({
+          type: "image",
+          url: image.url,
+          caption: image.title,
+          altText: image.altText,
+        });
+      }
+    });
+  }
+
+  // Summary built from the lesson's own headings, not canned text.
+  const headings = Array.from(markdownContent.matchAll(/^#{1,6}\s+(.+)$/gm), (m) => m[1]!.trim()).filter(Boolean);
+  if (headings.length > 0) {
+    blocks.push({
+      type: "summary",
+      content: isIndonesian
+        ? `Poin-poin utama pelajaran ini: ${headings.join("; ")}.`
+        : `Key points covered in this lesson: ${headings.join("; ")}.`,
+    });
+  }
+
+  return { title: lessonTitle, blocks };
+}
+
 export function getLessonPlainContent(content: string | null | undefined): string {
   if (!content) return "";
   try {

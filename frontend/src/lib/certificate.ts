@@ -359,6 +359,28 @@ export function certificateFileName(courseTitle: string): string {
   return 'TutorMe-Certificate-' + slug + '.pdf';
 }
 
+/** Renders and downloads the certificate PDF without needing a visible preview canvas. */
+export async function downloadCertificatePdf(data: CertificateData): Promise<void> {
+  await ensureCertificateFonts();
+  const canvas = document.createElement('canvas');
+  canvas.width = CERTIFICATE_PIXEL_WIDTH;
+  canvas.height = Math.round(CERTIFICATE_PIXEL_WIDTH / CERTIFICATE_ASPECT);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas unavailable.');
+  drawCertificate(ctx, canvas.width, data);
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+  if (!blob) throw new Error('Canvas export failed.');
+
+  const pdf = jpegToPdf(new Uint8Array(await blob.arrayBuffer()), canvas.width, canvas.height);
+  const url = URL.createObjectURL(pdf);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = certificateFileName(data.courseTitle);
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
 /** Ensures the Kalam/Nunito webfonts are loaded before the canvas draws text. */
 export async function ensureCertificateFonts(): Promise<void> {
   const href = 'https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap';

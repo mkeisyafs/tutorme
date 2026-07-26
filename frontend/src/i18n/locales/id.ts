@@ -205,6 +205,9 @@ export const id = {
     generatingNextLessonTitle: 'Membuat Pelajaran Berikutnya',
     creatingNextLesson: 'TutorMe sedang membuat "{{title}}"...',
     creatingNextLessonFallback: 'TutorMe sedang membuat pelajaran berikutnya untuk Anda...',
+    retakeExam: 'Coba lagi',
+    retakeStarting: 'Menyusun ujian baru…',
+    retakeFailed: 'Kami tidak dapat memulai ujian akhir baru. Silakan coba lagi.',
     genSteps: {
       s1: 'Menyiapkan struktur pelajaran',
       s2: 'Menyusun penjelasan & konsep',
@@ -219,6 +222,8 @@ export const id = {
     close: 'Tutup',
     previewAlt: 'Sertifikat kelulusan untuk {{name}}, kursus {{course}}',
     downloadFailed: 'Kami tidak dapat membuat PDF Anda. Silakan coba lagi.',
+    earnedTitle: 'Anda mendapatkan sertifikat',
+    earnedDesc: 'Anda lulus ujian akhir. Unduh sertifikat kelulusan Anda dalam bentuk PDF.',
   },
   coursePage: {
     title: 'Kursus Saya',

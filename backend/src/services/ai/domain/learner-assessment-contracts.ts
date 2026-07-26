@@ -125,6 +125,8 @@ export type FinalExamSubmissionSummary = BaseSubmissionSummary & {
     readonly courseId: string;
     readonly lessonId: string | null;
   };
+  readonly userAnswers: Readonly<Record<string, QuizAnswer>>;
+  readonly review: LessonQuizReview;
   readonly aiFeedback?: string;
 };
 

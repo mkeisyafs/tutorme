@@ -51,6 +51,11 @@ const FinalExam = () => {
       let nextStatus = await apiRequest<FinalExamStatus>(
         '/generation/course/' + encodeURIComponent(courseId) + '/final-exam'
       );
+      // Already sat this exam: send the learner straight to their saved result.
+      if (nextStatus.state === 'completed' && nextStatus.submissionId) {
+        navigate('/submissions/' + encodeURIComponent(nextStatus.submissionId), { replace: true });
+        return;
+      }
       if (nextStatus.state === 'queued' && nextStatus.canGenerate && !hasAutoQueued.current) {
         hasAutoQueued.current = true;
         nextStatus = await requestFinalExam() || nextStatus;
@@ -61,7 +66,7 @@ const FinalExam = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [courseId, requestFinalExam, user]);
+  }, [courseId, navigate, requestFinalExam, user]);
 
   useEffect(() => {
     void loadStatus();

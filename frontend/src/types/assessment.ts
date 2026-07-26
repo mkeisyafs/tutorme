@@ -19,8 +19,10 @@ export type FinalExamMetadata = QuizMetadata & {
 };
 
 export interface FinalExamStatus {
-  state: 'blocked' | 'queued' | 'generating' | 'ready';
+  state: 'blocked' | 'queued' | 'generating' | 'ready' | 'completed';
   quizId?: string;
+  /** Present when the learner already submitted this final exam. */
+  submissionId?: string;
   reason?: string;
   completedLessons: number;
   totalLessons: number;

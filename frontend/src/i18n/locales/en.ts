@@ -205,6 +205,9 @@ export const en = {
     generatingNextLessonTitle: 'Generating Next Lesson',
     creatingNextLesson: 'TutorMe is creating "{{title}}"...',
     creatingNextLessonFallback: 'TutorMe is creating your next lesson...',
+    retakeExam: 'Try again',
+    retakeStarting: 'Building a new exam…',
+    retakeFailed: 'We could not start a new final exam. Please try again.',
     genSteps: {
       s1: 'Preparing lesson structure',
       s2: 'Crafting explanations & concepts',
@@ -219,6 +222,8 @@ export const en = {
     close: 'Close',
     previewAlt: 'Certificate of completion for {{name}}, course {{course}}',
     downloadFailed: 'We could not build your PDF. Please try again.',
+    earnedTitle: 'You earned your certificate',
+    earnedDesc: 'You passed the final exam. Download your certificate of completion as a PDF.',
   },
   coursePage: {
     title: 'My Courses',

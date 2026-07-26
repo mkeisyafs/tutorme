@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleAlert,
+  Download,
   LoaderCircle,
   RefreshCw,
   Sparkles,
@@ -17,6 +18,7 @@ import { CourseSidebar } from '../components/CourseSidebar';
 import { useAuth } from '../auth/useAuth';
 import { useCourseSidebar } from '../hooks/useCourseSidebar';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
+import { downloadCertificatePdf } from '../lib/certificate';
 import type { ReturnToCourseResponse, SubmissionSummary } from '../types/assessment';
 import type { CourseLesson } from '../types/course';
 
@@ -27,10 +29,13 @@ const CourseAnalysis = () => {
   const { submissionId } = useParams<{ submissionId: string }>();
   const [summary, setSummary] = useState<SubmissionSummary | null>(null);
   const [showCertificate, setShowCertificate] = useState(false);
+  const [isDownloadingCertificate, setIsDownloadingCertificate] = useState(false);
+  const [certificateError, setCertificateError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isReturning, setIsReturning] = useState(false);
   const [isNavigatingNext, setIsNavigatingNext] = useState(false);
   const [nextLessonGenerating, setNextLessonGenerating] = useState(false);
+  const [isRetakingExam, setIsRetakingExam] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const [error, setError] = useState('');
   const [returnError, setReturnError] = useState('');
@@ -108,6 +113,38 @@ const CourseAnalysis = () => {
     }
   };
 
+  // Retaking regenerates a fresh set of final-exam questions server-side; the
+  // saved result stays untouched so the learner can still open it later.
+  const handleRetakeFinalExam = async () => {
+    if (!courseId || isRetakingExam) return;
+    setReturnError('');
+    setIsRetakingExam(true);
+    try {
+      await apiRequest('/generation/course/' + encodeURIComponent(courseId) + '/final-exam/retake', { method: 'POST' });
+      navigate('/courses/' + encodeURIComponent(courseId) + '/final-exam');
+    } catch (requestError) {
+      setReturnError(getApiErrorMessage(requestError, t('courseAnalysis.retakeFailed')));
+      setIsRetakingExam(false);
+    }
+  };
+
+  const handleDownloadCertificate = async () => {
+    if (!summary || isDownloadingCertificate) return;
+    setCertificateError('');
+    setIsDownloadingCertificate(true);
+    try {
+      await downloadCertificatePdf({
+        courseTitle,
+        userName: user?.fullName || '',
+        completedAt: summary.submittedAt ? new Date(summary.submittedAt) : new Date(),
+      });
+    } catch {
+      setCertificateError(t('certificate.downloadFailed'));
+    } finally {
+      setIsDownloadingCertificate(false);
+    }
+  };
+
   const currentLessonIndex = useMemo(
     () => summary?.quiz.lessonId ? orderedLessons.findIndex((l) => l.id === summary.quiz.lessonId) : -1,
     [orderedLessons, summary?.quiz.lessonId]
@@ -147,7 +184,8 @@ const CourseAnalysis = () => {
   const passed = summary ? summary.score >= 70 : false;
   const submittedAt = summary?.submittedAt ? new Date(summary.submittedAt).toLocaleString() : '';
   const isChapterQuiz = summary?.quiz.type === 'CHAPTER_QUIZ';
-  const earnedCertificate = passed && summary?.quiz.type === 'FINAL_EXAM';
+  const isFinalExam = summary?.quiz.type === 'FINAL_EXAM';
+  const earnedCertificate = passed && isFinalExam;
   const courseTitle = courseModules[0]?.courseTitle || summary?.quiz.title || '';
 
   const handleNextLesson = async () => {
@@ -224,19 +262,48 @@ const CourseAnalysis = () => {
 
         {summary?.review && <AssessmentReview review={summary.review} userAnswers={summary.userAnswers} />}
 
+        {/* Certificate download sits at the bottom of the final-exam review. */}
+        {earnedCertificate && (
+          <section className="mt-6 sm:mt-8 rounded-xl sm:rounded-2xl border-2 border-blue-300 bg-blue-50 p-4 sm:p-6 text-center dark:border-blue-800 dark:bg-blue-950/30">
+            <Award className="mx-auto h-9 w-9 sm:h-12 sm:w-12 text-blue-500" />
+            <h2 className="mt-2 font-['Kalam',cursive] text-xl sm:text-2xl font-bold text-blue-950 dark:text-blue-100">{t('certificate.earnedTitle')}</h2>
+            <p className="mt-1 text-xs sm:text-base font-semibold text-blue-800 dark:text-blue-200">{t('certificate.earnedDesc')}</p>
+            {certificateError && (
+              <p role="alert" className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 p-2.5 text-xs sm:text-sm font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{certificateError}</p>
+            )}
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3">
+              <button
+                onClick={() => setShowCertificate(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-blue-700 bg-white px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-blue-700 shadow-[2px_2px_0_#1d4ed8] transition-all hover:bg-blue-50 active:translate-y-0.5 active:shadow-none dark:bg-gray-800 dark:text-blue-300"
+              >
+                <Award className="h-5 w-5" /> {t('certificate.getButton')}
+              </button>
+              <button
+                onClick={() => void handleDownloadCertificate()}
+                disabled={isDownloadingCertificate}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-blue-700 bg-blue-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#1d4ed8] transition-all hover:bg-blue-600 active:translate-y-0.5 active:shadow-none disabled:cursor-wait disabled:opacity-70"
+              >
+                {isDownloadingCertificate ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />} {t('certificate.download')}
+              </button>
+            </div>
+          </section>
+        )}
+
         {submittedAt && <p className="mt-5 sm:mt-7 text-center text-xs sm:text-sm text-gray-400 dark:text-gray-500">{submittedAt}</p>}
         {error && <p role="alert" className="mt-3 sm:mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-center text-xs sm:text-sm font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">{error}</p>}
         {returnError && <p role="alert" aria-live="polite" className="mt-3 sm:mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center text-xs sm:text-sm font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{returnError}</p>}
         <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3">
-          {earnedCertificate && (
+          <button onClick={() => void handleBackToCourse()} disabled={isReturning || isNavigatingNext || !summary} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-wait disabled:opacity-70">{isReturning ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />} {isReturning ? t('courseAnalysis.returning') : t('courseAnalysis.backToCourse')}</button>
+          {isFinalExam && (
             <button
-              onClick={() => setShowCertificate(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-blue-700 bg-blue-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#1d4ed8] hover:bg-blue-600 transition-all"
+              onClick={() => void handleRetakeFinalExam()}
+              disabled={isRetakingExam}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-orange-700 bg-orange-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#c2410c] transition-all hover:bg-orange-600 active:translate-y-0.5 active:shadow-none disabled:cursor-wait disabled:opacity-70"
             >
-              <Award className="h-5 w-5" /> {t('certificate.getButton')}
+              {isRetakingExam ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+              {isRetakingExam ? t('courseAnalysis.retakeStarting') : t('courseAnalysis.retakeExam')}
             </button>
           )}
-          <button onClick={() => void handleBackToCourse()} disabled={isReturning || isNavigatingNext || !summary} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-wait disabled:opacity-70">{isReturning ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />} {isReturning ? t('courseAnalysis.returning') : t('courseAnalysis.backToCourse')}</button>
           {isChapterQuiz && nextLesson && (
             <button
               onClick={() => void handleNextLesson()}
