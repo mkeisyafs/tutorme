@@ -212,6 +212,14 @@ export const id = {
       s4: 'Finalisasi pelajaran berikutnya',
     },
   },
+  certificate: {
+    title: 'Sertifikat Anda',
+    getButton: 'Ambil Sertifikat',
+    download: 'Unduh PDF',
+    close: 'Tutup',
+    previewAlt: 'Sertifikat kelulusan untuk {{name}}, kursus {{course}}',
+    downloadFailed: 'Kami tidak dapat membuat PDF Anda. Silakan coba lagi.',
+  },
   coursePage: {
     title: 'Kursus Saya',
     subtitle: 'Semua jalur pembelajaran Anda yang aktif dan selesai.',

@@ -12,7 +12,9 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AssessmentReview } from '../components/AssessmentReview';
+import { CourseCertificateModal } from '../components/CourseCertificateModal';
 import { CourseSidebar } from '../components/CourseSidebar';
+import { useAuth } from '../auth/useAuth';
 import { useCourseSidebar } from '../hooks/useCourseSidebar';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
 import type { ReturnToCourseResponse, SubmissionSummary } from '../types/assessment';
@@ -21,8 +23,10 @@ import type { CourseLesson } from '../types/course';
 const CourseAnalysis = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { submissionId } = useParams<{ submissionId: string }>();
   const [summary, setSummary] = useState<SubmissionSummary | null>(null);
+  const [showCertificate, setShowCertificate] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isReturning, setIsReturning] = useState(false);
   const [isNavigatingNext, setIsNavigatingNext] = useState(false);
@@ -143,6 +147,8 @@ const CourseAnalysis = () => {
   const passed = summary ? summary.score >= 70 : false;
   const submittedAt = summary?.submittedAt ? new Date(summary.submittedAt).toLocaleString() : '';
   const isChapterQuiz = summary?.quiz.type === 'CHAPTER_QUIZ';
+  const earnedCertificate = passed && summary?.quiz.type === 'FINAL_EXAM';
+  const courseTitle = courseModules[0]?.courseTitle || summary?.quiz.title || '';
 
   const handleNextLesson = async () => {
     if (!nextLesson || !courseId || isNavigatingNext) return;
@@ -222,6 +228,14 @@ const CourseAnalysis = () => {
         {error && <p role="alert" className="mt-3 sm:mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 text-center text-xs sm:text-sm font-bold text-orange-800 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200">{error}</p>}
         {returnError && <p role="alert" aria-live="polite" className="mt-3 sm:mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center text-xs sm:text-sm font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{returnError}</p>}
         <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center gap-3">
+          {earnedCertificate && (
+            <button
+              onClick={() => setShowCertificate(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-blue-700 bg-blue-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#1d4ed8] hover:bg-blue-600 transition-all"
+            >
+              <Award className="h-5 w-5" /> {t('certificate.getButton')}
+            </button>
+          )}
           <button onClick={() => void handleBackToCourse()} disabled={isReturning || isNavigatingNext || !summary} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-green-700 bg-green-500 px-5 py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#15803d] disabled:cursor-wait disabled:opacity-70">{isReturning ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />} {isReturning ? t('courseAnalysis.returning') : t('courseAnalysis.backToCourse')}</button>
           {isChapterQuiz && nextLesson && (
             <button
@@ -247,6 +261,16 @@ const CourseAnalysis = () => {
       </section>
         </div>
       </main>
+
+      {/* ── Course Certificate Modal ── */}
+      {showCertificate && (
+        <CourseCertificateModal
+          courseTitle={courseTitle}
+          userName={user?.fullName || ''}
+          completedAt={summary?.submittedAt}
+          onClose={() => setShowCertificate(false)}
+        />
+      )}
 
       {/* ── Next Lesson Generation Modal ── */}
       {nextLessonGenerating && (

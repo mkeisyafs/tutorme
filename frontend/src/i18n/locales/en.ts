@@ -212,6 +212,14 @@ export const en = {
       s4: 'Finishing your next lesson',
     },
   },
+  certificate: {
+    title: 'Your Certificate',
+    getButton: 'Get Certificate',
+    download: 'Download PDF',
+    close: 'Close',
+    previewAlt: 'Certificate of completion for {{name}}, course {{course}}',
+    downloadFailed: 'We could not build your PDF. Please try again.',
+  },
   coursePage: {
     title: 'My Courses',
     subtitle: 'All your active and completed learning paths.',

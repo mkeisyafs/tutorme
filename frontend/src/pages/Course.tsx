@@ -1,8 +1,9 @@
 import { type MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
+import { CourseCertificateModal } from '../components/CourseCertificateModal';
 import { useCourseGeneration } from '../context/CourseGenerationContext';
-import { BookOpen, Search, Filter, Sparkles, Pin, CircleAlert, Users, X, Share2, Play, Check, Code, Palette, Terminal, Database, Languages, LoaderCircle, RefreshCw } from 'lucide-react';
+import { Award, BookOpen, Search, Filter, Sparkles, Pin, CircleAlert, Users, X, Share2, Play, Check, Code, Palette, Terminal, Database, Languages, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
 import type { PaginatedResponse } from '../types/api';
@@ -125,6 +126,7 @@ const Course = () => {
   const [previewRequestVersion, setPreviewRequestVersion] = useState(0);
   const [notice, setNotice] = useState('');
   const [isSharing, setIsSharing] = useState(false);
+  const [certificateCourse, setCertificateCourse] = useState<CourseCard | null>(null);
 
   const loadCourses = useCallback(async () => {
     if (!user?.id) {
@@ -651,6 +653,16 @@ const Course = () => {
                   {isSharing ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} {isSharing ? 'Sharing…' : 'Share to Library'}
                 </button>
               )}
+              {previewCourse.isCompleted && (
+                <button
+                  type="button"
+                  onClick={() => setCertificateCourse(previewCourse)}
+                  title="View and download your course certificate"
+                  className="flex-1 rounded-xl border-2 border-blue-400 bg-blue-100 py-2 sm:py-3 text-base sm:text-lg font-bold font-['Kalam',cursive] text-blue-700 transition-all hover:bg-blue-200 active:translate-y-0.5 dark:border-blue-600 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 flex justify-center items-center gap-2"
+                >
+                  <Award className="w-5 h-5" /> Get Certificate
+                </button>
+              )}
               <button
                 type="button"
                 disabled={isPreviewLoading || Boolean(previewError) || !resumePreviewLesson}
@@ -662,6 +674,16 @@ const Course = () => {
             </div>
           </section>
         </div>
+      )}
+      {certificateCourse && (
+        <CourseCertificateModal
+          courseTitle={certificateCourse.title}
+          userName={user?.fullName || ''}
+          /* ponytail: no course-level completedAt in the API; dated today.
+             Upgrade path: add completedAt to UserCourse and pass it here. */
+          completedAt={null}
+          onClose={() => setCertificateCourse(null)}
+        />
       )}
       {draftToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-4 backdrop-blur-sm" onMouseDown={() => setDraftToDelete(null)}>
