@@ -18,14 +18,24 @@ export interface AuthRegistrationDetails extends AuthCredentials {
   fullName: string;
 }
 
-export type AuthResponse = AuthSession;
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+  message?: string;
+  deletionCanceled?: boolean;
+}
+
+export interface LoginResult {
+  user: AuthUser;
+  deletionCanceled?: boolean;
+}
 
 export interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
   isReady: boolean;
-  login: (credentials: AuthCredentials) => Promise<AuthUser>;
+  login: (credentials: AuthCredentials) => Promise<LoginResult>;
   register: (details: AuthRegistrationDetails) => Promise<AuthUser>;
   updateUser: (user: AuthUser) => void;
   logout: () => void;

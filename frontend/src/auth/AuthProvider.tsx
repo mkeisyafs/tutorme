@@ -25,7 +25,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       method: "POST",
       body: credentials,
     });
-    return saveSession(response, setSession);
+    const user = saveSession(response, setSession);
+    return { user, deletionCanceled: response.deletionCanceled };
   }, []);
 
   const register = useCallback(async (details: AuthRegistrationDetails) => {

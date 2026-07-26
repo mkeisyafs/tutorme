@@ -32,6 +32,14 @@ const Home = () => {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deletionCanceledNotice, setDeletionCanceledNotice] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem('tutorme_deletion_canceled') === 'true') {
+      setDeletionCanceledNotice(true);
+      sessionStorage.removeItem('tutorme_deletion_canceled');
+    }
+  }, []);
 
   useEffect(() => {
     let isCurrent = true;
@@ -84,6 +92,13 @@ const Home = () => {
             </div>
           </div>
         </div>
+
+        {deletionCanceledNotice && (
+          <div role="alert" className="mb-6 sm:mb-8 rounded-2xl border-4 border-green-400 bg-green-100 p-4 font-bold text-sm sm:text-base text-green-900 shadow-[4px_4px_0px_0px_rgba(74,222,128,1)] dark:border-green-700/60 dark:bg-green-900/40 dark:text-green-200 dark:shadow-[4px_4px_0px_0px_rgba(21,128,61,0.8)] flex items-center justify-between">
+            <span>🎉 {t('settings.dangerZone.deletionCanceledNotice')}</span>
+            <button onClick={() => setDeletionCanceledNotice(false)} className="text-green-800 dark:text-green-300 font-bold ml-4 text-lg hover:opacity-75">✕</button>
+          </div>
+        )}
 
         {error && <div role="alert" className="mb-6 sm:mb-8 rounded-xl border-2 border-red-300 bg-red-100 p-3.5 sm:p-4 font-bold text-sm sm:text-base text-red-800 dark:border-red-800 dark:bg-red-900/35 dark:text-red-200">{error}</div>}
 

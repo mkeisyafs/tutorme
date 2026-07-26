@@ -1,6 +1,6 @@
 import { status } from "elysia";
 import prisma from "../../lib/prisma";
-import type { CreateUserBody, UpdateAccountSecurityBody, UpdateProfileBody, UpdateUserBody, UserListQuery } from "./user.schema";
+import type { CreateUserBody, SoftDeleteUserBody, UpdateAccountSecurityBody, UpdateProfileBody, UpdateUserBody, UserListQuery } from "./user.schema";
 
 abstract class UserService {
   static async list(query: UserListQuery) {
@@ -302,6 +302,28 @@ abstract class UserService {
         data: { streakCount: 1, streakLastActive: now }
       });
     }
+  }
+
+  static async softDelete(userId: string, data: SoftDeleteUserBody) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return status(404, { message: "User not found" });
+
+    const isPasswordValid = await Bun.password.verify(data.password, user.passwordHash);
+    if (!isPasswordValid) {
+      return status(400, { message: "Incorrect password" });
+    }
+
+    const scheduledDeletionAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { scheduledDeletionAt },
+    });
+
+    return {
+      message: "Account scheduled for deletion in 30 days",
+      scheduledDeletionAt,
+    };
   }
 
   static async delete(id: string) {

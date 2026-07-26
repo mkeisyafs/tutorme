@@ -45,6 +45,10 @@ export class UserController {
     return UserService.updateAccountSecurity(user.sub, body);
   }
 
+  static async softDelete({ body, user }: any) {
+    return UserService.softDelete(user.sub, body);
+  }
+
   static async create({ body }: any) {
     return UserService.create(body);
   }

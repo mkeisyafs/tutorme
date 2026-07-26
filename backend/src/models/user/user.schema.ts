@@ -26,6 +26,10 @@ export const UpdateAccountSecurityBody = t.Object({
   password: t.Optional(t.String({ minLength: 8 })),
 });
 
+export const SoftDeleteUserBody = t.Object({
+  password: t.String({ minLength: 1 }),
+});
+
 export const UserParams = t.Object({
   id: t.String(),
 });
@@ -42,5 +46,6 @@ export type CreateUserBody = typeof CreateUserBody.static;
 export type UpdateUserBody = typeof UpdateUserBody.static;
 export type UpdateProfileBody = typeof UpdateProfileBody.static;
 export type UpdateAccountSecurityBody = typeof UpdateAccountSecurityBody.static;
+export type SoftDeleteUserBody = typeof SoftDeleteUserBody.static;
 export type UserParams = typeof UserParams.static;
 export type UserListQuery = typeof UserListQuery.static;

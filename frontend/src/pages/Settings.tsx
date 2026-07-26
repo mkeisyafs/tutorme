@@ -7,6 +7,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../auth/useAuth';
 import { getPasswordValidationMessage } from '../auth/passwordValidation';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
+import DeleteAccountModal from '../components/DeleteAccountModal';
 import type { AccountSecurityUser } from '../types/auth';
 
 const Settings = () => {
@@ -19,7 +20,8 @@ const Settings = () => {
     return stored !== null ? stored === 'true' : true;
   });
 
-  // Security States
+  // Modal & Security States
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [email, setEmail] = useState(() => user?.email ?? '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -262,13 +264,21 @@ const Settings = () => {
                 <h3 className="font-bold text-red-950 dark:text-red-200 text-base sm:text-lg">{t('settings.dangerZone.deleteAccount')}</h3>
                 <p className="text-red-800 dark:text-red-400 text-xs sm:text-sm font-semibold">{t('settings.dangerZone.deleteDescription')}</p>
               </div>
-              <button className="flex-shrink-0 w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl font-['Kalam',cursive] text-lg sm:text-xl border-4 border-red-700 shadow-[4px_4px_0_#b91c1c] hover:translate-y-0.5 hover:shadow-[2px_2px_0_#b91c1c] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2">
+              <button 
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="flex-shrink-0 w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl font-['Kalam',cursive] text-lg sm:text-xl border-4 border-red-700 shadow-[4px_4px_0_#b91c1c] hover:translate-y-0.5 hover:shadow-[2px_2px_0_#b91c1c] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+              >
                 <Trash2 className="w-5 h-5" /> {t('settings.dangerZone.deleteBtn')}
               </button>
             </div>
           </section>
         </div>
       </div>
+
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
     </DashboardLayout>
   );
 };

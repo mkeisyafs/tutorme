@@ -50,16 +50,32 @@ export class AuthController {
       return error(401, { message: "Invalid email or password" });
     }
 
+    let deletionCanceled = false;
+    if (user.scheduledDeletionAt) {
+      const now = new Date();
+      if (now >= new Date(user.scheduledDeletionAt)) {
+        return error(401, { message: "Account has been deleted" });
+      } else {
+        // User logged back in within the 30-day grace period: cancel deletion request
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { scheduledDeletionAt: null },
+        });
+        deletionCanceled = true;
+      }
+    }
+
     const token = await jwt.sign({ sub: user.id, email: user.email });
 
     return {
-      message: "Logged in successfully",
+      message: deletionCanceled ? "Account deletion request canceled. Welcome back!" : "Logged in successfully",
       token,
       user: {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
       },
+      deletionCanceled,
     };
   }
 }

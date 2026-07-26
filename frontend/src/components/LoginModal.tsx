@@ -40,7 +40,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToSign
     setIsSubmitting(true);
 
     try {
-      await login({ email: email.trim(), password });
+      const result = await login({ email: email.trim(), password });
+      if (result?.deletionCanceled) {
+        sessionStorage.setItem('tutorme_deletion_canceled', 'true');
+      }
       onClose();
       navigate('/home');
     } catch (requestError) {

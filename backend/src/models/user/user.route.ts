@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { UserController } from "./user.controller";
 import {
   CreateUserBody,
+  SoftDeleteUserBody,
   UpdateAccountSecurityBody,
   UpdateProfileBody,
   UpdateUserBody,
@@ -15,7 +16,8 @@ const profileRoute = new Elysia()
   .get("/me/dashboard", UserController.getDashboard)
   .get("/me", UserController.getProfile)
   .patch("/me", UserController.updateProfile, { body: UpdateProfileBody })
-  .patch("/me/security", UserController.updateAccountSecurity, { body: UpdateAccountSecurityBody });
+  .patch("/me/security", UserController.updateAccountSecurity, { body: UpdateAccountSecurityBody })
+  .post("/me/soft-delete", UserController.softDelete, { body: SoftDeleteUserBody });
 
 export const userRoute = new Elysia({ prefix: "/users" })
   .use(profileRoute)
