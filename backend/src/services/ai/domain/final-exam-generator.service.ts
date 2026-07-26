@@ -327,7 +327,7 @@ export class FinalExamGeneratorService {
     const materialForPrompt = this.formatMaterial(material);
     const prompt = `Create a comprehensive final exam for the course "${material.courseTitle}" using only the supplied course material.
 
-Create 10 questions: 8 multiple-choice questions and 2 essay questions. Cover the major modules and lessons rather than concentrating on one topic. For multiple-choice questions, provide 4 plausible options, the zero-based correctAnswer index, and a concise explanation for each option. For essay questions, do not provide a correctAnswer.
+Create 10 questions: 8 multiple-choice questions and 2 essay questions. Cover the major modules and lessons rather than concentrating on one topic. For multiple-choice questions, provide 4 plausible options, the zero-based correctAnswer index, and an "explanations" array with exactly one concise explanation per option, in the same order as "options", saying why that specific option is correct or wrong. For essay questions, do not provide a correctAnswer.
 
 COURSE MATERIAL:
 ${materialForPrompt}`;
@@ -444,9 +444,10 @@ ${materialForPrompt}`;
           type: "MULTIPLE_CHOICE",
           prompt,
           options,
-          explanations: (question.explanations ?? [])
-            .map((explanation) => explanation.trim())
-            .filter(Boolean),
+          // Index-aligned with options: never filter, or explanations shift onto the wrong option.
+          explanations: options.map((_option, index) =>
+            (question.explanations?.[index] ?? "").trim()
+          ),
           correctAnswer,
           requiresImage: false,
         },

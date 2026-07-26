@@ -211,10 +211,13 @@ export function answerIndex(answer: string | number | boolean | null | undefined
 }
 
 function explanationsFor(question: ReviewQuestion, options: readonly string[]): readonly string[] {
-  const explanations = stringArray(question.explanations);
-  return options.map(
-    (_option, index) => explanations[index] ?? fallbackExplanation(question.correctAnswer === index)
-  );
+  const explanations = question.explanations;
+  return options.map((_option, index) => {
+    const explanation = Array.isArray(explanations) ? explanations[index] : undefined;
+    return typeof explanation === "string" && explanation.trim() !== ""
+      ? explanation
+      : fallbackExplanation(question.correctAnswer === index);
+  });
 }
 
 function fallbackExplanation(isCorrect: boolean): string {

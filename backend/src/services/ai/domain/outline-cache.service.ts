@@ -24,6 +24,8 @@ export interface DraftOutline {
   modules: DraftModule[];
   createdAt: Date;
   userId: string;
+  /** Set once the draft has been persisted, so republishing cannot duplicate the course. */
+  publishedCourseId?: string;
   quizSettings?: {
     enableEssayQuestions: boolean;
     requireImageSubmission: boolean;

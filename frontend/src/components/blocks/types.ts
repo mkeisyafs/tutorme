@@ -60,6 +60,13 @@ export interface CodeSandboxBlock {
   instructions: string;
 }
 
+export interface ImageBlock {
+  type: 'image';
+  url: string;
+  caption: string;
+  altText?: string;
+}
+
 export type LessonBlock =
   | ObjectiveBlock
   | ParagraphBlock
@@ -70,7 +77,8 @@ export type LessonBlock =
   | InteractiveQuizBlock
   | FlashcardBlock
   | InteractiveRevealBlock
-  | CodeSandboxBlock;
+  | CodeSandboxBlock
+  | ImageBlock;
 
 export interface BlockRendererProps {
   content: string;

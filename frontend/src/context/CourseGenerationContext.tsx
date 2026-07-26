@@ -306,6 +306,9 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
       }
 
       publishedCourseDetailsRef.current = { courseId: result.courseId, firstLessonId: result.firstLessonId };
+      // The course now exists in the DB, so this is no longer a draft. Drop it here
+      // rather than after lesson generation, which may fail or be cancelled.
+      removeDraftFromLocalStorage(draftIdVal);
       setPublishStep(1); // Moving to lesson generation
       
       await apiRequest(`/generation/lesson/${encodeURIComponent(result.firstLessonId)}/generate`, {
@@ -326,7 +329,6 @@ export const CourseGenerationProvider: React.FC<{ children: React.ReactNode }> =
 
       setPublishCourseId(result.courseId);
       setPublishFirstLessonId(result.firstLessonId);
-      removeDraftFromLocalStorage(draftIdVal);
     } catch (error) {
       if (controller.signal.aborted) {
         return;

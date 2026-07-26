@@ -13,6 +13,27 @@ export class CoursePersistenceService {
       throw new Error("Draft not found or expired.");
     }
 
+    // Republishing the same draft (retry, double click, refresh) must return the
+    // existing course instead of creating a duplicate.
+    if (draft.publishedCourseId) {
+      const existing = await prisma.course.findUnique({
+        where: { id: draft.publishedCourseId },
+        select: {
+          id: true,
+          modules: {
+            orderBy: { orderIndex: "asc" },
+            take: 1,
+            select: { lessons: { orderBy: { orderIndex: "asc" }, take: 1, select: { id: true } } },
+          },
+        },
+      });
+
+      const existingFirstLessonId = existing?.modules[0]?.lessons[0]?.id;
+      if (existing && existingFirstLessonId) {
+        return { courseId: existing.id, firstLessonId: existingFirstLessonId };
+      }
+    }
+
     let firstLessonId = "";
 
     const COURSE_COLORS: import("@prisma/client").CourseColor[] = ["blue", "yellow", "green", "pink", "purple"];
@@ -89,10 +110,10 @@ export class CoursePersistenceService {
       },
     });
 
-    // We no longer delete the draft from cache immediately here.
-    // If subsequent steps (like lesson generation) fail, the user can 
-    // click "Start Learning" again to retry without getting a "Draft not found" error.
-    
+    // The draft stays in the cache so a failed follow-up step (lesson generation)
+    // can be retried, but it is marked published so the retry reuses this course.
+    outlineCache.update(draftId, { publishedCourseId: course.id });
+
     return { courseId: course.id, firstLessonId };
   }
 }

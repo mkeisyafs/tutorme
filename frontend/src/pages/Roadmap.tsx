@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, Pencil, Play, RefreshCw, Save, Sidebar, Sparkles, X } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
-import { useCourseGeneration, saveDraftToLocalStorage } from '../context/CourseGenerationContext';
+import { useCourseGeneration, saveDraftToLocalStorage, removeDraftFromLocalStorage } from '../context/CourseGenerationContext';
 import type {
   DraftOutline,
 } from '../types/roadmap';
@@ -54,7 +54,12 @@ const Roadmap = () => {
       }
 
       setDraft(data);
-      saveDraftToLocalStorage(data.draftId, data.courseTitle, data.topic || data.courseTitle);
+      // A published draft is already a course; re-saving it would resurrect a stale draft card.
+      if (data.publishedCourseId) {
+        removeDraftFromLocalStorage(data.draftId);
+      } else {
+        saveDraftToLocalStorage(data.draftId, data.courseTitle, data.topic || data.courseTitle);
+      }
       setEditedTitle(data.courseTitle);
       setEditedDescription(data.courseDescription);
       setExpandedModule(data.modules[0]?.id ?? null);
@@ -117,7 +122,9 @@ const Roadmap = () => {
       });
 
       setDraft(updatedDraft);
-      saveDraftToLocalStorage(draftId, updatedDraft.courseTitle, updatedDraft.topic || updatedDraft.courseTitle);
+      if (!updatedDraft.publishedCourseId) {
+        saveDraftToLocalStorage(draftId, updatedDraft.courseTitle, updatedDraft.topic || updatedDraft.courseTitle);
+      }
       setEditedTitle(updatedDraft.courseTitle);
       setEditedDescription(updatedDraft.courseDescription);
       setIsEditingDetails(false);

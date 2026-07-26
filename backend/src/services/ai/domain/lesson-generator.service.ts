@@ -1,6 +1,6 @@
 import prisma from "../../../lib/prisma";
 import { AiService } from "../core/ai.service";
-import { performWebSearch, performYoutubeSearch } from "../core/tools/search-tools";
+import { performImageSearch, performWebSearch, performYoutubeSearch } from "../core/tools/search-tools";
 import { QuizWorkerService } from "../workers/quiz-worker.service";
 import { getPowerfulModel } from "../core/ai-providers";
 import { createLessonBlocksSchema, type LessonBlocks } from "./lesson-blocks";
@@ -79,9 +79,10 @@ CRITICAL RULES:
 - If you use the youtubeSearch tool and find a video, embed the URL naturally in the content (e.g. as a Markdown link).
 - Write in a friendly, encouraging tone suitable for learners.`;
 
-    const [webSearchResult, youtubeSearchResult] = await Promise.all([
+    const [webSearchResult, youtubeSearchResult, imageSearchResult] = await Promise.all([
       performWebSearch(`${courseTitle} ${lessonTitle}`),
-      performYoutubeSearch(`${courseTitle} ${lessonTitle}`)
+      performYoutubeSearch(`${courseTitle} ${lessonTitle}`),
+      performImageSearch(`${courseTitle} ${lessonTitle} diagram illustration`)
     ]);
 
     const contextSection = `
@@ -89,6 +90,9 @@ Here is some up-to-date context from the web to help you write the lesson:
 ${webSearchResult.results}
 
 ${youtubeSearchResult.videoUrl ? `Here is a relevant YouTube video URL you MUST embed in the lesson naturally: ${youtubeSearchResult.videoUrl}` : ""}
+
+${imageSearchResult.images.length > 0 ? `Here are relevant images you MAY embed with Markdown image syntax ![caption](url) where a visual aid helps comprehension. Use ONLY these exact URLs:
+${imageSearchResult.images.map((img) => `- ${img.url} (${img.title})`).join("\n")}` : ""}
 `;
 
     const prompt = `Write the full lesson content for "${lessonTitle}" in Markdown. Start directly with the material — no preamble.
@@ -106,7 +110,7 @@ ${contextSection}`;
     );
     const videoUrl = youtubeMatch?.[0]?.replace(/[.,!?)\]]+$/, "") ?? null;
 
-    const structuredContent = await this.convertMarkdownToBlocks(lessonTitle, content);
+    const structuredContent = await this.convertMarkdownToBlocks(lessonTitle, content, imageSearchResult.images);
 
     const updatedLesson = await prisma.lesson.update({
       where: { id: lessonId },
@@ -132,11 +136,19 @@ ${contextSection}`;
     return updatedLesson;
   }
 
-  private static async convertMarkdownToBlocks(lessonTitle: string, markdownContent: string) {
+  private static async convertMarkdownToBlocks(
+    lessonTitle: string,
+    markdownContent: string,
+    images: { url: string; title: string; altText: string }[] = []
+  ) {
+    const imageSection = images.length > 0
+      ? `\n\nAvailable images (use ONLY these exact URLs in "image" blocks, or omit image blocks entirely):\n${images.map((img) => `- ${img.url} — ${img.title}`).join("\n")}`
+      : "";
+
     const prompt = `Convert the following lesson markdown content for the lesson titled "${lessonTitle}" into structured blocks.
     
 Lesson Markdown Content:
-${markdownContent}`;
+${markdownContent}${imageSection}`;
 
     const system = `You are an expert curriculum developer. Your task is to convert a Markdown lesson into a structured JSON format containing a list of interactive and instructional blocks.
 
@@ -160,6 +172,7 @@ Every block must have a "type" field. The possible block types and their propert
 8. { "type": "flashcard", "front": string, "back": string }
 9. { "type": "interactive-reveal", "summary": string, "details": string }
 10. { "type": "code-sandbox", "code": string, "language": string, "expectedOutput": string, "instructions": string }
+11. { "type": "image", "url": string, "caption": string, "altText": string } (A web image that illustrates the nearby concept)
 
 CRITICAL REPETITION & PLACEMENT GUIDELINES:
 - REPEATED BLOCK USAGE ALLOWED & ENCOURAGED: You are NOT limited to using each block type only once. You can and SHOULD use ANY block type MULTIPLE TIMES throughout the lesson whenever helpful for the learner!
@@ -170,7 +183,9 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
   * Multiple "flashcard" blocks for distinct key terms, definitions, or key takeaways.
   * Multiple "interactive-quiz" blocks for quick self-assessment after different topic sections.
   * Multiple "interactive-reveal" blocks for expanding on different deep-dive details.
+  * Multiple "image" blocks placed inline wherever a visual aid enhances comprehension.
   * Multiple "code-sandbox" blocks ONLY for coding/programming lessons that have executable code snippets.
+- IMAGE RULE: "image" blocks are OPTIONAL. Use a URL ONLY if it appears verbatim in the "Available images" list or as a Markdown image in the source markdown. NEVER invent, guess, or modify an image URL. If no such URL exists, output no image blocks. Write the "caption" and "altText" in the lesson language.
 - PRESERVE ALL CODE FENCES AND NEWLINES: Every code snippet, script, function definition, or configuration variable in the text MUST retain its fenced code block format (\`\`\`python\n...\n\`\`\` or \`\`\`javascript\n...\n\`\`\`) with exact linebreaks and indentation preserved. NEVER collapse multiline code blocks into flat single-line strings.
 - DO NOT stack or group interactive/callout blocks at the bottom of the lesson!
 - Interleave interactive and instructional blocks naturally INLINE throughout the lesson flow right next to the relevant concepts being explained.
@@ -185,19 +200,32 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
     try {
       const parsedBlocks = await AiService.structuredObject<LessonBlocks>(
         prompt,
-        createLessonBlocksSchema(markdownContent),
+        createLessonBlocksSchema(markdownContent, this.collectAllowedImageUrls(markdownContent, images)),
         getPowerfulModel(),
         system
       );
       return JSON.stringify(parsedBlocks);
     } catch (error) {
       console.error("Failed to convert markdown to structured blocks, falling back to repaired lesson blocks", error);
-      const repairedBlocks = this.buildInterleavedRepairedBlocks(lessonTitle, markdownContent);
+      const repairedBlocks = this.buildInterleavedRepairedBlocks(lessonTitle, markdownContent, images);
       return JSON.stringify(repairedBlocks);
     }
   }
 
-  private static buildInterleavedRepairedBlocks(lessonTitle: string, markdownContent: string): LessonBlocks {
+  /** URLs the model is allowed to emit: retrieved images plus images already in the markdown. */
+  private static collectAllowedImageUrls(
+    markdownContent: string,
+    images: { url: string }[]
+  ): string[] {
+    const fromMarkdown = Array.from(markdownContent.matchAll(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/g), (m) => m[1]!);
+    return [...images.map((img) => img.url), ...fromMarkdown];
+  }
+
+  private static buildInterleavedRepairedBlocks(
+    lessonTitle: string,
+    markdownContent: string,
+    images: { url: string; title: string; altText: string }[] = []
+  ): LessonBlocks {
     const isIndonesian = /\b(dan|yang|di|ini|itu|untuk|dari|dengan|kucing|pelajaran|ras|adalah|secara|beberapa|memiliki|mengapa|apa|bagaimana)\b/i.test(`${lessonTitle} ${markdownContent}`);
 
     const rawParagraphs = markdownContent
@@ -223,6 +251,17 @@ CRITICAL REPETITION & PLACEMENT GUIDELINES:
       const totalP = rawParagraphs.length;
       rawParagraphs.forEach((p, idx) => {
         blocks.push({ type: "paragraph", content: p });
+
+        // Spread the retrieved images across the lesson instead of stacking them at the top.
+        const image = idx % 3 === 0 ? images[idx / 3] : undefined;
+        if (image) {
+          blocks.push({
+            type: "image",
+            url: image.url,
+            caption: image.title,
+            altText: image.altText,
+          });
+        }
 
         if (idx === 0) {
           blocks.push({

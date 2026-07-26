@@ -85,6 +85,26 @@ describe("lesson quiz structured review", () => {
     expect(mcq.options.every((option) => option.explanation.length > 0)).toBe(true);
   });
 
+  test("Given blank or gapped MCQ explanations When reviewed Then every option keeps its own index-aligned explanation", () => {
+    const question = {
+      ...QUESTIONS[0],
+      explanations: ["", null, "Secure runtime"],
+    } satisfies ReviewQuestion;
+    const review = buildLessonQuizReview({
+      questions: [question],
+      answers: { "mcq-1": 1 },
+      essayReview: { aggregateFeedback: "Review complete.", essays: [] },
+    });
+    const mcq = review.questions["mcq-1"];
+
+    if (mcq?.type !== "MULTIPLE_CHOICE") throw new Error("Expected MCQ review");
+    expect(mcq.options.map((option) => option.explanation)).toEqual([
+      "This is not the correct answer.",
+      "This is the correct answer.",
+      "Secure runtime",
+    ]);
+  });
+
   test("Given malformed AI essay IDs When reviewed Then duplicate missing and unknown IDs are rejected", () => {
     expect(() =>
       buildLessonQuizReview({

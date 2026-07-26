@@ -75,7 +75,7 @@ function buildQuizPrompt(lessonContent: string, settings: QuizSettings): string 
 ${questionSpec}
 
 CRITICAL: Every question object in the "questions" array MUST explicitly include the "type" field ("MULTIPLE_CHOICE" or "ESSAY").
-- For MULTIPLE_CHOICE: include "type": "MULTIPLE_CHOICE", "prompt", "options" (array of 4 choices), "correctAnswer" (0-based integer index), and "explanations" (array of explanation strings).
+- For MULTIPLE_CHOICE: include "type": "MULTIPLE_CHOICE", "prompt", "options" (array of 4 choices), "correctAnswer" (0-based integer index), and "explanations" (one explanation per option, same order and length as "options", explaining why that specific option is correct or wrong).
 - For ESSAY: include "type": "ESSAY", "prompt", and "requiresImage" (boolean).
 
 Lesson Content:

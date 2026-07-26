@@ -20,6 +20,8 @@ export interface DraftOutline {
   courseCategory: string;
   courseLevel: string;
   modules: DraftModule[];
+  /** Present once the draft has been published; it is a real course, not a draft. */
+  publishedCourseId?: string;
 }
 
 export type EditorMessageRole = 'assistant' | 'user';

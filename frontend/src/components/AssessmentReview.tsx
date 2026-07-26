@@ -56,7 +56,7 @@ const MultipleChoiceReviewCard = ({ review, index }: { readonly questionId: stri
             <p className="text-xs sm:text-base font-bold text-gray-900 dark:text-gray-100">{option.text}</p>
             <OptionBadge option={option} />
           </div>
-          {option.explanation && (option.isSelected || option.isCorrect) && (
+          {option.explanation && (
             <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium leading-relaxed text-gray-600 dark:text-gray-300">{option.explanation}</p>
           )}
         </div>

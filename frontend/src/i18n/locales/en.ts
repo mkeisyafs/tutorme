@@ -309,6 +309,11 @@ export const en = {
       incorrectLabel: 'Incorrect',
       explanationTitle: 'Explanation',
     },
+    image: {
+      badge: 'Visual Aid',
+      expand: 'Expand image',
+      unavailable: 'Image unavailable',
+    },
     interactiveReveal: {
       hideDetails: 'Hide Details',
       tapToReveal: 'Tap to Reveal',

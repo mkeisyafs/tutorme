@@ -10,3 +10,4 @@ export * from './InteractiveQuizCard';
 export * from './FlashcardComponent';
 export * from './InteractiveRevealComponent';
 export * from './CodeSandboxComponent';
+export * from './ImageCard';

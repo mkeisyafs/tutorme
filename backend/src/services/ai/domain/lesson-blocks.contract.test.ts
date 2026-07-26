@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createLessonBlocksSchema, LessonBlocksSchema, type LessonBlocks } from "./lesson-blocks";
+import { createLessonBlocksSchema, getLessonPlainContent, LessonBlocksSchema, type LessonBlocks } from "./lesson-blocks";
 
 const MARKDOWN_WITH_EXECUTABLE_CODE = `## Variables
 
@@ -94,7 +94,59 @@ const COMPLETE_MIXED_BLOCKS: LessonBlocks = {
   ],
 };
 
+const RETRIEVED_IMAGE_URL = "https://cdn.example.com/variables.png";
+
 describe("lesson block generation contracts", () => {
+  test("Given an image block from the retrieved list When parsed Then it is accepted", () => {
+    const result = createLessonBlocksSchema(MARKDOWN_WITH_EXECUTABLE_CODE, [RETRIEVED_IMAGE_URL]).safeParse({
+      ...COMPLETE_MIXED_BLOCKS,
+      blocks: [
+        ...COMPLETE_MIXED_BLOCKS.blocks,
+        { type: "image", url: RETRIEVED_IMAGE_URL, caption: "A labeled shelf", altText: "Shelf holding a value" },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  test("Given a hallucinated image URL When parsed Then the generation schema rejects it", () => {
+    const result = createLessonBlocksSchema(MARKDOWN_WITH_EXECUTABLE_CODE, [RETRIEVED_IMAGE_URL]).safeParse({
+      ...COMPLETE_MIXED_BLOCKS,
+      blocks: [
+        ...COMPLETE_MIXED_BLOCKS.blocks,
+        { type: "image", url: "https://cdn.example.com/made-up.png", caption: "Invented" },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  test("Given a malformed image url When parsed Then the base schema rejects it", () => {
+    const result = LessonBlocksSchema.safeParse({
+      title: "Variables",
+      blocks: [{ type: "image", url: "not-a-url", caption: "Broken" }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  test("Given no image blocks When parsed Then the lesson is still valid", () => {
+    const result = createLessonBlocksSchema(MARKDOWN_WITH_EXECUTABLE_CODE, []).safeParse(COMPLETE_MIXED_BLOCKS);
+
+    expect(result.success).toBe(true);
+  });
+
+  test("Given an image block When converted to plain content Then it renders markdown image syntax", () => {
+    const plain = getLessonPlainContent(
+      JSON.stringify({
+        title: "Variables",
+        blocks: [{ type: "image", url: RETRIEVED_IMAGE_URL, caption: "A shelf", altText: "Shelf alt" }],
+      })
+    );
+
+    expect(plain).toBe(`![Shelf alt](${RETRIEVED_IMAGE_URL})`);
+  });
+
   test("Given a legacy plain lesson When parsed by the base renderer schema Then existing content remains valid", () => {
     const result = LessonBlocksSchema.safeParse(LEGACY_PLAIN_LESSON);
 

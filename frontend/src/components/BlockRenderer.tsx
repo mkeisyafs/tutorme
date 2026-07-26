@@ -10,6 +10,7 @@ import {
   FlashcardComponent,
   InteractiveRevealComponent,
   CodeSandboxComponent,
+  ImageCard,
   MarkdownRenderer,
 } from './blocks';
 import type { BlockRendererProps, LessonBlock } from './blocks';
@@ -62,6 +63,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ content }) => {
             return <InteractiveRevealComponent key={key} {...block} />;
           case 'code-sandbox':
             return <CodeSandboxComponent key={key} {...block} />;
+          case 'image':
+            return <ImageCard key={key} {...block} />;
           default:
             return null;
         }

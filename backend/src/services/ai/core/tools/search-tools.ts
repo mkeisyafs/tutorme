@@ -47,6 +47,48 @@ export const webSearchTool = tool({
   execute: async (args: { query: string }) => performWebSearch(args.query),
 });
 
+export async function performImageSearch(topic: string) {
+  try {
+    const apiKey = process.env.FIRECRAWL_API_KEY;
+    if (!apiKey || apiKey === "fc-YOUR_API_KEY") {
+      return { images: [] as { url: string; title: string; altText: string }[] };
+    }
+
+    const app = new FirecrawlApp({ apiKey });
+    const searchResults = await app.search(topic, { sources: ["images"] }) as any;
+
+    const resultsArray = searchResults.images || [];
+    if (!Array.isArray(resultsArray)) return { images: [] };
+
+    const images = resultsArray
+      .map((res: any) => ({
+        url: String(res.imageUrl || res.url || ""),
+        title: String(res.title || topic),
+        altText: String(res.title || res.description || topic),
+      }))
+      // Only keep direct https image URLs so the renderer never points at an HTML page.
+      .filter((img) => /^https:\/\/\S+\.(png|jpe?g|gif|webp|svg)(\?\S*)?$/i.test(img.url))
+      .slice(0, 6);
+
+    return { images };
+  } catch (error: any) {
+    console.error("Image search error:", error);
+    return { images: [] as { url: string; title: string; altText: string }[] };
+  }
+}
+
+/**
+ * Firecrawl image search tool to find educational visual aids.
+ */
+export const imageSearchTool = tool({
+  description: "Search the web for relevant educational images on a topic.",
+  parameters: z.object({
+    topic: z.string().describe("The topic to find illustrative images for."),
+  }),
+  // @ts-expect-error - AI SDK overload inference sometimes fails here
+  execute: async (args: { topic: string }) => performImageSearch(args.topic),
+});
+
 export async function performYoutubeSearch(topic: string) {
   try {
     const apiKey = process.env.FIRECRAWL_API_KEY;

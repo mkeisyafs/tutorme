@@ -29,6 +29,7 @@ const routes = [
     {
         path: "/",
         element: <RootLayout />,
+        errorElement: <RouteErrorBoundary />,
         children: [
             {
                 path: listed.landing,
@@ -87,6 +88,10 @@ const routes = [
                 element: protectedPage(<Quiz/>)
             },
             {
+                path: "/quizzes/:quizId",
+                element: protectedPage(<Quiz/>)
+            },
+            {
                 path: listed.finalExam,
                 element: protectedPage(<FinalExam/>)
             },
@@ -101,6 +106,11 @@ const routes = [
             {
                 path: "/submissions/:submissionId",
                 element: protectedPage(<CourseAnalysis/>)
+            },
+            {
+                path: "*",
+                element: null,
+                loader: () => { throw new Response("Not Found", { status: 404 }) }
             }
         ].map((route) => ({
             ...route,

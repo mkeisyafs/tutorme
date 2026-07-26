@@ -70,6 +70,12 @@ export const BlockSchema = z.discriminatedUnion("type", [
     expectedOutput: z.string(),
     instructions: z.string(),
   }),
+  z.object({
+    type: z.literal("image"),
+    url: z.string().url(),
+    caption: z.string(),
+    altText: z.string().optional(),
+  }),
 ]);
 
 export const LessonBlocksSchema = z.object({
@@ -97,10 +103,22 @@ function hasRendererExecutableCodeFence(markdownContent: string): boolean {
   return false;
 }
 
-export function createLessonBlocksSchema(markdownContent: string) {
+export function createLessonBlocksSchema(markdownContent: string, allowedImageUrls: readonly string[] = []) {
   const hasExecutableCode = hasRendererExecutableCodeFence(markdownContent);
+  const allowedImages = new Set(allowedImageUrls);
 
   return LessonBlocksSchema.superRefine((lesson, context) => {
+    for (const block of lesson.blocks) {
+      // Reject hallucinated image URLs: only retrieved images may be rendered.
+      if (block.type === "image" && !allowedImages.has(block.url)) {
+        context.addIssue({
+          code: "custom",
+          path: ["blocks"],
+          message: `Image block URL must come from the retrieved image list: ${block.url}`,
+        });
+      }
+    }
+
     for (const blockType of REQUIRED_GENERATED_BLOCK_TYPES) {
       if (blockType === "code-sandbox" && !hasExecutableCode) {
         continue;
@@ -149,6 +167,8 @@ export function getLessonPlainContent(content: string | null | undefined): strin
             return `Question: ${block.question}\nOptions:\n${block.options.map((o: string, idx: number) => `${idx + 1}. ${o}`).join("\n")}\nExplanation: ${block.explanation}`;
           } else if (block.type === "interactive-reveal") {
             return `Reveal:\nSummary: ${block.summary}\nDetails: ${block.details}`;
+          } else if (block.type === "image") {
+            return `![${block.altText || block.caption}](${block.url})`;
           }
           return "";
         })

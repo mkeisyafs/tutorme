@@ -309,6 +309,11 @@ export const id = {
       incorrectLabel: 'Salah',
       explanationTitle: 'Penjelasan',
     },
+    image: {
+      badge: 'Alat Bantu Visual',
+      expand: 'Perbesar gambar',
+      unavailable: 'Gambar tidak tersedia',
+    },
     interactiveReveal: {
       hideDetails: 'Sembunyikan Detail',
       tapToReveal: 'Ketuk untuk Membuka',

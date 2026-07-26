@@ -5,7 +5,21 @@ import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import { ImageCard } from './ImageCard';
 import type { MarkdownRendererProps } from './types';
+
+/** A paragraph node that only wraps images must not emit <p>, since <figure> cannot nest inside it. */
+const isImageOnlyParagraph = (node: any): boolean => {
+  const children = node?.children ?? [];
+  return (
+    children.some((child: any) => child.type === 'element' && child.tagName === 'img') &&
+    children.every(
+      (child: any) =>
+        (child.type === 'element' && child.tagName === 'img') ||
+        (child.type === 'text' && !child.value.trim())
+    )
+  );
+};
 
 const highlightStyles = [
   {
@@ -191,9 +205,16 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeKatex]}
         components={{
-          p: ({ node, ...props }) => (
-            <p className="mb-4 last:mb-0 leading-relaxed font-medium whitespace-pre-line" {...props} />
-          ),
+          p: ({ node, children, ...props }) =>
+            isImageOnlyParagraph(node) ? (
+              <>{children}</>
+            ) : (
+              <p className="mb-4 last:mb-0 leading-relaxed font-medium whitespace-pre-line" {...props}>
+                {children}
+              </p>
+            ),
+          img: ({ src, alt, title }: any) =>
+            src ? <ImageCard type="image" url={String(src)} caption={title || alt || ''} altText={alt || ''} /> : null,
           strong: ({ node, children, ...props }) => {
             const style = getHighlightStyle(children);
             return (
