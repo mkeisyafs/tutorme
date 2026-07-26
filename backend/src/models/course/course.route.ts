@@ -13,14 +13,14 @@ const libraryRoute = new Elysia()
   .get("/library", CourseController.getLibrary, { query: CourseListQuery })
   .get("/mine", CourseController.getMine)
   .patch("/:id/share", CourseController.share, { params: CourseParams })
-  .post("/:id/reuse", CourseController.reuse, { params: CourseParams });
+  .post("/:id/reuse", CourseController.reuse, { params: CourseParams })
+  .delete("/:id", CourseController.delete, { params: CourseParams });
 
 export const courseRoute = new Elysia({ prefix: "/courses" })
   .use(libraryRoute)
   .get("/", CourseController.getAll, { query: CourseListQuery })
   .get("/:id", CourseController.getById, { params: CourseParams })
   .post("/", CourseController.create, { body: CreateCourseBody })
-  .patch("/:id", CourseController.update, { params: CourseParams, body: UpdateCourseBody })
-  .delete("/:id", CourseController.delete, { params: CourseParams });
+  .patch("/:id", CourseController.update, { params: CourseParams, body: UpdateCourseBody });
 
 export default courseRoute;

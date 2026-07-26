@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { CourseCertificateModal } from '../components/CourseCertificateModal';
 import { useCourseGeneration } from '../context/CourseGenerationContext';
-import { Award, BookOpen, Search, Filter, Sparkles, Pin, CircleAlert, Users, X, Share2, Play, Check, Code, Palette, Terminal, Database, Languages, LoaderCircle, RefreshCw } from 'lucide-react';
+import { Award, BookOpen, Search, Filter, Sparkles, Pin, CircleAlert, Users, X, Share2, Play, Check, Code, Palette, Terminal, Database, Languages, LoaderCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { useAuth } from '../auth/useAuth';
 import { apiRequest, getApiErrorMessage } from '../lib/api';
 import type { PaginatedResponse } from '../types/api';
@@ -127,6 +127,9 @@ const Course = () => {
   const [notice, setNotice] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [certificateCourse, setCertificateCourse] = useState<CourseCard | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<CourseCard | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const loadCourses = useCallback(async () => {
     if (!user?.id) {
@@ -278,6 +281,23 @@ const Course = () => {
       setPreviewError(getApiErrorMessage(error, 'We could not share this course. Please try again.'));
     } finally {
       setIsSharing(false);
+    }
+  };
+
+  const confirmDeleteCourse = async () => {
+    if (!courseToDelete || isDeleting) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await apiRequest(`/courses/${encodeURIComponent(courseToDelete.id)}`, { method: 'DELETE' });
+      setCourses((current) => current.filter((item) => item.id !== courseToDelete.id));
+      setNotice(`"${courseToDelete.title}" has been deleted.`);
+      setCourseToDelete(null);
+      closePreview();
+    } catch (error) {
+      setDeleteError(getApiErrorMessage(error, 'We could not delete this course. Please try again.'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -677,6 +697,17 @@ const Course = () => {
               >
                 <Play className="w-5 h-5 fill-current shrink-0" /> {previewCourse.isCompleted || previewCourse.progress === 100 ? 'Review Course' : previewCourse.progress === 0 ? 'Start Learning' : 'Continue Course'}
               </button>
+              {previewDetail?.creator?.id === user?.id && (
+                <button
+                  type="button"
+                  onClick={() => { setDeleteError(''); setCourseToDelete(previewCourse); }}
+                  aria-label="Delete this course"
+                  title="Delete this course permanently"
+                  className="shrink-0 self-end sm:self-auto rounded-xl border-2 border-red-400 bg-red-100 p-2 sm:p-2.5 text-red-700 transition-all hover:bg-red-200 active:translate-y-0.5 dark:border-red-700 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60 flex justify-center items-center"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              )}
             </div>
           </section>
         </div>
@@ -690,6 +721,42 @@ const Course = () => {
           completedAt={null}
           onClose={() => setCertificateCourse(null)}
         />
+      )}
+      {courseToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/45 p-4 backdrop-blur-sm" onMouseDown={() => { if (!isDeleting) setCourseToDelete(null); }}>
+          <section role="alertdialog" aria-modal="true" aria-labelledby="delete-course-title" onMouseDown={(e) => e.stopPropagation()} className="relative w-full max-w-md overflow-hidden rounded-2xl border-4 border-red-400 bg-red-50 p-6 shadow-[8px_8px_0_rgba(248,113,113,1)] dark:border-red-800 dark:bg-gray-800 flex flex-col font-bold">
+            <h3 id="delete-course-title" className="font-['Kalam',cursive] text-2xl text-red-950 dark:text-red-200 mb-3 flex items-center gap-2">
+              <CircleAlert className="w-6 h-6 text-red-500 shrink-0" />
+              Delete this course?
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-2 text-sm font-semibold leading-relaxed">
+              You are about to permanently delete <span className="text-red-700 dark:text-red-400 font-bold">"{courseToDelete.title}"</span>.
+            </p>
+            <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm font-semibold leading-relaxed">
+              All of its modules, lessons, quizzes, and everyone's progress will be erased. This cannot be undone.
+            </p>
+            {deleteError && <p role="alert" className="mb-4 rounded-xl border-2 border-red-300 bg-red-100 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{deleteError}</p>}
+            <div className="flex gap-4">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setCourseToDelete(null)}
+                className="flex-1 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-750 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 py-2 font-['Kalam',cursive] text-lg transition-all active:translate-y-0.5 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => void confirmDeleteCourse()}
+                className="flex-1 rounded-xl border-2 border-red-700 bg-red-500 text-white hover:bg-red-600 py-2 font-['Kalam',cursive] text-lg transition-all shadow-[2px_2px_0_rgba(185,28,28,1)] active:translate-y-0.5 active:shadow-none flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isDeleting && <LoaderCircle className="w-4 h-4 animate-spin" />}
+                {isDeleting ? 'Deleting…' : 'Delete Course'}
+              </button>
+            </div>
+          </section>
+        </div>
       )}
       {draftToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/45 p-4 backdrop-blur-sm" onMouseDown={() => setDraftToDelete(null)}>

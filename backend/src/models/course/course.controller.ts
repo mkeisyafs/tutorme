@@ -48,7 +48,11 @@ export class CourseController {
     return CourseService.update(params.id, body);
   }
 
-  static async delete({ params }: any) {
-    return CourseService.delete(params.id);
+  static async delete({ params, user, error }: any) {
+    const result = await CourseService.delete(user.sub, params.id);
+    if (result?.error === "NOT_FOUND") {
+      return error(404, { message: "Course not found or you do not own it" });
+    }
+    return result.data;
   }
 }

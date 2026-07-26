@@ -241,12 +241,16 @@ abstract class CourseService {
     });
   }
 
-  static async delete(id: string) {
-    const course = await prisma.course.findUnique({ where: { id } });
-    if (!course) return status(404, { message: "Course not found" });
+  // Only the creator may delete. Modules/lessons/quizzes/enrollments cascade in the schema.
+  static async delete(userId: string, courseId: string) {
+    const course = await prisma.course.findFirst({
+      where: { id: courseId, creatorId: userId },
+      select: { id: true },
+    });
+    if (!course) return { error: "NOT_FOUND" };
 
-    await prisma.course.delete({ where: { id } });
-    return { message: "Course deleted successfully" };
+    await prisma.course.delete({ where: { id: courseId } });
+    return { data: { message: "Course deleted successfully" } };
   }
 }
 
