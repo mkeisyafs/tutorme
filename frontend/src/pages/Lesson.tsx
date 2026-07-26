@@ -300,8 +300,7 @@ const Lesson = () => {
         {
           method: 'POST',
           body: {
-            question,
-            history: updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+            messages: updatedMessages.map((m) => ({ role: m.role, content: m.content })),
           },
         }
       );
