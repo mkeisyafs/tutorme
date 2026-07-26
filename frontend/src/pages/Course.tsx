@@ -637,20 +637,24 @@ const Course = () => {
               ) : null}
             </div>
 
-            <div className="mt-2.5 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-4 pt-2.5 sm:pt-4 border-t-2 border-blue-200 dark:border-blue-800 shrink-0 bg-blue-50 dark:bg-gray-800">
+            {/* Secondary actions size to their labels so the primary button
+                keeps the remaining width; all stack full-width on mobile. */}
+            <div className="mt-2.5 sm:mt-4 flex flex-col sm:flex-row sm:items-stretch gap-2 sm:gap-3 pt-2.5 sm:pt-4 border-t-2 border-blue-200 dark:border-blue-800 shrink-0 bg-blue-50 dark:bg-gray-800">
               {previewDetail?.creator?.id === user?.id && (
                 <button
                   type="button"
                   disabled={isSharing || !previewCourse.isCompleted}
                   onClick={() => void handleShareToLibrary(previewCourse)}
                   title={!previewCourse.isCompleted ? 'Complete all lessons and the final exam to share' : 'Share course to public library'}
-                  className={`flex-1 rounded-xl border-2 py-2 sm:py-3 text-base sm:text-lg font-bold font-['Kalam',cursive] transition-all flex justify-center items-center gap-2 ${
+                  className={`shrink-0 rounded-xl border-2 px-3 py-2 sm:py-2.5 text-base font-bold font-['Kalam',cursive] whitespace-nowrap transition-all flex justify-center items-center gap-1.5 ${
                     !previewCourse.isCompleted
                       ? 'border-gray-300 bg-gray-100 text-gray-400 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-500 cursor-not-allowed opacity-70'
                       : 'border-purple-400 bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/60 active:translate-y-0.5 disabled:cursor-wait disabled:opacity-60'
                   }`}
                 >
-                  {isSharing ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} {isSharing ? 'Sharing…' : 'Share to Library'}
+                  {isSharing ? <LoaderCircle className="w-4.5 h-4.5 animate-spin" /> : <Share2 className="w-4.5 h-4.5" />}
+                  <span className="sm:hidden">{isSharing ? 'Sharing…' : 'Share to Library'}</span>
+                  <span className="hidden sm:inline">{isSharing ? 'Sharing…' : 'Share'}</span>
                 </button>
               )}
               {previewCourse.isCompleted && (
@@ -658,18 +662,20 @@ const Course = () => {
                   type="button"
                   onClick={() => setCertificateCourse(previewCourse)}
                   title="View and download your course certificate"
-                  className="flex-1 rounded-xl border-2 border-blue-400 bg-blue-100 py-2 sm:py-3 text-base sm:text-lg font-bold font-['Kalam',cursive] text-blue-700 transition-all hover:bg-blue-200 active:translate-y-0.5 dark:border-blue-600 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 flex justify-center items-center gap-2"
+                  className="shrink-0 rounded-xl border-2 border-blue-400 bg-blue-100 px-3 py-2 sm:py-2.5 text-base font-bold font-['Kalam',cursive] whitespace-nowrap text-blue-700 transition-all hover:bg-blue-200 active:translate-y-0.5 dark:border-blue-600 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 flex justify-center items-center gap-1.5"
                 >
-                  <Award className="w-5 h-5" /> Get Certificate
+                  <Award className="w-4.5 h-4.5" />
+                  <span className="sm:hidden">Get Certificate</span>
+                  <span className="hidden sm:inline">Certificate</span>
                 </button>
               )}
               <button
                 type="button"
                 disabled={isPreviewLoading || Boolean(previewError) || !resumePreviewLesson}
                 onClick={openCurrentLesson}
-                className="sm:flex-[2] rounded-xl border-2 border-blue-700 bg-blue-500 py-2 sm:py-3 text-lg sm:text-xl font-bold font-['Kalam',cursive] text-white shadow-[0_4px_0_#1d4ed8] sm:shadow-[0_5px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_3px_0_#1d4ed8] active:translate-y-1 active:shadow-none flex justify-center items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="sm:flex-1 min-w-0 rounded-xl border-2 border-blue-700 bg-blue-500 px-4 py-2 sm:py-2.5 text-lg font-bold font-['Kalam',cursive] whitespace-nowrap text-white shadow-[0_4px_0_#1d4ed8] transition-all hover:translate-y-0.5 hover:shadow-[0_2px_0_#1d4ed8] active:translate-y-1 active:shadow-none flex justify-center items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Play className="w-5 h-5 fill-current" /> {previewCourse.isCompleted || previewCourse.progress === 100 ? 'Review Course' : previewCourse.progress === 0 ? 'Start Learning' : 'Continue Course'}
+                <Play className="w-5 h-5 fill-current shrink-0" /> {previewCourse.isCompleted || previewCourse.progress === 100 ? 'Review Course' : previewCourse.progress === 0 ? 'Start Learning' : 'Continue Course'}
               </button>
             </div>
           </section>
