@@ -30,7 +30,7 @@ const makeMessage = (role: 'assistant' | 'user', content: string): EditorMessage
 
 export const RoadmapAIAssistant = ({
   draftId,
-  draft,
+  draft: _draft,
   onUpdateDraft,
   isOpen,
   onClose,
