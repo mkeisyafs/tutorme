@@ -68,7 +68,7 @@ export async function performImageSearch(topic: string) {
       }))
       // Only keep direct https image URLs so the renderer never points at an HTML page.
       .filter((img) => /^https:\/\/\S+\.(png|jpe?g|gif|webp|svg)(\?\S*)?$/i.test(img.url))
-      .slice(0, 6);
+      .slice(0, 3);
 
     return { images };
   } catch (error: any) {

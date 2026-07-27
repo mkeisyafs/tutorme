@@ -307,8 +307,9 @@ export function buildRepairedLessonBlocks(
         blocks.push({ type: "paragraph", content: p });
       }
 
-      // Limit inline images to at most 1 relevant image in fallback
-      const image = idx === 1 ? images[0] : undefined;
+      // Spread 1-3 unique images inline in fallback
+      const imageIndex = idx % 4 === 1 ? Math.floor(idx / 4) : -1;
+      const image = imageIndex >= 0 && imageIndex < 3 ? images[imageIndex] : undefined;
       if (image) {
         blocks.push({
           type: "image",

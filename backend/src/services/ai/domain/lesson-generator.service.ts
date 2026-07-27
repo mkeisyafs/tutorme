@@ -97,7 +97,7 @@ ${webSearchResult.results}
 
 ${youtubeSearchResult.videoUrl ? `Here is a relevant YouTube video URL you MUST embed in the lesson naturally: ${youtubeSearchResult.videoUrl}` : ""}
 
-${imageSearchResult.images.length > 0 ? `Here are relevant images you MAY embed with Markdown image syntax ![caption](url) where a visual aid helps comprehension. Use ONLY these exact URLs, and NEVER use the same image URL more than once:
+${imageSearchResult.images.length > 0 ? `Here are 1–3 relevant images you MAY embed with Markdown image syntax ![caption](url) where a visual aid helps comprehension. Use ONLY these exact URLs, and NEVER use the same image URL more than once:
 ${imageSearchResult.images.map((img) => `- ${img.url} (${img.title})`).join("\n")}` : ""}
 `;
 
@@ -189,7 +189,7 @@ CRITICAL REPETITION & HIGH DENSITY GUIDELINES:
   * AT LEAST 2 "analogy" blocks to make abstract ideas intuitive.
   * AT LEAST 2 "example" blocks to demonstrate real-world scenarios or worked problems.
   * AT LEAST 1–2 "warning" blocks for common mistakes or misconceptions.
-  * Use AT MOST 1 "image" block ONLY if a valid URL exists in "Available images". Do NOT overuse images.
+  * Use 1 to 3 "image" blocks inline across the lesson when visual aids help comprehension, using ONLY unique URLs from "Available images".
   * "code-sandbox" blocks for coding/programming topics with executable code snippets.
 - IMAGE RULE: "image" blocks are OPTIONAL. Use a URL ONLY if it appears verbatim in the "Available images" list or as a Markdown image in the source markdown. NEVER invent, guess, or modify an image URL. Each image block MUST use a UNIQUE URL — NEVER repeat the same image URL in a lesson. Write "caption" and "altText" in the lesson language.
 - PRESERVE ALL CODE FENCES AND NEWLINES: Retain fenced code blocks (\x60\x60\x60python\n...\x60\x60\x60 or \x60\x60\x60javascript\n...\x60\x60\x60) with exact linebreaks.
