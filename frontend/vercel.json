@@ -5,7 +5,7 @@
       "destination": "http://43.128.100.132:5000/api/:path*"
     },
     {
-      "source": "/:(.*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ]
