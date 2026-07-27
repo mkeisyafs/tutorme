@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImageOff, Maximize2 } from 'lucide-react';
+import { Maximize2 } from 'lucide-react';
 import type { ImageBlock } from './types';
 
 export const ImageCard: React.FC<ImageBlock> = ({ url, caption, altText }) => {
@@ -9,12 +9,7 @@ export const ImageCard: React.FC<ImageBlock> = ({ url, caption, altText }) => {
   const dialogRef = React.useRef<HTMLDialogElement>(null);
 
   if (status === 'error') {
-    return (
-      <div className="p-6 rounded-3xl border-4 border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 flex items-center gap-3 text-gray-500 dark:text-gray-400">
-        <ImageOff className="w-6 h-6 shrink-0" />
-        <span className="font-mono text-sm">{caption || t('blocks.image.unavailable')}</span>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -41,7 +36,7 @@ export const ImageCard: React.FC<ImageBlock> = ({ url, caption, altText }) => {
           loading="lazy"
           onLoad={() => setStatus('loaded')}
           onError={() => setStatus('error')}
-          className={`w-full rounded-xl object-contain transition-opacity duration-300 ${status === 'loaded' ? 'opacity-100' : 'opacity-0 min-h-40'}`}
+          className={`w-full max-h-72 sm:max-h-96 rounded-xl object-contain transition-opacity duration-300 ${status === 'loaded' ? 'opacity-100' : 'opacity-0 min-h-40'}`}
         />
         <span className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-black/60 text-white opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
           <Maximize2 className="w-4 h-4" />

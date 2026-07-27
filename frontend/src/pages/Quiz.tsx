@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { ApiError, apiRequest, getApiErrorMessage } from '../lib/api';
 import { QuizSubmissionAnalysisModal } from '../components/QuizSubmissionAnalysisModal';
+import { MarkdownRenderer } from '../components/blocks';
 import { INVALID_QUIZ_ATTEMPT_MESSAGE, emptyQuizFormState, resolveLoadedQuizAttempt } from './quizAttemptRouting';
 import { CourseSidebar } from '../components/CourseSidebar';
 import { useCourseSidebar } from '../hooks/useCourseSidebar';
@@ -228,7 +229,9 @@ const Quiz = () => {
           {attempt?.questions.map((question, index) => (
             <article key={question.id} className="rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-gray-300 bg-white p-4 sm:p-6 shadow-[4px_4px_0_#d1d5db] sm:shadow-[6px_6px_0_#d1d5db] dark:border-gray-700 dark:bg-gray-800">
               <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Question {index + 1}</p>
-              <h2 className="mt-1.5 sm:mt-2 text-base sm:text-xl font-bold leading-relaxed text-gray-900 dark:text-white">{question.prompt}</h2>
+              <div className="mt-1.5 sm:mt-2 text-base sm:text-xl font-bold leading-relaxed text-gray-900 dark:text-white">
+                <MarkdownRenderer content={question.prompt} />
+              </div>
               {question.type === 'MULTIPLE_CHOICE' ? (
                 <div className="mt-3 sm:mt-5 space-y-2.5 sm:space-y-3">
                   {question.options.map((option, optionIndex) => {
@@ -236,7 +239,9 @@ const Quiz = () => {
                     return (
                       <label key={question.id + '-' + optionIndex} className={'flex cursor-pointer items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl border-2 p-3 sm:p-4 text-xs sm:text-base font-bold transition-colors ' + (isSelected ? 'border-purple-500 bg-purple-100 text-purple-950 dark:border-purple-400 dark:bg-purple-950/45 dark:text-purple-100' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-purple-300 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200')}>
                         <input type="radio" name={question.id} checked={isSelected} onChange={() => setAnswer(question.id, optionIndex)} disabled={isSubmitting} className="h-4 w-4 shrink-0 accent-purple-600" />
-                        <span>{option}</span>
+                        <div className="flex-1 min-w-0">
+                          <MarkdownRenderer content={option} />
+                        </div>
                       </label>
                     );
                   })}

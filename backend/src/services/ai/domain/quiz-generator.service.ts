@@ -77,6 +77,7 @@ ${questionSpec}
 CRITICAL: Every question object in the "questions" array MUST explicitly include the "type" field ("MULTIPLE_CHOICE" or "ESSAY").
 - For MULTIPLE_CHOICE: include "type": "MULTIPLE_CHOICE", "prompt", "options" (array of 4 choices), "correctAnswer" (0-based integer index), and "explanations" (one explanation per option, same order and length as "options", explaining why that specific option is correct or wrong).
 - For ESSAY: include "type": "ESSAY", "prompt", and "requiresImage" (boolean).
+- For any mathematical expressions, equations, formulas, or numbers in prompts, options, or explanations: Use standard LaTeX math delimiters \\( ... \\) for inline math (e.g. \\( x^2 + y^2 = r^2 \\) or \\( \\frac{a}{b} \\)) or \\[ ... \\] for display math, alongside Markdown formatting.
 
 Lesson Content:
 ${lessonContent}`;
@@ -165,7 +166,7 @@ export class QuizGeneratorService {
     }
 
     const prompt = buildQuizPrompt(getLessonPlainContent(lesson.content), settings);
-    const system = "You are an expert curriculum designer creating assessments. Every question object MUST have a 'type' property with value 'MULTIPLE_CHOICE' or 'ESSAY'.";
+    const system = "You are an expert curriculum designer creating assessments. Every question object MUST have a 'type' property with value 'MULTIPLE_CHOICE' or 'ESSAY'. Format all mathematical formulas, equations, and math terms using LaTeX math delimiters \\( ... \\) or \\[ ... \\] and Markdown.";
 
     const result = await AiService.structuredObject<z.infer<typeof QuestionSchema>>(
       prompt,

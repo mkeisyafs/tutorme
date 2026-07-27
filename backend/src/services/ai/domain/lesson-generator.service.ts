@@ -68,15 +68,21 @@ Lesson: "${lessonTitle}"
 CRITICAL RULES:
 - Output ONLY the lesson content in Markdown format. Start directly with the lesson material.
 - Write the lesson using the exact same language as the course title and lesson title (e.g., if titles are in Indonesian or another language, write using that language).
-- Do NOT include any preamble, introduction about yourself, or meta-commentary such as "I'll create...", "Let me search...", "Here is the lesson...", etc.
-- Do NOT describe what you are going to do. Just do it.
-- Include clear explanations, real-world examples, and practical exercises.
-- Use headings (##, ###), bullet points, and bold/italic for readability.
-- CRITICAL CODE FORMATTING: ALL code examples, scripts, function definitions, variable configurations, and code snippets MUST BE WRAPPED in triple-backtick fenced code blocks with language specifiers (e.g. \`\`\`python\n...\n\`\`\` or \`\`\`javascript\n...\n\`\`\`). NEVER output multiline code or python functions as raw unformatted prose without code fences!
-- PRESERVE ALL NEWLINES AND INDENTATION inside code blocks.
-- ONLY include code examples (Python, JavaScript, etc.) if the lesson topic is directly about programming, coding, or a technical computing subject. Do NOT add code examples to lessons about math, science, history, language, or any non-programming topic.
-- If you use the webSearch tool, incorporate the information naturally into the content without mentioning that you searched.
-- If you use the youtubeSearch tool and find a video, embed the URL naturally in the content (e.g. as a Markdown link).
+- Do NOT include any preamble, introduction about yourself, or meta-commentary.
+- RICH INTERACTIVE LESSON STRUCTURE REQUIREMENT:
+  * For every key concept, format key terms as bold bullet definitions: \x60* **[Key Term]**: [Clear 1-sentence definition]\x60 so they convert directly into interactive Flashcards!
+  * Add at least 1-2 Analogi callouts starting with \x60Analogi:\x60 or \x60Ibarat:\x60 (e.g. \x60Analogi: Memahami jenis bilangan seperti mengelompokkan barang belanjaan...\x60).
+  * Add at least 1-2 Worked Example callouts starting with \x60Contoh Nyata:\x60 or \x60Contoh:\x60 (e.g. \x60Contoh Nyata: Menghitung sisa apel...\x60).
+  * Add at least 1-2 Warning callouts starting with \x60Catatan:\x60 or \x60Perhatian:\x60 for common pitfalls or edge cases.
+  * For practice questions or exercise sections, ALWAYS place the full answer breakdown inside an expandable HTML details block:
+    <details>
+    <summary>Klik di sini untuk melihat Kunci Jawaban & Pembahasan</summary>
+
+    1. **Soal 1:** ...
+    2. **Soal 2:** ...
+    </details>
+- CRITICAL CODE FORMATTING: ALL code examples MUST BE WRAPPED in triple-backtick fenced code blocks with language specifiers (e.g. \x60\x60\x60python\n...\x60\x60\x60 or \x60\x60\x60javascript\n...\x60\x60\x60).
+- ONLY include code examples if the lesson topic is directly about programming, coding, or technical computing.
 - Write in a friendly, encouraging tone suitable for learners.`;
 
     const [webSearchResult, youtubeSearchResult, imageSearchResult] = await Promise.all([
@@ -91,7 +97,7 @@ ${webSearchResult.results}
 
 ${youtubeSearchResult.videoUrl ? `Here is a relevant YouTube video URL you MUST embed in the lesson naturally: ${youtubeSearchResult.videoUrl}` : ""}
 
-${imageSearchResult.images.length > 0 ? `Here are relevant images you MAY embed with Markdown image syntax ![caption](url) where a visual aid helps comprehension. Use ONLY these exact URLs:
+${imageSearchResult.images.length > 0 ? `Here are relevant images you MAY embed with Markdown image syntax ![caption](url) where a visual aid helps comprehension. Use ONLY these exact URLs, and NEVER use the same image URL more than once:
 ${imageSearchResult.images.map((img) => `- ${img.url} (${img.title})`).join("\n")}` : ""}
 `;
 
@@ -174,27 +180,27 @@ Every block must have a "type" field. The possible block types and their propert
 10. { "type": "code-sandbox", "code": string, "language": string, "expectedOutput": string, "instructions": string }
 11. { "type": "image", "url": string, "caption": string, "altText": string } (A web image that illustrates the nearby concept)
 
-CRITICAL REPETITION & PLACEMENT GUIDELINES:
-- REPEATED BLOCK USAGE ALLOWED & ENCOURAGED: You are NOT limited to using each block type only once. You can and SHOULD use ANY block type MULTIPLE TIMES throughout the lesson whenever helpful for the learner!
-  * Multiple "paragraph" blocks for distinct concepts and sections.
-  * Multiple "analogy" blocks to explain different complex or abstract topics.
-  * Multiple "example" blocks to demonstrate step-by-step walkthroughs, worked problems, or real-world scenarios (do NOT force code examples for non-programming topics).
-  * Multiple "warning" blocks for different common pitfalls or edge cases.
-  * Multiple "flashcard" blocks for distinct key terms, definitions, or key takeaways.
-  * Multiple "interactive-quiz" blocks for quick self-assessment after different topic sections.
-  * Multiple "interactive-reveal" blocks for expanding on different deep-dive details.
-  * Multiple "image" blocks placed inline wherever a visual aid enhances comprehension.
-  * Multiple "code-sandbox" blocks ONLY for coding/programming lessons that have executable code snippets.
-- IMAGE RULE: "image" blocks are OPTIONAL. Use a URL ONLY if it appears verbatim in the "Available images" list or as a Markdown image in the source markdown. NEVER invent, guess, or modify an image URL. If no such URL exists, output no image blocks. Write the "caption" and "altText" in the lesson language.
-- PRESERVE ALL CODE FENCES AND NEWLINES: Every code snippet, script, function definition, or configuration variable in the text MUST retain its fenced code block format (\`\`\`python\n...\n\`\`\` or \`\`\`javascript\n...\n\`\`\`) with exact linebreaks and indentation preserved. NEVER collapse multiline code blocks into flat single-line strings.
-- DO NOT stack or group interactive/callout blocks at the bottom of the lesson!
-- Interleave interactive and instructional blocks naturally INLINE throughout the lesson flow right next to the relevant concepts being explained.
+CRITICAL REPETITION & HIGH DENSITY GUIDELINES:
+- MAXIMIZE INTERACTIVE BLOCK FREQUENCY: Do NOT output long unformatted walls of text or consecutive plain paragraphs! Break down explanations into short 1–3 sentence paragraphs and interleave interactive cards continuously throughout the lesson flow.
+- REQUIRED HIGH-DENSITY BLOCK TYPES:
+  * AT LEAST 3–6 "flashcard" blocks across the lesson for key terminology, formulas, core rules, or definition pairs.
+  * AT LEAST 2–4 "interactive-quiz" blocks inserted inline after key concept sections to test understanding on the spot.
+  * AT LEAST 2–4 "interactive-reveal" blocks for worked solutions, deep dives, answer breakdowns, or step-by-step reveals.
+  * AT LEAST 2 "analogy" blocks to make abstract ideas intuitive.
+  * AT LEAST 2 "example" blocks to demonstrate real-world scenarios or worked problems.
+  * AT LEAST 1–2 "warning" blocks for common mistakes or misconceptions.
+  * Use AT MOST 1 "image" block ONLY if a valid URL exists in "Available images". Do NOT overuse images.
+  * "code-sandbox" blocks for coding/programming topics with executable code snippets.
+- IMAGE RULE: "image" blocks are OPTIONAL. Use a URL ONLY if it appears verbatim in the "Available images" list or as a Markdown image in the source markdown. NEVER invent, guess, or modify an image URL. Each image block MUST use a UNIQUE URL — NEVER repeat the same image URL in a lesson. Write "caption" and "altText" in the lesson language.
+- PRESERVE ALL CODE FENCES AND NEWLINES: Retain fenced code blocks (\x60\x60\x60python\n...\x60\x60\x60 or \x60\x60\x60javascript\n...\x60\x60\x60) with exact linebreaks.
+- DO NOT stack or group interactive/callout blocks at the bottom of the lesson! Interleave them naturally inline next to relevant concepts.
 - Structure of the lesson:
   1. Start with an "objective" block at the top.
-  2. Explain concepts in paragraph blocks, freely inserting analogies, examples, warnings, flashcards, interactive reveals, quizzes, and code sandboxes as many times as needed wherever they fit best in the learning flow.
+  2. Explain concepts using short paragraph blocks interspersed with analogies, examples, warnings, flashcards, interactive reveals, quizzes, and code sandboxes.
   3. Conclude with a "summary" block at the very end.
-- Divide long markdown text into multiple smaller "paragraph" blocks so interactive elements can be inserted between them.
-- Include at least one of every required block type (objective, paragraph, analogy, example, warning, summary, interactive-quiz, flashcard, interactive-reveal). Include "code-sandbox" ONLY if the source markdown contains executable Python or JavaScript code AND the lesson is about a programming/coding topic.
+- For "summary" blocks: Write a clean, engaging bulleted summary of core takeaways in the lesson's language.
+- For any expandable content or solution key (e.g. "Jawaban", "Pembahasan", "Kunci Jawaban", or <details> HTML tags): ALWAYS convert them into "interactive-reveal" blocks where "summary" is the toggle title and "details" is the explanation. NEVER output raw <details> or <summary> HTML tags inside paragraph blocks!
+- Include at least one of every required block type (objective, paragraph, analogy, example, warning, summary, interactive-quiz, flashcard, interactive-reveal). Include "code-sandbox" ONLY if the source markdown contains executable Python or JavaScript code AND the lesson is a programming topic.
 - Ensure the output is strictly valid JSON conforming to the schema. Do not output anything else.`;
 
     const schema = createLessonBlocksSchema(markdownContent, this.collectAllowedImageUrls(markdownContent, images));

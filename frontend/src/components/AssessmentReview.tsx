@@ -1,4 +1,5 @@
 import { CheckCircle2, CircleAlert, FileText, XCircle } from 'lucide-react';
+import { MarkdownRenderer } from './blocks';
 import type { LessonQuizReview, MultipleChoiceQuestionReview, QuizAnswer } from '../types/assessment';
 
 type AssessmentReviewProps = {
@@ -53,11 +54,15 @@ const MultipleChoiceReviewCard = ({ review, index }: { readonly questionId: stri
       {review.options.map((option) => (
         <div key={String(option.index)} className={'rounded-lg sm:rounded-xl border-2 p-2.5 sm:p-3.5 transition-colors ' + optionClassName(option)}>
           <div className="flex items-start justify-between gap-2">
-            <p className="text-xs sm:text-base font-bold text-gray-900 dark:text-gray-100">{option.text}</p>
+            <div className="text-xs sm:text-base font-bold text-gray-900 dark:text-gray-100 flex-1 min-w-0">
+              <MarkdownRenderer content={option.text} />
+            </div>
             <OptionBadge option={option} />
           </div>
           {option.explanation && (
-            <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium leading-relaxed text-gray-600 dark:text-gray-300">{option.explanation}</p>
+            <div className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium leading-relaxed text-gray-600 dark:text-gray-300">
+              <MarkdownRenderer content={option.explanation} />
+            </div>
           )}
         </div>
       ))}
@@ -73,11 +78,15 @@ const EssayReviewCard = ({ review, learnerAnswer, index }: { readonly questionId
     </div>
     <div className="mt-3 sm:mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:p-4 dark:border-gray-700 dark:bg-gray-900/40">
       <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Your response</p>
-      <p className="mt-1.5 sm:mt-2 whitespace-pre-wrap text-xs sm:text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-200">{answerText(learnerAnswer)}</p>
+      <div className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-200">
+        <MarkdownRenderer content={answerText(learnerAnswer)} />
+      </div>
     </div>
     <div className="mt-2.5 sm:mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3 sm:p-4 dark:border-blue-800 dark:bg-blue-950/20">
       <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400">AI feedback</p>
-      <p className="mt-1.5 sm:mt-2 whitespace-pre-wrap text-xs sm:text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-200">{review.rationale}</p>
+      <div className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-200">
+        <MarkdownRenderer content={review.rationale} />
+      </div>
     </div>
     {(review.strengths.length > 0 || review.improvements.length > 0) && (
       <div className="mt-2.5 sm:mt-3 grid gap-2.5 sm:gap-3 md:grid-cols-2">
@@ -85,7 +94,11 @@ const EssayReviewCard = ({ review, learnerAnswer, index }: { readonly questionId
           <div className="rounded-xl border border-green-200 bg-green-50/60 p-3 sm:p-4 dark:border-green-800 dark:bg-green-950/20">
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400">Strengths</p>
             <ul className="mt-1.5 sm:mt-2 list-disc space-y-1 pl-4 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200">
-              {review.strengths.map((s, i) => <li key={String(i)}>{s}</li>)}
+              {review.strengths.map((s, i) => (
+                <li key={String(i)}>
+                  <MarkdownRenderer content={s} />
+                </li>
+              ))}
             </ul>
           </div>
         )}
@@ -93,7 +106,11 @@ const EssayReviewCard = ({ review, learnerAnswer, index }: { readonly questionId
           <div className="rounded-xl border border-orange-200 bg-orange-50/60 p-3 sm:p-4 dark:border-orange-800 dark:bg-orange-950/20">
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">Areas to improve</p>
             <ul className="mt-1.5 sm:mt-2 list-disc space-y-1 pl-4 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200">
-              {review.improvements.map((s, i) => <li key={String(i)}>{s}</li>)}
+              {review.improvements.map((s, i) => (
+                <li key={String(i)}>
+                  <MarkdownRenderer content={s} />
+                </li>
+              ))}
             </ul>
           </div>
         )}

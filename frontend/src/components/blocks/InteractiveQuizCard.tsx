@@ -61,9 +61,9 @@ export const InteractiveQuizCard: React.FC<InteractiveQuizBlock> = ({
         )}
       </div>
 
-      <h4 className="text-[17px] sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-6 leading-relaxed">
-        {displayQuestion}
-      </h4>
+      <div className="text-[17px] sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-6 leading-relaxed">
+        <MarkdownRenderer content={displayQuestion} />
+      </div>
 
       <div className="flex flex-col gap-3.5">
         {displayOptions.map((option, idx) => {
@@ -102,11 +102,13 @@ export const InteractiveQuizCard: React.FC<InteractiveQuizBlock> = ({
               disabled={isAnswered}
               className={btnClass}
             >
-              <div className="flex items-center gap-3.5 flex-1">
+              <div className="flex items-center gap-3.5 flex-1 min-w-0">
                 <span className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl font-bold font-mono flex items-center justify-center shrink-0 text-sm ${letterBg}`}>
                   {letter}
                 </span>
-                <span>{option}</span>
+                <div className="flex-1 min-w-0">
+                  <MarkdownRenderer content={option} />
+                </div>
               </div>
               {isAnswered && isCorrect && (
                 <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-bold text-xs sm:text-sm shrink-0">

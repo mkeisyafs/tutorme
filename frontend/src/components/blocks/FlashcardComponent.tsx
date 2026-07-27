@@ -1,29 +1,85 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RotateCw } from 'lucide-react';
+import { RotateCw, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import type { FlashcardBlock } from './types';
 
-export const FlashcardComponent: React.FC<FlashcardBlock> = ({ front, back }) => {
+export interface FlashcardComponentProps {
+  cards?: FlashcardBlock[];
+  front?: string;
+  back?: string;
+}
+
+export const FlashcardComponent: React.FC<FlashcardComponentProps> = (props) => {
   const { t, i18n } = useTranslation();
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
-  let displayFront = front;
-  if (i18n.language === 'id' && front.includes('What is the core takeaway of ')) {
-    displayFront = front.replace(/What is the core takeaway of (.*)\?/i, 'Apa poin utama dari $1?');
+  const cardList: FlashcardBlock[] =
+    props.cards && props.cards.length > 0
+      ? props.cards
+      : props.front && props.back
+      ? [{ type: 'flashcard', front: props.front, back: props.back }]
+      : [];
+
+  if (cardList.length === 0) return null;
+
+  const currentCard = cardList[currentIndex] || cardList[0];
+  const totalCards = cardList.length;
+
+  let displayFront = currentCard.front;
+  if (i18n.language === 'id' && displayFront.includes('What is the core takeaway of ')) {
+    displayFront = displayFront.replace(/What is the core takeaway of (.*)\?/i, 'Apa poin utama dari $1?');
   }
 
-  let displayBack = back;
-  if (i18n.language === 'id' && back.includes('Review the key explanation and connect it to the practical examples')) {
+  let displayBack = currentCard.back;
+  if (i18n.language === 'id' && displayBack.includes('Review the key explanation and connect it to the practical examples')) {
     displayBack = 'Tinjau penjelasan kunci dan hubungkan dengan contoh praktis dalam pelajaran ini.';
   }
 
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (currentIndex < totalCards - 1) {
+      setFlipped(false);
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (currentIndex > 0) {
+      setFlipped(false);
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleDotClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFlipped(false);
+    setCurrentIndex(index);
+  };
+
   return (
-    <div className="flex flex-col items-center my-6">
-      <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3 bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
-        <RotateCw className="w-3.5 h-3.5 animate-pulse" /> {t('blocks.flashcard.flipNotice')}
+    <div className="flex flex-col items-center my-6 w-full">
+      {/* Header Badge */}
+      <div className="flex items-center gap-2 mb-3">
+        {totalCards > 1 ? (
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-100 dark:bg-indigo-950/70 px-4 py-1.5 rounded-full border border-indigo-300 dark:border-indigo-800 shadow-sm">
+            <Layers className="w-3.5 h-3.5" />
+            <span>{t('blocks.flashcard.deckBadge')}</span>
+            <span className="opacity-40">•</span>
+            <span className="font-mono text-indigo-700 dark:text-indigo-300">
+              {t('blocks.flashcard.cardCounter', { current: currentIndex + 1, total: totalCards })}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/50 px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
+            <RotateCw className="w-3.5 h-3.5 animate-pulse" /> {t('blocks.flashcard.flipNotice')}
+          </div>
+        )}
       </div>
 
+      {/* Main Interactive Flip Card Container */}
       <div
         className="w-full max-w-lg cursor-pointer grid select-none"
         style={{ perspective: '1000px' }}
@@ -78,6 +134,48 @@ export const FlashcardComponent: React.FC<FlashcardBlock> = ({ front, back }) =>
           </div>
         </div>
       </div>
+
+      {/* Deck Controls (If deck has more than 1 card) */}
+      {totalCards > 1 && (
+        <div className="flex items-center justify-between w-full max-w-lg mt-4 px-2">
+          <button
+            type="button"
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            className="flex items-center gap-1 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950/80 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-200 dark:hover:bg-indigo-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>{t('blocks.flashcard.prevCard')}</span>
+          </button>
+
+          {/* Pagination Dots */}
+          <div className="flex items-center gap-1.5">
+            {cardList.map((_, i) => (
+              <button
+                key={`dot-${i}`}
+                type="button"
+                onClick={(e) => handleDotClick(i, e)}
+                aria-label={`Go to card ${i + 1}`}
+                className={`h-2.5 rounded-full transition-all ${
+                  i === currentIndex
+                    ? 'w-6 bg-indigo-600 dark:bg-indigo-400'
+                    : 'w-2.5 bg-indigo-200 dark:bg-indigo-800 hover:bg-indigo-300 dark:hover:bg-indigo-700'
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={currentIndex === totalCards - 1}
+            className="flex items-center gap-1 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950/80 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-200 dark:hover:bg-indigo-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <span>{t('blocks.flashcard.nextCard')}</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

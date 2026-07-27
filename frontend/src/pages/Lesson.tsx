@@ -533,7 +533,7 @@ const Lesson = () => {
               {isQuizReady ? (
                 <button
                   onClick={handleGoToQuiz}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-4 py-2.5 sm:px-5 sm:py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce] shrink-0"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-4 py-2.5 sm:px-5 sm:py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce] shrink-0 hover:bg-purple-600 active:translate-y-0.5 transition-all"
                 >
                   {t('lessonPage.takeQuizBtn')}
                 </button>
@@ -541,6 +541,20 @@ const Lesson = () => {
                 <span className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-300 bg-purple-100 px-4 py-2.5 sm:py-3 font-bold text-xs sm:text-base text-purple-800 dark:border-purple-700 dark:bg-purple-900/40 dark:text-purple-200 shrink-0">
                   <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> {t('lessonPage.generatingQuizBtn')}
                 </span>
+              ) : quizStatus.state === 'failed' ? (
+                <button
+                  onClick={handleStartQuiz}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-600 hover:bg-purple-700 px-4 py-2.5 sm:px-5 sm:py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#581c87] shrink-0 active:translate-y-0.5 transition-all"
+                >
+                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 fill-current" /> {t('lessonPage.tryAgainQuizBtn')}
+                </button>
+              ) : isLessonReady ? (
+                <button
+                  onClick={handleStartQuiz}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border-2 border-purple-700 bg-purple-500 px-4 py-2.5 sm:px-5 sm:py-3 font-['Kalam',cursive] text-base sm:text-lg font-bold text-white shadow-[2px_2px_0_#7e22ce] shrink-0 hover:bg-purple-600 active:translate-y-0.5 transition-all"
+                >
+                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 fill-current" /> {t('lessonPage.generateQuizBtn')}
+                </button>
               ) : (
                 <span className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border-2 border-purple-200 bg-white px-4 py-2.5 sm:py-3 font-bold text-xs sm:text-base text-purple-700 dark:border-purple-700 dark:bg-gray-900 dark:text-purple-200 shrink-0">
                   {t('lessonPage.waitingForLesson')}

@@ -21,6 +21,12 @@ const isImageOnlyParagraph = (node: any): boolean => {
   );
 };
 
+const containsBlockElement = (node: any): boolean => {
+  const children = node?.children ?? [];
+  const blockTags = new Set(['details', 'div', 'table', 'ul', 'ol', 'pre', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+  return children.some((child: any) => child.type === 'element' && blockTags.has(child.tagName));
+};
+
 const highlightStyles = [
   {
     bg: 'bg-blue-100/80 dark:bg-blue-900/50',
@@ -191,8 +197,8 @@ const formatUnfencedCodeContent = (rawContent: string): string => {
 
 const preprocessMath = (rawContent: string): string => {
   if (!rawContent) return '';
-  let processed = rawContent.replace(/\\\(([\s\S]*?)\\\)/g, '$$1$');
-  processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, '$$$$1$$');
+  let processed = rawContent.replace(/\\\(([\s\S]*?)\\\)/g, (_, match) => `$${match}$`);
+  processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (_, match) => `$$${match}$$`);
   return processed;
 };
 
@@ -206,8 +212,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         rehypePlugins={[rehypeRaw, rehypeKatex]}
         components={{
           p: ({ node, children, ...props }) =>
-            isImageOnlyParagraph(node) ? (
-              <>{children}</>
+            isImageOnlyParagraph(node) || containsBlockElement(node) ? (
+              <div className="mb-4 last:mb-0 leading-relaxed font-medium" {...props}>
+                {children}
+              </div>
             ) : (
               <p className="mb-4 last:mb-0 leading-relaxed font-medium whitespace-pre-line" {...props}>
                 {children}
@@ -287,8 +295,12 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
           blockquote: ({ node, ...props }) => (
             <blockquote className="border-l-4 border-pink-500 pl-4 py-1.5 italic my-4 text-gray-700 dark:text-gray-300 bg-pink-50/40 dark:bg-pink-950/20 rounded-r-xl font-medium" {...props} />
           ),
-          details: ({ node, ...props }) => <details className="mb-4 rounded-2xl border-2 border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50" {...props} />,
-          summary: ({ node, ...props }) => <summary className="cursor-pointer font-bold text-gray-900 dark:text-gray-100 outline-none hover:text-pink-600 dark:hover:text-pink-400 font-['Kalam',cursive] text-lg" {...props} />,
+          details: ({ node, ...props }) => (
+            <details className="my-4 rounded-2xl border-2 border-sky-300 dark:border-sky-700 bg-sky-50/60 dark:bg-sky-950/40 p-4 sm:p-5 shadow-[4px_4px_0px_0px_rgba(2,132,199,0.3)] dark:shadow-[4px_4px_0px_0px_rgba(3,105,161,0.5)] transition-all" {...props} />
+          ),
+          summary: ({ node, ...props }) => (
+            <summary className="cursor-pointer font-bold text-gray-900 dark:text-gray-100 outline-none hover:text-sky-600 dark:hover:text-sky-400 font-['Kalam',cursive] text-base sm:text-lg select-none mb-2" {...props} />
+          ),
         }}
       >
         {formattedContent}

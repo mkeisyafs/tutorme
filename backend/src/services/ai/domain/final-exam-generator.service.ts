@@ -377,6 +377,7 @@ export class FinalExamGeneratorService {
     const prompt = `Create a comprehensive final exam for the course "${material.courseTitle}" using only the supplied course material.
 
 Create 10 questions: 8 multiple-choice questions and 2 essay questions. Cover the major modules and lessons rather than concentrating on one topic. For multiple-choice questions, provide 4 plausible options, the zero-based correctAnswer index, and an "explanations" array with exactly one concise explanation per option, in the same order as "options", saying why that specific option is correct or wrong. For essay questions, do not provide a correctAnswer.
+For any mathematical expressions, equations, formulas, or numbers in prompts, options, or explanations: Use standard LaTeX math delimiters \\( ... \\) for inline math or \\[ ... \\] for display math, alongside Markdown.
 ${isRetake ? "\nThis is a RETAKE: write a different set of questions covering different angles, examples, and lessons than a typical first attempt would use.\n" : ""}
 COURSE MATERIAL:
 ${materialForPrompt}`;
@@ -385,7 +386,7 @@ ${materialForPrompt}`;
       prompt,
       FinalExamQuestionSchema,
       getDefaultModel(),
-      "You are an expert assessment designer. Ground every question in the supplied course material and do not introduce facts from outside it."
+      "You are an expert assessment designer. Ground every question in the supplied course material and do not introduce facts from outside it. Format all mathematical formulas, equations, and math terms using LaTeX math delimiters \\( ... \\) or \\[ ... \\] and Markdown."
     );
     const questions = this.normalizeQuestions(result);
 

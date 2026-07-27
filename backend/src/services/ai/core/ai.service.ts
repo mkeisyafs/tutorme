@@ -98,20 +98,36 @@ export class AiService {
  * code fences or other surrounding text.
  */
 function extractAndParseJson(text: string): unknown {
+  const tryParse = (str: string) => {
+    try {
+      return JSON.parse(str);
+    } catch {
+      // Sanitize invalid escape sequences (e.g. \S, \G, \p, \a, \x that aren't valid JSON escapes)
+      const sanitized = str.replace(/\\(?:([^"\\/bfnrtu])|u(?![0-9a-fA-F]{4}))/g, (match, p1) => {
+        return p1 !== undefined ? p1 : match;
+      });
+      return JSON.parse(sanitized);
+    }
+  };
+
   // Try direct parse first
   try {
-    return JSON.parse(text);
+    return tryParse(text);
   } catch {
     // Try extracting from markdown code blocks
     const codeBlockMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
     if (codeBlockMatch) {
-      return JSON.parse(codeBlockMatch[1].trim());
+      try {
+        return tryParse(codeBlockMatch[1].trim());
+      } catch {
+        // Continue to next fallback
+      }
     }
     // Try extracting the first { ... } block
     const firstBrace = text.indexOf("{");
     const lastBrace = text.lastIndexOf("}");
     if (firstBrace !== -1 && lastBrace > firstBrace) {
-      return JSON.parse(text.slice(firstBrace, lastBrace + 1));
+      return tryParse(text.slice(firstBrace, lastBrace + 1));
     }
     throw new Error("Could not extract JSON from model response");
   }
@@ -280,6 +296,18 @@ export function normalizeModelResponse(value: unknown): unknown {
     } else if (result.type === "ESSAY") {
       if (typeof result.requiresImage !== "boolean") {
         result.requiresImage = false;
+      }
+    } else if (result.type === "interactive-quiz") {
+      // interactive-quiz blocks require "question" and "explanation"
+      if (!result.question && typeof result.prompt === "string") {
+        result.question = result.prompt;
+      }
+      if (!result.explanation) {
+        if (typeof result.explanations === "string") {
+          result.explanation = result.explanations;
+        } else if (Array.isArray(result.explanations) && result.explanations.length > 0) {
+          result.explanation = String(result.explanations[0]);
+        }
       }
     }
 

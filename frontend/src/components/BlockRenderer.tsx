@@ -17,6 +17,37 @@ import type { BlockRendererProps, LessonBlock } from './blocks';
 
 export { MarkdownRenderer };
 
+type RenderGroup =
+  | { type: 'single'; block: LessonBlock; key: string }
+  | { type: 'flashcard-group'; blocks: Extract<LessonBlock, { type: 'flashcard' }>[]; key: string };
+
+function groupBlocks(blocks: LessonBlock[]): RenderGroup[] {
+  const groups: RenderGroup[] = [];
+  let currentFlashcards: Extract<LessonBlock, { type: 'flashcard' }>[] = [];
+  let groupKey = '';
+
+  blocks.forEach((block, index) => {
+    if (block.type === 'flashcard') {
+      if (currentFlashcards.length === 0) {
+        groupKey = `flashcard-group-${index}`;
+      }
+      currentFlashcards.push(block);
+    } else {
+      if (currentFlashcards.length > 0) {
+        groups.push({ type: 'flashcard-group', blocks: currentFlashcards, key: groupKey });
+        currentFlashcards = [];
+      }
+      groups.push({ type: 'single', block, key: `block-${index}` });
+    }
+  });
+
+  if (currentFlashcards.length > 0) {
+    groups.push({ type: 'flashcard-group', blocks: currentFlashcards, key: groupKey });
+  }
+
+  return groups;
+}
+
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ content }) => {
   let parsedContent: { title: string; blocks: LessonBlock[] } | null = null;
 
@@ -37,10 +68,17 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ content }) => {
     );
   }
 
+  const grouped = groupBlocks(parsedContent.blocks);
+
   return (
     <div className="flex flex-col gap-8 w-full">
-      {parsedContent.blocks.map((block, index) => {
-        const key = `block-${index}`;
+      {grouped.map((group) => {
+        if (group.type === 'flashcard-group') {
+          return <FlashcardComponent key={group.key} cards={group.blocks} />;
+        }
+
+        const block = group.block;
+        const key = group.key;
 
         switch (block.type) {
           case 'objective':

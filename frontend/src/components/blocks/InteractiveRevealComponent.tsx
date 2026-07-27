@@ -37,7 +37,7 @@ export const InteractiveRevealComponent: React.FC<InteractiveRevealBlock> = ({ s
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${
           isOpen
-            ? 'max-h-[600px] opacity-100 border-t-3 border-dashed border-sky-200 dark:border-gray-700'
+            ? 'max-h-[5000px] opacity-100 border-t-3 border-dashed border-sky-200 dark:border-gray-700'
             : 'max-h-0 opacity-0'
         }`}
       >

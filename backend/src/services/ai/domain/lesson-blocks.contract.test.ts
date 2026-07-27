@@ -256,7 +256,7 @@ describe("buildRepairedLessonBlocks fallback", () => {
     }
     // Summary derived from real headings
     const summary = blocks.find((b) => b.type === "summary") as Extract<LessonBlocks["blocks"][number], { type: "summary" }> | undefined;
-    expect(summary?.content).toContain("Mengapa Kita Mandi?");
+    expect(summary?.content).toContain("Manfaat Kesehatan");
   });
 
   test("Given empty-ish markdown Then still produces objective + paragraph", () => {
