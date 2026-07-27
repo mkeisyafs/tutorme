@@ -47,7 +47,22 @@ export class AiService {
     });
 
     const parsed = extractAndParseJson(response.text);
-    const normalized = normalizeModelResponse(parsed);
+    let normalized = normalizeModelResponse(parsed);
+
+    // If top-level output is a raw array of modules, wrap it for EditorAssistant schema
+    if (Array.isArray(normalized)) {
+      const isModuleList =
+        normalized.length > 0 &&
+        normalized.every(
+          (item) => typeof item === "object" && item !== null && ("title" in item || "lessons" in item)
+        );
+      if (isModuleList) {
+        normalized = {
+          messageToUser: "I've updated your course outline based on your request.",
+          updatedModules: normalized,
+        };
+      }
+    }
 
     const validationResult = schema.safeParse(normalized);
     if (!validationResult.success) {
@@ -293,6 +308,31 @@ export function normalizeModelResponse(value: unknown): unknown {
                 return lesson;
               });
             }
+          }
+        }
+      }
+    }
+
+    // Handle EditorAssistant schema normalization
+    if (Array.isArray(result.modules) && !result.updatedModules) {
+      result.updatedModules = result.modules;
+    }
+    if (Array.isArray(result.updatedModules)) {
+      if (!result.messageToUser) {
+        result.messageToUser = (result.message as string) || (result.reply as string) || "I've updated your course outline based on your request.";
+      }
+      for (const mod of result.updatedModules as any[]) {
+        if (typeof mod === "object" && mod !== null) {
+          if (!mod.description) {
+            mod.description = (mod.title as string) || "No description provided.";
+          }
+          if (Array.isArray(mod.lessons)) {
+            mod.lessons = mod.lessons.map((lesson: any) => {
+              if (typeof lesson === "string") {
+                return { title: lesson };
+              }
+              return lesson;
+            });
           }
         }
       }

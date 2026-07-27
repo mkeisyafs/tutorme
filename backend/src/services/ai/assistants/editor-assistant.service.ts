@@ -35,27 +35,32 @@ You can add, remove, rename, or reorder modules and lessons.
 Here is the CURRENT state of the course outline (JSON):
 ${JSON.stringify(draft.modules, null, 2)}
 
-Always respond with the COMPLETE, updated list of modules and lessons, along with a message explaining what you changed based on the user's latest request.`;
+Respond with a JSON object containing:
+1. "messageToUser": A clear, helpful response explaining what you changed based on the user's request.
+2. "updatedModules": The complete updated list of modules and lessons. Each module must have "title", "description", and "lessons" (array of objects with "title").`;
+
+    const formattedMessages = messages.map(m => `${m.role}: ${m.content}`).join("\n");
 
     const result = await AiService.structuredObject<z.infer<typeof EditOutlineSchema>>(
-      // We pass the conversation history as a formatted string for the generateObject prompt
-      messages.map(m => `${m.role}: ${m.content}`).join("\\n"),
+      formattedMessages,
       EditOutlineSchema,
       getDefaultModel(),
       system
     );
 
     // Map back to our Draft format, preserving order
-    draft.modules = result.updatedModules.map((m, mIndex) => ({
+    draft.modules = result.updatedModules.map((m: any, mIndex: number) => ({
       id: crypto.randomUUID(),
-      title: m.title,
-      description: m.description,
+      title: m.title || `Module ${mIndex + 1}`,
+      description: m.description || null,
       orderIndex: mIndex,
-      lessons: m.lessons.map((l, lIndex) => ({
-        id: crypto.randomUUID(),
-        title: l.title,
-        orderIndex: lIndex,
-      })),
+      lessons: Array.isArray(m.lessons)
+        ? m.lessons.map((l: any, lIndex: number) => ({
+            id: crypto.randomUUID(),
+            title: typeof l === "string" ? l : l?.title || `Lesson ${lIndex + 1}`,
+            orderIndex: lIndex,
+          }))
+        : [],
     }));
 
     // Update cache

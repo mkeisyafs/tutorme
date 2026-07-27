@@ -76,3 +76,39 @@ test("Normalizes user's raw AI quiz response payload cleanly", () => {
     }
   }
 });
+
+test("Normalizes raw module list or updatedModules correctly", () => {
+  const EditOutlineSchema = z.object({
+    messageToUser: z.string(),
+    updatedModules: z.array(
+      z.object({
+        title: z.string(),
+        description: z.string(),
+        lessons: z.array(z.object({ title: z.string() }))
+      })
+    )
+  });
+
+  const payload = {
+    messageToUser: "I have consolidated all the modules...",
+    updatedModules: [
+      {
+        id: "212bcad7-13e7-47da-bbc0-99b76d0c6562",
+        title: "Mastering Furina",
+        description: "A guide",
+        orderIndex: 0,
+        lessons: [
+          { id: "123", title: "Lesson 1", orderIndex: 0 }
+        ]
+      }
+    ]
+  };
+
+  const normalized = normalizeModelResponse(payload);
+  const validated = EditOutlineSchema.safeParse(normalized);
+  expect(validated.success).toBe(true);
+  if (validated.success) {
+    expect(validated.data.updatedModules[0].title).toBe("Mastering Furina");
+    expect(Array.isArray(validated.data.updatedModules)).toBe(true);
+  }
+});

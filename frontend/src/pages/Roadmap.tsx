@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ChevronRight, CircleAlert, LoaderCircle, Pencil, Play, RefreshCw, Save, Sidebar, Sparkles, X } from 'lucide-react';
 import { ApiError, apiRequest } from '../lib/api';
 import { useCourseGeneration, saveDraftToLocalStorage, removeDraftFromLocalStorage } from '../context/CourseGenerationContext';
+import { RoadmapAIAssistant } from '../components/RoadmapAIAssistant';
 import type {
   DraftOutline,
 } from '../types/roadmap';
@@ -23,6 +24,8 @@ const Roadmap = () => {
   const [draft, setDraft] = useState<DraftOutline | null>(null);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [aiSidebarWidth, setAiSidebarWidth] = useState(340);
   const [isDraftLoading, setIsDraftLoading] = useState(true);
   const [draftError, setDraftError] = useState('');
   const [actionError, setActionError] = useState('');
@@ -97,6 +100,14 @@ const Roadmap = () => {
   const showGuideMessage = (message: string) => {
     setToastMessage(message);
   };
+
+  const handleUpdateDraft = useCallback((updatedDraft: DraftOutline) => {
+    setDraft(updatedDraft);
+    if (!updatedDraft.publishedCourseId && draftId) {
+      saveDraftToLocalStorage(draftId, updatedDraft.courseTitle, updatedDraft.topic || updatedDraft.courseTitle);
+    }
+    showGuideMessage(t('roadmap.aiAssistantUpdatedToast'));
+  }, [draftId, t]);
 
   const handleSaveDetails = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -234,6 +245,13 @@ const Roadmap = () => {
               {t('roadmap.roadmapTitle')}
             </h1>
             <div className="flex gap-2 sm:gap-4">
+              <button
+                onClick={() => setIsAIAssistantOpen(!isAIAssistantOpen)}
+                className="flex items-center gap-2 rounded-xl border-2 border-purple-400 bg-purple-100 hover:bg-purple-200 px-3.5 sm:px-5 py-2.5 font-['Kalam',cursive] text-lg font-bold text-purple-900 shadow-[2px_2px_0px_0px_rgba(168,85,247,1)] transition-all active:translate-y-0.5 active:shadow-none dark:border-purple-700 dark:bg-purple-900/40 dark:text-purple-200 dark:hover:bg-purple-900/60"
+              >
+                <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-300 fill-purple-400" />
+                <span className="hidden sm:inline">{t('roadmap.aiAssistantButton')}</span>
+              </button>
               <button
                 onClick={() => navigate(-1)}
                 disabled={isPublishing}
@@ -383,6 +401,28 @@ const Roadmap = () => {
           </div>
         </div>
       </main>
+
+      {/* Right Sidebar — AI Assistant */}
+      <RoadmapAIAssistant
+        draftId={draftId || ''}
+        draft={draft}
+        onUpdateDraft={handleUpdateDraft}
+        isOpen={isAIAssistantOpen}
+        onClose={() => setIsAIAssistantOpen(false)}
+        width={aiSidebarWidth}
+        setWidth={setAiSidebarWidth}
+      />
+
+      {/* Floating AI button */}
+      <button
+        onClick={() => setIsAIAssistantOpen(true)}
+        title={t('roadmap.aiAssistantTitle')}
+        className={`fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-30 bg-purple-500 hover:bg-purple-600 text-white p-3 sm:p-4 rounded-full shadow-[3px_3px_0px_0px_rgba(126,34,206,1)] sm:shadow-[4px_4px_0px_0px_rgba(126,34,206,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(126,34,206,1)] active:translate-y-1 active:shadow-none transition-all duration-300 transform flex items-center justify-center ${
+          !isAIAssistantOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'
+        }`}
+      >
+        <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 fill-purple-200 text-purple-200" />
+      </button>
     </div>
   );
 };
